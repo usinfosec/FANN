@@ -1,0 +1,94 @@
+[package]
+name = "neuro-divergent"
+version = "0.1.0"
+edition = "2021"
+authors = ["Claude Code <noreply@anthropic.com>"]
+description = "High-performance neural forecasting library providing 100% compatibility with NeuralForecast Python API, built on ruv-FANN foundation"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/your-org/ruv-FANN"
+homepage = "https://github.com/your-org/ruv-FANN"
+documentation = "https://docs.rs/neuro-divergent"
+keywords = ["neural-network", "forecasting", "time-series", "machine-learning", "rust"]
+categories = ["science", "algorithms", "mathematics"]
+readme = "README.md"
+
+[lib]
+name = "neuro_divergent"
+path = "src/lib.rs"
+
+[dependencies]
+# Core numeric traits and operations
+num-traits = "0.2"
+num-complex = "0.4"
+
+# Data structures and manipulation
+polars = { version = "0.35", features = ["lazy", "temporal", "csv-file", "parquet", "json"] }
+ndarray = "0.15"
+
+# Serialization and configuration
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Date and time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Parallel processing
+rayon = "1.8"
+
+# Async support
+tokio = { version = "1.0", features = ["full"], optional = true }
+futures = { version = "0.3", optional = true }
+
+# Optional GPU support
+candle-core = { version = "0.3", optional = true }
+candle-nn = { version = "0.3", optional = true }
+
+# Logging and monitoring
+log = "0.4"
+tracing = { version = "0.1", optional = true }
+
+# Local ruv-FANN dependency (adjust path as needed)
+ruv-fann = { path = "..", version = "0.1" }
+
+[dev-dependencies]
+approx = "0.5"
+tempfile = "3.8"
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1.4"
+
+[features]
+default = ["std"]
+std = []
+async = ["tokio", "futures"]
+gpu = ["candle-core", "candle-nn"]
+tracing = ["dep:tracing"]
+python-compat = []  # Enable Python-specific compatibility features
+
+[[bench]]
+name = "forecasting_benchmark"
+harness = false
+
+[[example]]
+name = "basic_usage"
+path = "examples/basic_usage.rs"
+
+[[example]]
+name = "lstm_forecasting"
+path = "examples/lstm_forecasting.rs"
+
+[[example]]
+name = "multiple_models"
+path = "examples/multiple_models.rs"
+
+[[example]]
+name = "cross_validation"
+path = "examples/cross_validation.rs"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
