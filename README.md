@@ -578,6 +578,11 @@ cargo doc --open
 - **[linfa](https://crates.io/crates/linfa)**: Comprehensive ML toolkit
 - **[burn](https://crates.io/crates/burn)**: Deep learning framework
 
+### Integration Examples
+
+- **[ruv-fann-examples](https://github.com/ruvnet/ruv-fann-examples)**: Complete application examples
+- **[ruv-fann-benchmarks](https://github.com/ruvnet/ruv-fann-benchmarks)**: Performance comparisons
+- **[ruv-fann-python](https://github.com/ruvnet/ruv-fann-python)**: Python bindings
 
 ## 📄 License
 
