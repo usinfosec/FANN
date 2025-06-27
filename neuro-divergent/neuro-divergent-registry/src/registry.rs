@@ -17,7 +17,6 @@ use serde_json::Value;
 use ahash::AHashMap;
 
 /// Model descriptor containing creation information
-#[derive(Debug, Clone)]
 pub struct ModelDescriptor {
     /// Model information
     pub info: ModelInfo,
@@ -37,6 +36,38 @@ pub struct ModelDescriptor {
     pub tags: Vec<String>,
     /// Model aliases
     pub aliases: Vec<String>,
+}
+
+impl std::fmt::Debug for ModelDescriptor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ModelDescriptor")
+            .field("info", &self.info)
+            .field("creator_f32", &self.creator_f32.as_ref().map(|_| "<closure>"))
+            .field("creator_f64", &self.creator_f64.as_ref().map(|_| "<closure>"))
+            .field("plugin", &self.plugin)
+            .field("registered_at", &self.registered_at)
+            .field("last_accessed", &self.last_accessed)
+            .field("access_count", &self.access_count)
+            .field("tags", &self.tags)
+            .field("aliases", &self.aliases)
+            .finish()
+    }
+}
+
+impl Clone for ModelDescriptor {
+    fn clone(&self) -> Self {
+        Self {
+            info: self.info.clone(),
+            creator_f32: self.creator_f32.clone(),
+            creator_f64: self.creator_f64.clone(),
+            plugin: self.plugin.clone(),
+            registered_at: self.registered_at,
+            last_accessed: RwLock::new(*self.last_accessed.read()),
+            access_count: RwLock::new(*self.access_count.read()),
+            tags: self.tags.clone(),
+            aliases: self.aliases.clone(),
+        }
+    }
 }
 
 /// Registry search criteria
@@ -72,7 +103,7 @@ pub struct PerformanceRequirements {
 }
 
 /// Registry statistics
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct RegistryStats {
     /// Total registered models
     pub total_models: usize,
@@ -94,6 +125,23 @@ pub struct RegistryStats {
     pub average_creation_time_ms: f64,
     /// Last updated timestamp
     pub last_updated: std::time::SystemTime,
+}
+
+impl Default for RegistryStats {
+    fn default() -> Self {
+        Self {
+            total_models: 0,
+            by_category: HashMap::new(),
+            by_parameter_type: HashMap::new(),
+            total_plugins: 0,
+            active_plugins: 0,
+            total_accesses: 0,
+            most_accessed: Vec::new(),
+            registry_size_bytes: 0,
+            average_creation_time_ms: 0.0,
+            last_updated: std::time::SystemTime::UNIX_EPOCH,
+        }
+    }
 }
 
 /// Model Registry for centralized model management
@@ -222,7 +270,7 @@ impl ModelRegistry {
     pub fn unregister(&self, name: &str) -> RegistryResult<()> {
         let descriptor = {
             let mut models = self.models.write();
-            models.remove(name)
+            models.shift_remove(name)
                 .ok_or_else(|| RegistryError::ModelNotFound(name.to_string()))?
         };
         
@@ -459,9 +507,9 @@ impl ModelRegistry {
     }
     
     /// List all plugins
-    pub fn list_plugins(&self) -> Vec<&Plugin> {
+    pub fn list_plugins(&self) -> Vec<Plugin> {
         let plugins = self.plugins.read();
-        plugins.values().collect()
+        plugins.values().cloned().collect()
     }
     
     /// Get plugin by name

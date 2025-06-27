@@ -75,6 +75,10 @@ pub mod models {
 // Model categories
 pub mod recurrent;
 
+// Core components
+pub mod activations;
+pub mod layers;
+
 // Utilities
 pub mod utils;
 

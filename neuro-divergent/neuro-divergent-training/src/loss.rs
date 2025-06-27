@@ -39,7 +39,7 @@ use std::marker::PhantomData;
 use crate::{TrainingError, TrainingResult};
 
 /// Core trait for loss functions in neural forecasting
-pub trait LossFunction<T: Float>: Send + Sync {
+pub trait LossFunction<T: Float + Send + Sync>: Send + Sync {
     /// Calculate the forward loss
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T>;
     
@@ -58,7 +58,7 @@ pub trait LossFunction<T: Float>: Send + Sync {
 
 /// Loss function wrapper that can be used with different concrete types
 #[derive(Clone)]
-pub enum Loss<T: Float> {
+pub enum Loss<T: Float + Send + Sync> {
     MAE(MAELoss<T>),
     MSE(MSELoss<T>),
     RMSE(RMSELoss<T>),
@@ -77,7 +77,7 @@ pub enum Loss<T: Float> {
     SeasonalLoss(SeasonalLoss<T>),
 }
 
-impl<T: Float> LossFunction<T> for Loss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for Loss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         match self {
             Loss::MAE(loss) => loss.forward(predictions, targets),
@@ -148,17 +148,17 @@ impl<T: Float> LossFunction<T> for Loss<T> {
 
 /// Mean Absolute Error (MAE)
 #[derive(Clone)]
-pub struct MAELoss<T: Float> {
+pub struct MAELoss<T: Float + Send + Sync> {
     _phantom: PhantomData<T>,
 }
 
-impl<T: Float> MAELoss<T> {
+impl<T: Float + Send + Sync> MAELoss<T> {
     pub fn new() -> Self {
         Self { _phantom: PhantomData }
     }
 }
 
-impl<T: Float> LossFunction<T> for MAELoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for MAELoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         if predictions.len() != targets.len() {
             return Err(TrainingError::LossError("Dimension mismatch".to_string()));
@@ -199,7 +199,7 @@ impl<T: Float> LossFunction<T> for MAELoss<T> {
     }
 }
 
-impl<T: Float> Default for MAELoss<T> {
+impl<T: Float + Send + Sync> Default for MAELoss<T> {
     fn default() -> Self {
         Self::new()
     }
@@ -207,17 +207,17 @@ impl<T: Float> Default for MAELoss<T> {
 
 /// Mean Squared Error (MSE)
 #[derive(Clone)]
-pub struct MSELoss<T: Float> {
+pub struct MSELoss<T: Float + Send + Sync> {
     _phantom: PhantomData<T>,
 }
 
-impl<T: Float> MSELoss<T> {
+impl<T: Float + Send + Sync> MSELoss<T> {
     pub fn new() -> Self {
         Self { _phantom: PhantomData }
     }
 }
 
-impl<T: Float> LossFunction<T> for MSELoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for MSELoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         if predictions.len() != targets.len() {
             return Err(TrainingError::LossError("Dimension mismatch".to_string()));
@@ -254,7 +254,7 @@ impl<T: Float> LossFunction<T> for MSELoss<T> {
     }
 }
 
-impl<T: Float> Default for MSELoss<T> {
+impl<T: Float + Send + Sync> Default for MSELoss<T> {
     fn default() -> Self {
         Self::new()
     }
@@ -262,17 +262,17 @@ impl<T: Float> Default for MSELoss<T> {
 
 /// Root Mean Squared Error (RMSE)
 #[derive(Clone)]
-pub struct RMSELoss<T: Float> {
+pub struct RMSELoss<T: Float + Send + Sync> {
     _phantom: PhantomData<T>,
 }
 
-impl<T: Float> RMSELoss<T> {
+impl<T: Float + Send + Sync> RMSELoss<T> {
     pub fn new() -> Self {
         Self { _phantom: PhantomData }
     }
 }
 
-impl<T: Float> LossFunction<T> for RMSELoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for RMSELoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         let mse_loss = MSELoss::new();
         let mse = mse_loss.forward(predictions, targets)?;
@@ -299,7 +299,7 @@ impl<T: Float> LossFunction<T> for RMSELoss<T> {
     }
 }
 
-impl<T: Float> Default for RMSELoss<T> {
+impl<T: Float + Send + Sync> Default for RMSELoss<T> {
     fn default() -> Self {
         Self::new()
     }
@@ -307,11 +307,11 @@ impl<T: Float> Default for RMSELoss<T> {
 
 /// Mean Absolute Percentage Error (MAPE)
 #[derive(Clone)]
-pub struct MAPELoss<T: Float> {
+pub struct MAPELoss<T: Float + Send + Sync> {
     epsilon: T,
 }
 
-impl<T: Float> MAPELoss<T> {
+impl<T: Float + Send + Sync> MAPELoss<T> {
     pub fn new() -> Self {
         Self { 
             epsilon: T::from(1e-8).unwrap() 
@@ -323,7 +323,7 @@ impl<T: Float> MAPELoss<T> {
     }
 }
 
-impl<T: Float> LossFunction<T> for MAPELoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for MAPELoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         if predictions.len() != targets.len() {
             return Err(TrainingError::LossError("Dimension mismatch".to_string()));
@@ -366,7 +366,7 @@ impl<T: Float> LossFunction<T> for MAPELoss<T> {
     }
 }
 
-impl<T: Float> Default for MAPELoss<T> {
+impl<T: Float + Send + Sync> Default for MAPELoss<T> {
     fn default() -> Self {
         Self::new()
     }
@@ -374,11 +374,11 @@ impl<T: Float> Default for MAPELoss<T> {
 
 /// Symmetric Mean Absolute Percentage Error (SMAPE)
 #[derive(Clone)]
-pub struct SMAPELoss<T: Float> {
+pub struct SMAPELoss<T: Float + Send + Sync> {
     epsilon: T,
 }
 
-impl<T: Float> SMAPELoss<T> {
+impl<T: Float + Send + Sync> SMAPELoss<T> {
     pub fn new() -> Self {
         Self { 
             epsilon: T::from(1e-8).unwrap() 
@@ -390,7 +390,7 @@ impl<T: Float> SMAPELoss<T> {
     }
 }
 
-impl<T: Float> LossFunction<T> for SMAPELoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for SMAPELoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         if predictions.len() != targets.len() {
             return Err(TrainingError::LossError("Dimension mismatch".to_string()));
@@ -443,7 +443,7 @@ impl<T: Float> LossFunction<T> for SMAPELoss<T> {
     }
 }
 
-impl<T: Float> Default for SMAPELoss<T> {
+impl<T: Float + Send + Sync> Default for SMAPELoss<T> {
     fn default() -> Self {
         Self::new()
     }
@@ -451,12 +451,12 @@ impl<T: Float> Default for SMAPELoss<T> {
 
 /// Mean Absolute Scaled Error (MASE)
 #[derive(Clone)]
-pub struct MASELoss<T: Float> {
+pub struct MASELoss<T: Float + Send + Sync> {
     seasonal_naive_error: T,
     epsilon: T,
 }
 
-impl<T: Float> MASELoss<T> {
+impl<T: Float + Send + Sync> MASELoss<T> {
     pub fn new(seasonal_naive_error: T) -> Self {
         Self { 
             seasonal_naive_error,
@@ -470,7 +470,7 @@ impl<T: Float> MASELoss<T> {
     }
 }
 
-impl<T: Float> LossFunction<T> for MASELoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for MASELoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         if predictions.len() != targets.len() {
             return Err(TrainingError::LossError("Dimension mismatch".to_string()));
@@ -519,17 +519,17 @@ impl<T: Float> LossFunction<T> for MASELoss<T> {
 
 /// Negative Log-Likelihood Loss for probabilistic forecasting
 #[derive(Clone)]
-pub struct NegativeLogLikelihoodLoss<T: Float> {
+pub struct NegativeLogLikelihoodLoss<T: Float + Send + Sync> {
     _phantom: PhantomData<T>,
 }
 
-impl<T: Float> NegativeLogLikelihoodLoss<T> {
+impl<T: Float + Send + Sync> NegativeLogLikelihoodLoss<T> {
     pub fn new() -> Self {
         Self { _phantom: PhantomData }
     }
 }
 
-impl<T: Float> LossFunction<T> for NegativeLogLikelihoodLoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for NegativeLogLikelihoodLoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         // predictions should contain [mean, log_var] for each target
         if predictions.len() != targets.len() * 2 {
@@ -586,7 +586,7 @@ impl<T: Float> LossFunction<T> for NegativeLogLikelihoodLoss<T> {
     }
 }
 
-impl<T: Float> Default for NegativeLogLikelihoodLoss<T> {
+impl<T: Float + Send + Sync> Default for NegativeLogLikelihoodLoss<T> {
     fn default() -> Self {
         Self::new()
     }
@@ -594,17 +594,17 @@ impl<T: Float> Default for NegativeLogLikelihoodLoss<T> {
 
 /// Pinball Loss for quantile forecasting
 #[derive(Clone)]
-pub struct PinballLoss<T: Float> {
+pub struct PinballLoss<T: Float + Send + Sync> {
     quantile: T,
 }
 
-impl<T: Float> PinballLoss<T> {
+impl<T: Float + Send + Sync> PinballLoss<T> {
     pub fn new(quantile: T) -> Self {
         Self { quantile }
     }
 }
 
-impl<T: Float> LossFunction<T> for PinballLoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for PinballLoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         if predictions.len() != targets.len() {
             return Err(TrainingError::LossError("Dimension mismatch".to_string()));
@@ -656,17 +656,17 @@ impl<T: Float> LossFunction<T> for PinballLoss<T> {
 
 /// Continuous Ranked Probability Score (CRPS)
 #[derive(Clone)]
-pub struct CRPSLoss<T: Float> {
+pub struct CRPSLoss<T: Float + Send + Sync> {
     _phantom: PhantomData<T>,
 }
 
-impl<T: Float> CRPSLoss<T> {
+impl<T: Float + Send + Sync> CRPSLoss<T> {
     pub fn new() -> Self {
         Self { _phantom: PhantomData }
     }
 }
 
-impl<T: Float> LossFunction<T> for CRPSLoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for CRPSLoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         // For simplicity, assume Gaussian distribution with mean and std
         if predictions.len() != targets.len() * 2 {
@@ -716,7 +716,7 @@ impl<T: Float> LossFunction<T> for CRPSLoss<T> {
     }
 }
 
-impl<T: Float> Default for CRPSLoss<T> {
+impl<T: Float + Send + Sync> Default for CRPSLoss<T> {
     fn default() -> Self {
         Self::new()
     }
@@ -728,17 +728,17 @@ impl<T: Float> Default for CRPSLoss<T> {
 
 /// Gaussian Negative Log-Likelihood
 #[derive(Clone)]
-pub struct GaussianNLLLoss<T: Float> {
+pub struct GaussianNLLLoss<T: Float + Send + Sync> {
     _phantom: PhantomData<T>,
 }
 
-impl<T: Float> GaussianNLLLoss<T> {
+impl<T: Float + Send + Sync> GaussianNLLLoss<T> {
     pub fn new() -> Self {
         Self { _phantom: PhantomData }
     }
 }
 
-impl<T: Float> LossFunction<T> for GaussianNLLLoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for GaussianNLLLoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         // Same as NegativeLogLikelihoodLoss but more explicit
         let nll_loss = NegativeLogLikelihoodLoss::new();
@@ -755,7 +755,7 @@ impl<T: Float> LossFunction<T> for GaussianNLLLoss<T> {
     }
 }
 
-impl<T: Float> Default for GaussianNLLLoss<T> {
+impl<T: Float + Send + Sync> Default for GaussianNLLLoss<T> {
     fn default() -> Self {
         Self::new()
     }
@@ -763,17 +763,17 @@ impl<T: Float> Default for GaussianNLLLoss<T> {
 
 /// Poisson Negative Log-Likelihood
 #[derive(Clone)]
-pub struct PoissonNLLLoss<T: Float> {
+pub struct PoissonNLLLoss<T: Float + Send + Sync> {
     _phantom: PhantomData<T>,
 }
 
-impl<T: Float> PoissonNLLLoss<T> {
+impl<T: Float + Send + Sync> PoissonNLLLoss<T> {
     pub fn new() -> Self {
         Self { _phantom: PhantomData }
     }
 }
 
-impl<T: Float> LossFunction<T> for PoissonNLLLoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for PoissonNLLLoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         if predictions.len() != targets.len() {
             return Err(TrainingError::LossError("Dimension mismatch".to_string()));
@@ -811,7 +811,7 @@ impl<T: Float> LossFunction<T> for PoissonNLLLoss<T> {
     }
 }
 
-impl<T: Float> Default for PoissonNLLLoss<T> {
+impl<T: Float + Send + Sync> Default for PoissonNLLLoss<T> {
     fn default() -> Self {
         Self::new()
     }
@@ -819,17 +819,17 @@ impl<T: Float> Default for PoissonNLLLoss<T> {
 
 /// Negative Binomial Negative Log-Likelihood
 #[derive(Clone)]
-pub struct NegativeBinomialNLLLoss<T: Float> {
+pub struct NegativeBinomialNLLLoss<T: Float + Send + Sync> {
     r: T, // Dispersion parameter
 }
 
-impl<T: Float> NegativeBinomialNLLLoss<T> {
+impl<T: Float + Send + Sync> NegativeBinomialNLLLoss<T> {
     pub fn new(r: T) -> Self {
         Self { r }
     }
 }
 
-impl<T: Float> LossFunction<T> for NegativeBinomialNLLLoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for NegativeBinomialNLLLoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         if predictions.len() != targets.len() {
             return Err(TrainingError::LossError("Dimension mismatch".to_string()));
@@ -881,17 +881,17 @@ impl<T: Float> LossFunction<T> for NegativeBinomialNLLLoss<T> {
 
 /// Huber Loss (robust to outliers)
 #[derive(Clone)]
-pub struct HuberLoss<T: Float> {
+pub struct HuberLoss<T: Float + Send + Sync> {
     delta: T,
 }
 
-impl<T: Float> HuberLoss<T> {
+impl<T: Float + Send + Sync> HuberLoss<T> {
     pub fn new(delta: T) -> Self {
         Self { delta }
     }
 }
 
-impl<T: Float> LossFunction<T> for HuberLoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for HuberLoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         if predictions.len() != targets.len() {
             return Err(TrainingError::LossError("Dimension mismatch".to_string()));
@@ -946,17 +946,17 @@ impl<T: Float> LossFunction<T> for HuberLoss<T> {
 
 /// Quantile Loss for quantile regression
 #[derive(Clone)]
-pub struct QuantileLoss<T: Float> {
+pub struct QuantileLoss<T: Float + Send + Sync> {
     quantiles: Vec<T>,
 }
 
-impl<T: Float> QuantileLoss<T> {
+impl<T: Float + Send + Sync> QuantileLoss<T> {
     pub fn new(quantiles: Vec<T>) -> Self {
         Self { quantiles }
     }
 }
 
-impl<T: Float> LossFunction<T> for QuantileLoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for QuantileLoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         if predictions.len() != targets.len() * self.quantiles.len() {
             return Err(TrainingError::LossError("Predictions length mismatch".to_string()));
@@ -1021,12 +1021,12 @@ impl<T: Float> LossFunction<T> for QuantileLoss<T> {
 
 /// Scale-invariant loss function
 #[derive(Clone)]
-pub struct ScaledLoss<T: Float> {
+pub struct ScaledLoss<T: Float + Send + Sync> {
     base_loss: Box<Loss<T>>,
     scale_factor: T,
 }
 
-impl<T: Float> ScaledLoss<T> {
+impl<T: Float + Send + Sync> ScaledLoss<T> {
     pub fn new(base_loss: Loss<T>, scale_factor: T) -> Self {
         Self { 
             base_loss: Box::new(base_loss),
@@ -1035,7 +1035,7 @@ impl<T: Float> ScaledLoss<T> {
     }
 }
 
-impl<T: Float> LossFunction<T> for ScaledLoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for ScaledLoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         let base_loss = self.base_loss.forward(predictions, targets)?;
         Ok(base_loss / self.scale_factor)
@@ -1057,12 +1057,12 @@ impl<T: Float> LossFunction<T> for ScaledLoss<T> {
 
 /// Seasonal-aware loss function
 #[derive(Clone)]
-pub struct SeasonalLoss<T: Float> {
+pub struct SeasonalLoss<T: Float + Send + Sync> {
     base_loss: Box<Loss<T>>,
     seasonal_weights: Vec<T>,
 }
 
-impl<T: Float> SeasonalLoss<T> {
+impl<T: Float + Send + Sync> SeasonalLoss<T> {
     pub fn new(base_loss: Loss<T>, seasonal_weights: Vec<T>) -> Self {
         Self { 
             base_loss: Box::new(base_loss),
@@ -1071,7 +1071,7 @@ impl<T: Float> SeasonalLoss<T> {
     }
 }
 
-impl<T: Float> LossFunction<T> for SeasonalLoss<T> {
+impl<T: Float + Send + Sync> LossFunction<T> for SeasonalLoss<T> {
     fn forward(&self, predictions: &[T], targets: &[T]) -> TrainingResult<T> {
         if predictions.len() != targets.len() {
             return Err(TrainingError::LossError("Dimension mismatch".to_string()));
@@ -1117,7 +1117,7 @@ impl<T: Float> LossFunction<T> for SeasonalLoss<T> {
 // =============================================================================
 
 /// Approximation of the error function (erf)
-fn erf_approx<T: Float>(x: T) -> T {
+fn erf_approx<T: Float + Send + Sync>(x: T) -> T {
     // Abramowitz and Stegun approximation
     let a1 = T::from(0.254829592).unwrap();
     let a2 = T::from(-0.284496736).unwrap();
@@ -1136,7 +1136,7 @@ fn erf_approx<T: Float>(x: T) -> T {
 }
 
 /// Stirling's approximation for log factorial
-fn log_factorial_approx<T: Float>(n: T) -> T {
+fn log_factorial_approx<T: Float + Send + Sync>(n: T) -> T {
     if n <= T::one() {
         return T::zero();
     }
@@ -1146,7 +1146,7 @@ fn log_factorial_approx<T: Float>(n: T) -> T {
 }
 
 /// Approximation of log gamma function
-fn log_gamma_approx<T: Float>(x: T) -> T {
+fn log_gamma_approx<T: Float + Send + Sync>(x: T) -> T {
     if x <= T::zero() {
         return T::zero();
     }

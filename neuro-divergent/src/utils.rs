@@ -2,8 +2,7 @@
 
 use std::collections::HashMap;
 use num_traits::Float;
-use chrono::{DateTime, Utc, Duration};
-use polars::prelude::*;
+use chrono::{DateTime, Utc};
 
 use crate::config::Frequency;
 use crate::results::TimeSeriesDataFrame;
@@ -12,7 +11,7 @@ use crate::errors::{NeuroDivergentError, NeuroDivergentResult};
 /// Mathematical utility functions
 pub mod math {
     use super::*;
-    use num_traits::{Float, FromPrimitive};
+    use num_traits::Float;
     
     /// Calculate Mean Absolute Error (MAE)
     pub fn mae<T: Float>(y_true: &[T], y_pred: &[T]) -> NeuroDivergentResult<T> {
@@ -410,6 +409,7 @@ pub mod preprocessing {
     
     /// Interpolate missing values linearly
     pub fn linear_interpolate<T: Float + Copy>(data: &mut Vec<Option<T>>) {
+        let mut changes = Vec::new();
         let mut start_idx = None;
         
         for (i, value) in data.iter().enumerate() {
@@ -421,7 +421,8 @@ pub mod preprocessing {
                         if steps > 0 {
                             let step_size = (end_val - start_val) / T::from(steps + 1).unwrap();
                             for j in 1..=steps {
-                                data[start + j] = Some(start_val + step_size * T::from(j).unwrap());
+                                let new_val = start_val + step_size * T::from(j).unwrap();
+                                changes.push((start + j, Some(new_val)));
                             }
                         }
                     }
@@ -430,6 +431,11 @@ pub mod preprocessing {
             } else if start_idx.is_none() && i > 0 && data[i - 1].is_some() {
                 start_idx = Some(i - 1);
             }
+        }
+        
+        // Apply all changes
+        for (idx, value) in changes {
+            data[idx] = value;
         }
     }
 }

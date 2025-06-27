@@ -5,11 +5,11 @@
 //! capability detection and performance profiling.
 
 use crate::{
-    BaseModel, Float, ModelInfo, ModelCategory, ModelCapabilities, ModelPerformance,
-    RegistryError, RegistryResult, plugin::{Plugin, PluginManager},
+    ModelInfo, ModelCategory, ModelCapabilities, ModelPerformance,
+    RegistryResult, plugin::PluginManager,
 };
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::{SystemTime, Instant};
 use serde_json::Value;
 use parking_lot::RwLock;
@@ -147,6 +147,15 @@ pub struct DiscoveryStats {
     pub cache_misses: usize,
 }
 
+/// Plugin discovery statistics
+#[derive(Debug, Default)]
+pub struct PluginDiscoveryStats {
+    /// Number of plugins scanned
+    pub plugins_scanned: usize,
+    /// Number of directories scanned
+    pub directories_scanned: usize,
+}
+
 /// Discovery error
 #[derive(Debug, Clone)]
 pub struct DiscoveryError {
@@ -185,7 +194,8 @@ pub enum DiscoveryErrorCategory {
 pub struct ModelDiscovery {
     /// Discovery configuration
     config: RwLock<DiscoveryConfig>,
-    /// Plugin manager
+    /// Plugin manager (placeholder - not yet used)
+    #[allow(dead_code)]
     plugin_manager: PluginManager,
     /// Discovery cache
     cache: RwLock<DiscoveryCache>,
@@ -543,12 +553,6 @@ impl ModelDiscovery {
         Ok((models, stats))
     }
     
-    /// Plugin discovery statistics
-    #[derive(Debug, Default)]
-    struct PluginDiscoveryStats {
-        plugins_scanned: usize,
-        directories_scanned: usize,
-    }
     
     /// Apply discovery filters
     fn apply_filters(&self, mut models: Vec<ModelInfo>, filters: &DiscoveryFilters) -> Vec<ModelInfo> {

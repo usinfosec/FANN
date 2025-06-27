@@ -51,13 +51,13 @@ impl TimeSeriesSchema {
 
 /// Main data structure for time series data
 #[derive(Debug, Clone)]
-pub struct TimeSeriesDataFrame<T: Float> {
+pub struct TimeSeriesDataFrame<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     pub data: Vec<HashMap<String, DataValue<T>>>,
     pub schema: TimeSeriesSchema,
     phantom: PhantomData<T>,
 }
 
-impl<T: Float> TimeSeriesDataFrame<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> TimeSeriesDataFrame<T> {
     /// Create a new TimeSeriesDataFrame
     pub fn new(schema: TimeSeriesSchema) -> Self {
         Self {
@@ -87,7 +87,7 @@ impl<T: Float> TimeSeriesDataFrame<T> {
 
 /// Results from forecasting operations
 #[derive(Debug, Clone)]
-pub struct ForecastDataFrame<T: Float> {
+pub struct ForecastDataFrame<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     pub data: Vec<HashMap<String, DataValue<T>>>,
     pub models: Vec<String>,
     pub forecast_horizon: usize,
@@ -95,7 +95,7 @@ pub struct ForecastDataFrame<T: Float> {
     phantom: PhantomData<T>,
 }
 
-impl<T: Float> ForecastDataFrame<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> ForecastDataFrame<T> {
     /// Create a new ForecastDataFrame
     pub fn new(models: Vec<String>, forecast_horizon: usize) -> Self {
         Self {
@@ -110,7 +110,7 @@ impl<T: Float> ForecastDataFrame<T> {
 
 /// Generic data value for DataFrame operations
 #[derive(Debug, Clone)]
-pub enum DataValue<T: Float> {
+pub enum DataValue<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     Float(T),
     Int(i64),
     String(String),
@@ -119,7 +119,7 @@ pub enum DataValue<T: Float> {
     Null,
 }
 
-impl<T: Float> DataValue<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> DataValue<T> {
     pub fn as_float(&self) -> Option<T> {
         match self {
             DataValue::Float(f) => Some(*f),

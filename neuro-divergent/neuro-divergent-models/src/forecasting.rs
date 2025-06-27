@@ -11,14 +11,14 @@ use crate::data::{TimeSeriesDataFrame, ForecastDataFrame};
 use crate::config::{TrainingConfig, PredictionConfig, CrossValidationConfig};
 
 /// Main entry point for neural forecasting
-pub struct NeuralForecast<T: Float + Send + Sync> {
+pub struct NeuralForecast<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     models: Vec<Box<dyn BaseModel<T>>>,
     frequency: Option<String>,
     local_scaler_type: Option<String>,
     num_threads: Option<usize>,
 }
 
-impl<T: Float + Send + Sync> NeuralForecast<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> NeuralForecast<T> {
     /// Create new NeuralForecast instance builder
     pub fn new() -> NeuralForecastBuilder<T> {
         NeuralForecastBuilder::new()
@@ -92,14 +92,14 @@ impl<T: Float + Send + Sync> NeuralForecast<T> {
 }
 
 /// Builder for constructing NeuralForecast instances
-pub struct NeuralForecastBuilder<T: Float + Send + Sync> {
+pub struct NeuralForecastBuilder<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     models: Vec<Box<dyn BaseModel<T>>>,
     frequency: Option<String>,
     local_scaler_type: Option<String>,
     num_threads: Option<usize>,
 }
 
-impl<T: Float + Send + Sync> NeuralForecastBuilder<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> NeuralForecastBuilder<T> {
     pub fn new() -> Self {
         Self {
             models: Vec::new(),
@@ -154,7 +154,7 @@ impl<T: Float + Send + Sync> NeuralForecastBuilder<T> {
     }
 }
 
-impl<T: Float + Send + Sync> Default for NeuralForecastBuilder<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> Default for NeuralForecastBuilder<T> {
     fn default() -> Self {
         Self::new()
     }

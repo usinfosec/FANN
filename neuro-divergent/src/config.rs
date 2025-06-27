@@ -3,13 +3,13 @@
 use std::collections::HashMap;
 use std::fmt;
 use serde::{Serialize, Deserialize};
-use chrono::{DateTime, Utc, Duration};
-use num_traits::Float;
+use chrono::Duration;
+use num_traits::{Float, NumCast};
 
 use crate::errors::{NeuroDivergentError, NeuroDivergentResult};
 
 /// Time series frequency enumeration matching NeuralForecast Python API
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Frequency {
     // High frequency
     #[serde(rename = "ns")]
@@ -412,7 +412,7 @@ impl<T: Float> EarlyStoppingConfig<T> {
         Self {
             monitor: "val_loss".to_string(),
             patience: 10,
-            min_delta: T::from(0.001),
+            min_delta: NumCast::from(0.001f64).unwrap(),
             mode: EarlyStoppingMode::Min,
         }
     }

@@ -31,7 +31,7 @@ log = "0.4"
 tracing = "0.1"
 
 # Dynamic loading
-libloading = "0.8"
+libloading = { version = "0.8", optional = true }
 
 # Configuration
 config = "0.14"
@@ -68,10 +68,6 @@ criterion = { version = "0.5", features = ["html_reports"] }
 tempfile = "3.8"
 env_logger = "0.10"
 
-[[bench]]
-name = "registry_benchmarks"
-harness = false
-required-features = ["benchmarks"]
 
 [lib]
 name = "neuro_divergent_registry"

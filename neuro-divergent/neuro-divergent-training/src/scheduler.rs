@@ -29,7 +29,7 @@ use std::marker::PhantomData;
 use crate::{TrainingError, TrainingResult};
 
 /// Core trait for learning rate schedulers
-pub trait LearningRateScheduler<T: Float>: Send + Sync {
+pub trait LearningRateScheduler<T: Float + Send + Sync>: Send + Sync {
     /// Get the learning rate for the current step/epoch
     fn get_learning_rate(&mut self, step: usize) -> T;
     
@@ -57,7 +57,7 @@ pub trait LearningRateScheduler<T: Float>: Send + Sync {
 
 /// Scheduler state for serialization and checkpointing
 #[derive(Debug, Clone)]
-pub struct SchedulerState<T: Float> {
+pub struct SchedulerState<T: Float + Send + Sync> {
     pub current_step: usize,
     pub current_lr: T,
     pub best_metric: Option<T>,
@@ -69,7 +69,7 @@ pub struct SchedulerState<T: Float> {
 
 /// Scheduler wrapper enum for dynamic dispatch
 #[derive(Clone)]
-pub enum SchedulerType<T: Float> {
+pub enum SchedulerType<T: Float + Send + Sync> {
     Exponential(ExponentialScheduler<T>),
     Step(StepScheduler<T>),
     Cosine(CosineScheduler<T>),
@@ -80,7 +80,7 @@ pub enum SchedulerType<T: Float> {
     Seasonal(SeasonalScheduler<T>),
 }
 
-impl<T: Float> LearningRateScheduler<T> for SchedulerType<T> {
+impl<T: Float + Send + Sync> LearningRateScheduler<T> for SchedulerType<T> {
     fn get_learning_rate(&mut self, step: usize) -> T {
         match self {
             SchedulerType::Exponential(s) => s.get_learning_rate(step),
@@ -192,7 +192,7 @@ impl<T: Float> LearningRateScheduler<T> for SchedulerType<T> {
 
 /// Exponential learning rate decay with optional warmup
 #[derive(Clone)]
-pub struct ExponentialScheduler<T: Float> {
+pub struct ExponentialScheduler<T: Float + Send + Sync> {
     initial_lr: T,
     decay_rate: T,
     current_lr: T,
@@ -201,7 +201,7 @@ pub struct ExponentialScheduler<T: Float> {
     min_lr: T,
 }
 
-impl<T: Float> ExponentialScheduler<T> {
+impl<T: Float + Send + Sync> ExponentialScheduler<T> {
     pub fn new(initial_lr: T, decay_rate: T) -> Self {
         Self {
             initial_lr,
@@ -224,7 +224,7 @@ impl<T: Float> ExponentialScheduler<T> {
     }
 }
 
-impl<T: Float> LearningRateScheduler<T> for ExponentialScheduler<T> {
+impl<T: Float + Send + Sync> LearningRateScheduler<T> for ExponentialScheduler<T> {
     fn get_learning_rate(&mut self, step: usize) -> T {
         self.current_step = step;
         
@@ -306,7 +306,7 @@ impl<T: Float> LearningRateScheduler<T> for ExponentialScheduler<T> {
 
 /// Step-wise learning rate decay
 #[derive(Clone)]
-pub struct StepScheduler<T: Float> {
+pub struct StepScheduler<T: Float + Send + Sync> {
     initial_lr: T,
     step_size: usize,
     gamma: T,
@@ -315,7 +315,7 @@ pub struct StepScheduler<T: Float> {
     milestones: Vec<usize>,
 }
 
-impl<T: Float> StepScheduler<T> {
+impl<T: Float + Send + Sync> StepScheduler<T> {
     pub fn new(initial_lr: T, step_size: usize, gamma: T) -> Self {
         Self {
             initial_lr,
@@ -334,7 +334,7 @@ impl<T: Float> StepScheduler<T> {
     }
 }
 
-impl<T: Float> LearningRateScheduler<T> for StepScheduler<T> {
+impl<T: Float + Send + Sync> LearningRateScheduler<T> for StepScheduler<T> {
     fn get_learning_rate(&mut self, step: usize) -> T {
         self.current_step = step;
         
@@ -416,7 +416,7 @@ impl<T: Float> LearningRateScheduler<T> for StepScheduler<T> {
 
 /// Cosine annealing learning rate scheduler with restarts
 #[derive(Clone)]
-pub struct CosineScheduler<T: Float> {
+pub struct CosineScheduler<T: Float + Send + Sync> {
     initial_lr: T,
     min_lr: T,
     t_max: usize,
@@ -427,7 +427,7 @@ pub struct CosineScheduler<T: Float> {
     current_t_max: usize,
 }
 
-impl<T: Float> CosineScheduler<T> {
+impl<T: Float + Send + Sync> CosineScheduler<T> {
     pub fn new(initial_lr: T, t_max: usize) -> Self {
         Self {
             initial_lr,
@@ -452,7 +452,7 @@ impl<T: Float> CosineScheduler<T> {
     }
 }
 
-impl<T: Float> LearningRateScheduler<T> for CosineScheduler<T> {
+impl<T: Float + Send + Sync> LearningRateScheduler<T> for CosineScheduler<T> {
     fn get_learning_rate(&mut self, step: usize) -> T {
         self.current_step = step;
         
@@ -554,7 +554,7 @@ impl<T: Float> LearningRateScheduler<T> for CosineScheduler<T> {
 
 /// Reduce learning rate on plateau
 #[derive(Clone)]
-pub struct PlateauScheduler<T: Float> {
+pub struct PlateauScheduler<T: Float + Send + Sync> {
     initial_lr: T,
     factor: T,
     patience: usize,
@@ -574,7 +574,7 @@ pub enum PlateauMode {
     Max,
 }
 
-impl<T: Float> PlateauScheduler<T> {
+impl<T: Float + Send + Sync> PlateauScheduler<T> {
     pub fn new(initial_lr: T, mode: PlateauMode, factor: T, patience: usize) -> Self {
         Self {
             initial_lr,
@@ -614,7 +614,7 @@ impl<T: Float> PlateauScheduler<T> {
     }
 }
 
-impl<T: Float> LearningRateScheduler<T> for PlateauScheduler<T> {
+impl<T: Float + Send + Sync> LearningRateScheduler<T> for PlateauScheduler<T> {
     fn get_learning_rate(&mut self, _step: usize) -> T {
         self.current_lr
     }
@@ -729,7 +729,7 @@ impl<T: Float> LearningRateScheduler<T> for PlateauScheduler<T> {
 
 /// Linear warmup followed by decay
 #[derive(Clone)]
-pub struct WarmupScheduler<T: Float> {
+pub struct WarmupScheduler<T: Float + Send + Sync> {
     warmup_steps: usize,
     initial_lr: T,
     target_lr: T,
@@ -738,7 +738,7 @@ pub struct WarmupScheduler<T: Float> {
     current_step: usize,
 }
 
-impl<T: Float> WarmupScheduler<T> {
+impl<T: Float + Send + Sync> WarmupScheduler<T> {
     pub fn new(
         warmup_steps: usize,
         target_lr: T,
@@ -761,7 +761,7 @@ impl<T: Float> WarmupScheduler<T> {
     }
 }
 
-impl<T: Float> LearningRateScheduler<T> for WarmupScheduler<T> {
+impl<T: Float + Send + Sync> LearningRateScheduler<T> for WarmupScheduler<T> {
     fn get_learning_rate(&mut self, step: usize) -> T {
         self.current_step = step;
         
@@ -836,7 +836,7 @@ impl<T: Float> LearningRateScheduler<T> for WarmupScheduler<T> {
 
 /// Cyclic learning rate scheduler
 #[derive(Clone)]
-pub struct CyclicScheduler<T: Float> {
+pub struct CyclicScheduler<T: Float + Send + Sync> {
     base_lr: T,
     max_lr: T,
     step_size_up: usize,
@@ -855,7 +855,7 @@ pub enum CyclicMode {
     ExpRange,
 }
 
-impl<T: Float> CyclicScheduler<T> {
+impl<T: Float + Send + Sync> CyclicScheduler<T> {
     pub fn new(base_lr: T, max_lr: T, step_size_up: usize) -> Self {
         Self {
             base_lr,
@@ -886,7 +886,7 @@ impl<T: Float> CyclicScheduler<T> {
     }
 }
 
-impl<T: Float> LearningRateScheduler<T> for CyclicScheduler<T> {
+impl<T: Float + Send + Sync> LearningRateScheduler<T> for CyclicScheduler<T> {
     fn get_learning_rate(&mut self, step: usize) -> T {
         self.current_step = step;
         
@@ -994,7 +994,7 @@ impl<T: Float> LearningRateScheduler<T> for CyclicScheduler<T> {
 
 /// One cycle learning rate policy
 #[derive(Clone)]
-pub struct OneCycleScheduler<T: Float> {
+pub struct OneCycleScheduler<T: Float + Send + Sync> {
     max_lr: T,
     total_steps: usize,
     pct_start: T,
@@ -1012,7 +1012,7 @@ pub enum AnnealStrategy {
     Linear,
 }
 
-impl<T: Float> OneCycleScheduler<T> {
+impl<T: Float + Send + Sync> OneCycleScheduler<T> {
     pub fn new(max_lr: T, total_steps: usize) -> Self {
         Self {
             max_lr,
@@ -1049,7 +1049,7 @@ impl<T: Float> OneCycleScheduler<T> {
     }
 }
 
-impl<T: Float> LearningRateScheduler<T> for OneCycleScheduler<T> {
+impl<T: Float + Send + Sync> LearningRateScheduler<T> for OneCycleScheduler<T> {
     fn get_learning_rate(&mut self, step: usize) -> T {
         if step >= self.total_steps {
             self.finished = true;
@@ -1171,7 +1171,7 @@ impl<T: Float> LearningRateScheduler<T> for OneCycleScheduler<T> {
 
 /// Seasonal-aware learning rate scheduler for time series
 #[derive(Clone)]
-pub struct SeasonalScheduler<T: Float> {
+pub struct SeasonalScheduler<T: Float + Send + Sync> {
     base_scheduler: Box<SchedulerType<T>>,
     seasonal_factors: Vec<T>,
     current_lr: T,
@@ -1179,7 +1179,7 @@ pub struct SeasonalScheduler<T: Float> {
     season_length: usize,
 }
 
-impl<T: Float> SeasonalScheduler<T> {
+impl<T: Float + Send + Sync> SeasonalScheduler<T> {
     pub fn new(
         base_scheduler: SchedulerType<T>,
         seasonal_factors: Vec<T>,
@@ -1196,7 +1196,7 @@ impl<T: Float> SeasonalScheduler<T> {
     }
 }
 
-impl<T: Float> LearningRateScheduler<T> for SeasonalScheduler<T> {
+impl<T: Float + Send + Sync> LearningRateScheduler<T> for SeasonalScheduler<T> {
     fn get_learning_rate(&mut self, step: usize) -> T {
         self.current_step = step;
         
@@ -1271,11 +1271,11 @@ impl<T: Float> LearningRateScheduler<T> for SeasonalScheduler<T> {
 // =============================================================================
 
 /// Builder for creating schedulers with fluent interface
-pub struct SchedulerBuilder<T: Float> {
+pub struct SchedulerBuilder<T: Float + Send + Sync> {
     _phantom: PhantomData<T>,
 }
 
-impl<T: Float> SchedulerBuilder<T> {
+impl<T: Float + Send + Sync> SchedulerBuilder<T> {
     pub fn new() -> Self {
         Self { _phantom: PhantomData }
     }
@@ -1313,7 +1313,7 @@ impl<T: Float> SchedulerBuilder<T> {
     }
 }
 
-impl<T: Float> Default for SchedulerBuilder<T> {
+impl<T: Float + Send + Sync> Default for SchedulerBuilder<T> {
     fn default() -> Self {
         Self::new()
     }

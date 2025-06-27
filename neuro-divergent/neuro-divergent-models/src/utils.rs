@@ -12,7 +12,7 @@ pub mod math {
     use super::*;
     
     /// Calculate mean squared error
-    pub fn mse<T: Float>(actual: &[T], predicted: &[T]) -> NeuroDivergentResult<T> {
+    pub fn mse<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>(actual: &[T], predicted: &[T]) -> NeuroDivergentResult<T> {
         if actual.len() != predicted.len() {
             return Err(NeuroDivergentError::dimension_mismatch(actual.len(), predicted.len()));
         }
@@ -29,7 +29,7 @@ pub mod math {
     }
     
     /// Calculate mean absolute error
-    pub fn mae<T: Float>(actual: &[T], predicted: &[T]) -> NeuroDivergentResult<T> {
+    pub fn mae<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>(actual: &[T], predicted: &[T]) -> NeuroDivergentResult<T> {
         if actual.len() != predicted.len() {
             return Err(NeuroDivergentError::dimension_mismatch(actual.len(), predicted.len()));
         }
@@ -43,13 +43,13 @@ pub mod math {
     }
     
     /// Calculate root mean squared error
-    pub fn rmse<T: Float>(actual: &[T], predicted: &[T]) -> NeuroDivergentResult<T> {
+    pub fn rmse<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>(actual: &[T], predicted: &[T]) -> NeuroDivergentResult<T> {
         let mse_value = mse(actual, predicted)?;
         Ok(mse_value.sqrt())
     }
     
     /// Apply softmax function
-    pub fn softmax<T: Float>(inputs: &[T]) -> Vec<T> {
+    pub fn softmax<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>(inputs: &[T]) -> Vec<T> {
         let max_val = inputs.iter().fold(inputs[0], |max, &x| max.max(x));
         let exp_values: Vec<T> = inputs.iter()
             .map(|&x| (x - max_val).exp())
@@ -62,7 +62,7 @@ pub mod math {
     }
     
     /// Calculate dot product of two vectors
-    pub fn dot_product<T: Float>(a: &[T], b: &[T]) -> NeuroDivergentResult<T> {
+    pub fn dot_product<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>(a: &[T], b: &[T]) -> NeuroDivergentResult<T> {
         if a.len() != b.len() {
             return Err(NeuroDivergentError::dimension_mismatch(a.len(), b.len()));
         }
@@ -71,7 +71,7 @@ pub mod math {
     }
     
     /// Matrix multiplication for 2D vectors
-    pub fn matrix_multiply<T: Float>(a: &[Vec<T>], b: &[Vec<T>]) -> NeuroDivergentResult<Vec<Vec<T>>> {
+    pub fn matrix_multiply<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>(a: &[Vec<T>], b: &[Vec<T>]) -> NeuroDivergentResult<Vec<Vec<T>>> {
         if a.is_empty() || b.is_empty() {
             return Err(NeuroDivergentError::data("Cannot multiply empty matrices"));
         }
@@ -105,13 +105,13 @@ pub mod preprocessing {
     
     /// Min-Max scaler
     #[derive(Debug, Clone)]
-    pub struct MinMaxScaler<T: Float> {
+    pub struct MinMaxScaler<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
         min_val: Option<T>,
         max_val: Option<T>,
         range: (T, T), // (min_range, max_range)
     }
     
-    impl<T: Float> MinMaxScaler<T> {
+    impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> MinMaxScaler<T> {
         pub fn new() -> Self {
             Self {
                 min_val: None,
@@ -180,12 +180,12 @@ pub mod preprocessing {
     
     /// Standard scaler (Z-score normalization)
     #[derive(Debug, Clone)]
-    pub struct StandardScaler<T: Float> {
+    pub struct StandardScaler<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
         mean: Option<T>,
         std: Option<T>,
     }
     
-    impl<T: Float> StandardScaler<T> {
+    impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> StandardScaler<T> {
         pub fn new() -> Self {
             Self {
                 mean: None,
@@ -258,7 +258,7 @@ pub mod validation {
     use super::*;
     
     /// Validate input dimensions
-    pub fn validate_dimensions<T: Float>(
+    pub fn validate_dimensions<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>(
         input: &[T], 
         expected_size: usize, 
         name: &str
@@ -270,7 +270,7 @@ pub mod validation {
     }
     
     /// Validate that vectors have the same length
-    pub fn validate_same_length<T: Float>(
+    pub fn validate_same_length<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>(
         a: &[T], 
         b: &[T], 
         name_a: &str, 
@@ -283,7 +283,7 @@ pub mod validation {
     }
     
     /// Validate that all values are finite
-    pub fn validate_finite<T: Float>(data: &[T], name: &str) -> NeuroDivergentResult<()> {
+    pub fn validate_finite<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>(data: &[T], name: &str) -> NeuroDivergentResult<()> {
         for (i, &value) in data.iter().enumerate() {
             if !value.is_finite() {
                 return Err(NeuroDivergentError::data(
@@ -295,7 +295,7 @@ pub mod validation {
     }
     
     /// Validate that values are in a specific range
-    pub fn validate_range<T: Float>(
+    pub fn validate_range<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>(
         data: &[T], 
         min_val: T, 
         max_val: T, 
@@ -318,7 +318,7 @@ pub mod timeseries {
     use super::*;
     
     /// Create sliding windows from a time series
-    pub fn create_sliding_windows<T: Float>(
+    pub fn create_sliding_windows<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>(
         data: &[T], 
         window_size: usize, 
         step_size: usize
@@ -335,7 +335,7 @@ pub mod timeseries {
     }
     
     /// Split time series into train/validation sets
-    pub fn train_validation_split<T: Float>(
+    pub fn train_validation_split<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>(
         data: &[T], 
         validation_split: f64
     ) -> NeuroDivergentResult<(Vec<T>, Vec<T>)> {
@@ -354,7 +354,7 @@ pub mod timeseries {
     }
     
     /// Calculate seasonal decomposition (simple moving average)
-    pub fn simple_seasonal_decompose<T: Float>(
+    pub fn simple_seasonal_decompose<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>(
         data: &[T], 
         period: usize
     ) -> NeuroDivergentResult<(Vec<T>, Vec<T>)> {

@@ -6,18 +6,19 @@ use std::marker::PhantomData;
 use num_traits::Float;
 use rayon::prelude::*;
 use serde::{Serialize, Deserialize};
+use polars::prelude::*;
 
 use crate::config::{
     Frequency, ScalerType, PredictionIntervals, CrossValidationConfig, Device
 };
 use crate::results::{
     TimeSeriesDataFrame, ForecastDataFrame, CrossValidationDataFrame, 
-    AccuracyMetrics, TimeSeriesSchema
+    TimeSeriesSchema
 };
 use crate::errors::{NeuroDivergentError, NeuroDivergentResult};
 
 // Forward declarations for core traits (will be implemented in core module)
-pub trait BaseModel<T: Float + Send + Sync>: Send + Sync {
+pub trait BaseModel<T: Float + Send + Sync>: Send + Sync + std::fmt::Debug {
     /// Fit the model to training data
     fn fit(&mut self, data: &TimeSeriesDataFrame<T>) -> NeuroDivergentResult<()>;
     
@@ -312,7 +313,7 @@ impl<T: Float + Send + Sync> NeuralForecast<T> {
             .collect();
             
         // Create empty forecast dataframe (placeholder)
-        let data = polars::prelude::df! {
+        let data = df! {
             "unique_id" => Vec::<String>::new(),
             "ds" => Vec::<i64>::new(),
         }.map_err(|e| NeuroDivergentError::prediction(format!("DataFrame creation error: {}", e)))?;
@@ -352,7 +353,7 @@ impl<T: Float + Send + Sync> NeuralForecast<T> {
         let model_names: Vec<String> = self.models.iter().map(|m| m.name().to_string()).collect();
         
         // Placeholder implementation
-        let data_df = polars::prelude::df! {
+        let data_df = df! {
             "unique_id" => Vec::<String>::new(),
             "ds" => Vec::<i64>::new(),
         }.map_err(|e| NeuroDivergentError::prediction(format!("DataFrame creation error: {}", e)))?;
@@ -418,9 +419,12 @@ impl<T: Float + Send + Sync> NeuralForecast<T> {
     
     /// Get mutable model by name
     pub fn get_model_mut(&mut self, name: &str) -> Option<&mut dyn BaseModel<T>> {
-        self.models.iter_mut()
-            .find(|model| model.name() == name)
-            .map(|model| model.as_mut())
+        for model in &mut self.models {
+            if model.name() == name {
+                return Some(model.as_mut());
+            }
+        }
+        None
     }
     
     /// List all model names
@@ -435,7 +439,7 @@ impl<T: Float + Send + Sync> NeuralForecast<T> {
     
     /// Get frequency
     pub fn frequency(&self) -> Frequency {
-        self.frequency
+        self.frequency.clone()
     }
     
     /// Get number of models
@@ -666,6 +670,7 @@ mod tests {
     use super::*;
     
     // Mock model for testing
+    #[derive(Debug)]
     struct MockModel {
         name: String,
         fitted: bool,
@@ -688,7 +693,7 @@ mod tests {
         
         fn predict(&self, _data: &TimeSeriesDataFrame<f32>) -> NeuroDivergentResult<ForecastDataFrame<f32>> {
             // Return placeholder forecast
-            let data = polars::prelude::df! {
+            let data = df! {
                 "unique_id" => Vec::<String>::new(),
                 "ds" => Vec::<i64>::new(),
             }.unwrap();

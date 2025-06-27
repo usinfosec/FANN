@@ -11,7 +11,7 @@ use crate::foundation::{ConfigValue, ModelConfig};
 
 /// Configuration for RNN models
 #[derive(Debug, Clone)]
-pub struct RNNConfig<T: Float> {
+pub struct RNNConfig<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     // Required parameters
     pub horizon: usize,
     pub input_size: usize,
@@ -34,7 +34,7 @@ pub struct RNNConfig<T: Float> {
     pub futr_exog_features: Option<Vec<String>>,
 }
 
-impl<T: Float> RNNConfig<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> RNNConfig<T> {
     pub fn default_with_horizon(horizon: usize) -> Self {
         Self {
             horizon,
@@ -54,7 +54,7 @@ impl<T: Float> RNNConfig<T> {
     }
 }
 
-impl<T: Float> ModelConfig<T> for RNNConfig<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> ModelConfig<T> for RNNConfig<T> {
     fn model_type(&self) -> &'static str {
         "RNN"
     }
@@ -99,7 +99,7 @@ impl<T: Float> ModelConfig<T> for RNNConfig<T> {
 
 /// Configuration for LSTM models
 #[derive(Debug, Clone)]
-pub struct LSTMConfig<T: Float> {
+pub struct LSTMConfig<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     // Required parameters
     pub horizon: usize,
     pub input_size: usize,
@@ -126,7 +126,7 @@ pub struct LSTMConfig<T: Float> {
     pub futr_exog_features: Option<Vec<String>>,
 }
 
-impl<T: Float> LSTMConfig<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> LSTMConfig<T> {
     pub fn default_with_horizon(horizon: usize) -> Self {
         Self {
             horizon,
@@ -166,7 +166,7 @@ impl<T: Float> LSTMConfig<T> {
     }
 }
 
-impl<T: Float> ModelConfig<T> for LSTMConfig<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> ModelConfig<T> for LSTMConfig<T> {
     fn model_type(&self) -> &'static str {
         "LSTM"
     }
@@ -212,7 +212,7 @@ impl<T: Float> ModelConfig<T> for LSTMConfig<T> {
 
 /// Configuration for GRU models
 #[derive(Debug, Clone)]
-pub struct GRUConfig<T: Float> {
+pub struct GRUConfig<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     // Required parameters
     pub horizon: usize,
     pub input_size: usize,
@@ -234,7 +234,7 @@ pub struct GRUConfig<T: Float> {
     pub futr_exog_features: Option<Vec<String>>,
 }
 
-impl<T: Float> GRUConfig<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> GRUConfig<T> {
     pub fn default_with_horizon(horizon: usize) -> Self {
         Self {
             horizon,
@@ -253,7 +253,7 @@ impl<T: Float> GRUConfig<T> {
     }
 }
 
-impl<T: Float> ModelConfig<T> for GRUConfig<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> ModelConfig<T> for GRUConfig<T> {
     fn model_type(&self) -> &'static str {
         "GRU"
     }
@@ -295,7 +295,7 @@ impl<T: Float> ModelConfig<T> for GRUConfig<T> {
 
 /// General training configuration
 #[derive(Debug, Clone)]
-pub struct TrainingConfig<T: Float> {
+pub struct TrainingConfig<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     pub max_epochs: usize,
     pub batch_size: usize,
     pub learning_rate: T,
@@ -307,7 +307,7 @@ pub struct TrainingConfig<T: Float> {
     pub early_stopping_min_delta: Option<T>,
 }
 
-impl<T: Float> Default for TrainingConfig<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> Default for TrainingConfig<T> {
     fn default() -> Self {
         Self {
             max_epochs: 1000,

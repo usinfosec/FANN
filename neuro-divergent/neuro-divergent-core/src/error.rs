@@ -352,6 +352,7 @@ macro_rules! config_error {
     };
 }
 
+/// Create a data error with the given message
 #[macro_export]
 macro_rules! data_error {
     ($msg:expr) => {
@@ -371,6 +372,7 @@ macro_rules! data_error {
     };
 }
 
+/// Create a training error with the given message
 #[macro_export]
 macro_rules! training_error {
     ($msg:expr) => {

@@ -11,7 +11,7 @@ use crate::foundation::{RecurrentState, SequenceProcessor};
 use crate::utils::math;
 
 /// Generic recurrent layer trait that all recurrent layers must implement
-pub trait RecurrentLayer<T: Float>: Send + Sync {
+pub trait RecurrentLayer<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>: Send + Sync {
     /// Process a single time step
     fn forward_step(&mut self, input: &[T]) -> NeuroDivergentResult<Vec<T>>;
     
@@ -34,12 +34,12 @@ pub trait RecurrentLayer<T: Float>: Send + Sync {
     fn input_size(&self) -> usize;
     
     /// Clone the layer
-    fn clone_layer(&self) -> Box<dyn RecurrentLayer<T>>;
+    fn clone_layer(&self) -> Box<dyn RecurrentLayer<T> + Send + Sync>;
 }
 
 /// Basic recurrent cell implementation
 #[derive(Debug, Clone)]
-pub struct BasicRecurrentCell<T: Float> {
+pub struct BasicRecurrentCell<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     input_size: usize,
     hidden_size: usize,
     
@@ -55,7 +55,7 @@ pub struct BasicRecurrentCell<T: Float> {
     activation: ActivationFunction,
 }
 
-impl<T: Float> BasicRecurrentCell<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> BasicRecurrentCell<T> {
     /// Create a new basic recurrent cell
     pub fn new(
         input_size: usize, 
@@ -109,7 +109,7 @@ impl<T: Float> BasicRecurrentCell<T> {
     }
 }
 
-impl<T: Float> RecurrentLayer<T> for BasicRecurrentCell<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> RecurrentLayer<T> for BasicRecurrentCell<T> {
     fn forward_step(&mut self, input: &[T]) -> NeuroDivergentResult<Vec<T>> {
         if input.len() != self.input_size {
             return Err(NeuroDivergentError::dimension_mismatch(self.input_size, input.len()));
@@ -173,14 +173,14 @@ impl<T: Float> RecurrentLayer<T> for BasicRecurrentCell<T> {
         self.input_size
     }
     
-    fn clone_layer(&self) -> Box<dyn RecurrentLayer<T>> {
+    fn clone_layer(&self) -> Box<dyn RecurrentLayer<T> + Send + Sync> {
         Box::new(self.clone())
     }
 }
 
 /// LSTM cell implementation
 #[derive(Debug, Clone)]
-pub struct LSTMCell<T: Float> {
+pub struct LSTMCell<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     input_size: usize,
     hidden_size: usize,
     
@@ -195,7 +195,7 @@ pub struct LSTMCell<T: Float> {
     hidden_state: Vec<T>,
 }
 
-impl<T: Float> LSTMCell<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> LSTMCell<T> {
     /// Create a new LSTM cell
     pub fn new(input_size: usize, hidden_size: usize) -> NeuroDivergentResult<Self> {
         let combined_input_size = input_size + hidden_size;
@@ -237,7 +237,7 @@ impl<T: Float> LSTMCell<T> {
     }
 }
 
-impl<T: Float> RecurrentLayer<T> for LSTMCell<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> RecurrentLayer<T> for LSTMCell<T> {
     fn forward_step(&mut self, input: &[T]) -> NeuroDivergentResult<Vec<T>> {
         if input.len() != self.input_size {
             return Err(NeuroDivergentError::dimension_mismatch(self.input_size, input.len()));
@@ -311,14 +311,14 @@ impl<T: Float> RecurrentLayer<T> for LSTMCell<T> {
         self.input_size
     }
     
-    fn clone_layer(&self) -> Box<dyn RecurrentLayer<T>> {
+    fn clone_layer(&self) -> Box<dyn RecurrentLayer<T> + Send + Sync> {
         Box::new(self.clone())
     }
 }
 
 /// GRU cell implementation
 #[derive(Debug, Clone)]
-pub struct GRUCell<T: Float> {
+pub struct GRUCell<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     input_size: usize,
     hidden_size: usize,
     
@@ -331,7 +331,7 @@ pub struct GRUCell<T: Float> {
     hidden_state: Vec<T>,
 }
 
-impl<T: Float> GRUCell<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> GRUCell<T> {
     /// Create a new GRU cell
     pub fn new(input_size: usize, hidden_size: usize) -> NeuroDivergentResult<Self> {
         let combined_input_size = input_size + hidden_size;
@@ -365,7 +365,7 @@ impl<T: Float> GRUCell<T> {
     }
 }
 
-impl<T: Float> RecurrentLayer<T> for GRUCell<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> RecurrentLayer<T> for GRUCell<T> {
     fn forward_step(&mut self, input: &[T]) -> NeuroDivergentResult<Vec<T>> {
         if input.len() != self.input_size {
             return Err(NeuroDivergentError::dimension_mismatch(self.input_size, input.len()));
@@ -433,21 +433,35 @@ impl<T: Float> RecurrentLayer<T> for GRUCell<T> {
         self.input_size
     }
     
-    fn clone_layer(&self) -> Box<dyn RecurrentLayer<T>> {
+    fn clone_layer(&self) -> Box<dyn RecurrentLayer<T> + Send + Sync> {
         Box::new(self.clone())
     }
 }
 
 /// Multi-layer recurrent network
-pub struct MultiLayerRecurrent<T: Float> {
-    layers: Vec<Box<dyn RecurrentLayer<T>>>,
+pub struct MultiLayerRecurrent<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
+    layers: Vec<Box<dyn RecurrentLayer<T> + Send + Sync>>,
     dropout_rate: T,
     training_mode: bool,
 }
 
-impl<T: Float> MultiLayerRecurrent<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> Clone for MultiLayerRecurrent<T> {
+    fn clone(&self) -> Self {
+        let cloned_layers = self.layers.iter()
+            .map(|layer| layer.clone_layer())
+            .collect();
+        
+        Self {
+            layers: cloned_layers,
+            dropout_rate: self.dropout_rate,
+            training_mode: self.training_mode,
+        }
+    }
+}
+
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> MultiLayerRecurrent<T> {
     /// Create a new multi-layer recurrent network
-    pub fn new(layers: Vec<Box<dyn RecurrentLayer<T>>>, dropout_rate: T) -> Self {
+    pub fn new(layers: Vec<Box<dyn RecurrentLayer<T> + Send + Sync>>, dropout_rate: T) -> Self {
         Self {
             layers,
             dropout_rate,
@@ -480,12 +494,13 @@ impl<T: Float> MultiLayerRecurrent<T> {
     /// Forward pass through all layers
     pub fn forward(&mut self, input: &[T]) -> NeuroDivergentResult<Vec<T>> {
         let mut current_input = input.to_vec();
+        let num_layers = self.layers.len();
         
-        for (i, layer) in self.layers.iter_mut().enumerate() {
-            current_input = layer.forward_step(&current_input)?;
+        for i in 0..num_layers {
+            current_input = self.layers[i].forward_step(&current_input)?;
             
             // Apply dropout between layers (except last layer)
-            if i < self.layers.len() - 1 {
+            if i < num_layers - 1 {
                 current_input = self.apply_dropout(&current_input);
             }
         }
@@ -539,7 +554,7 @@ impl<T: Float> MultiLayerRecurrent<T> {
 }
 
 /// Bidirectional recurrent wrapper
-pub struct BidirectionalRecurrent<T: Float> {
+pub struct BidirectionalRecurrent<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     forward_layer: Box<dyn RecurrentLayer<T>>,
     backward_layer: Box<dyn RecurrentLayer<T>>,
     merge_mode: BidirectionalMergeMode,
@@ -553,7 +568,7 @@ pub enum BidirectionalMergeMode {
     Multiply,
 }
 
-impl<T: Float> BidirectionalRecurrent<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> BidirectionalRecurrent<T> {
     /// Create a new bidirectional recurrent layer
     pub fn new(
         forward_layer: Box<dyn RecurrentLayer<T>>,

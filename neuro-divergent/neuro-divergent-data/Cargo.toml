@@ -17,7 +17,10 @@ parallel = ["rayon"]
 simd = []
 
 [dependencies]
-# Core numeric traits and operations
+# Internal dependencies
+neuro-divergent-core = { version = "0.1.0", path = "../neuro-divergent-core" }
+
+# Core numeric traits and operations  
 num-traits = "0.2"
 num-complex = "0.4"
 
@@ -46,7 +49,7 @@ rand_distr = "0.4"
 # Data format support
 csv = "1.2"
 arrow = { version = "52.0", features = ["csv", "json"] }
-polars = { version = "0.33", features = ["lazy", "temporal", "csv-file", "json", "parquet"] }
+polars = { version = "0.33", features = ["lazy", "temporal", "csv", "json", "parquet"] }
 
 # Interpolation and numerical methods
 interpolate = "0.2"
@@ -67,17 +70,6 @@ proptest = "1.3"
 approx = "0.5"
 tempfile = "3.8"
 
-[[bench]]
-name = "preprocessing_benchmarks"
-harness = false
-
-[[bench]]
-name = "feature_engineering_benchmarks"
-harness = false
-
-[[bench]]
-name = "data_loading_benchmarks"
-harness = false
 
 [package.metadata.docs.rs]
 all-features = true

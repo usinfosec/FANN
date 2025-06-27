@@ -1,57 +1,57 @@
 [package]
 name = "neuro-divergent-core"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
-license.workspace = true
+version = "0.1.0"
+edition = "2021"
+authors = ["Claude Code <noreply@anthropic.com>"]
+license = "MIT OR Apache-2.0"
 description = "Core foundation for neuro-divergent neural forecasting library"
-repository.workspace = true
-homepage.workspace = true
-documentation.workspace = true
-keywords.workspace = true
-categories.workspace = true
+repository = "https://github.com/your-org/ruv-FANN"
+homepage = "https://github.com/your-org/ruv-FANN"
+documentation = "https://docs.rs/neuro-divergent-core"
+keywords = ["neural-network", "forecasting", "time-series", "machine-learning", "rust"]
+categories = ["science", "algorithms", "mathematics"]
 
 [dependencies]
 # Core numeric types and traits
-num-traits.workspace = true
-num-complex.workspace = true
+num-traits = "0.2"
+num-complex = "0.4"
 
 # Date and time handling
-chrono.workspace = true
+chrono = { version = "0.4", features = ["serde"] }
 
 # Serialization
-serde.workspace = true
-serde_json.workspace = true
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 # Error handling
-thiserror.workspace = true
-anyhow.workspace = true
+thiserror = "1.0"
+anyhow = "1.0"
 
 # Data structures and processing
-ndarray.workspace = true
-polars.workspace = true
+ndarray = "0.15"
+polars = { version = "0.35", features = ["lazy", "temporal", "csv", "parquet", "json"] }
 
 # Parallel processing
-rayon.workspace = true
+rayon = "1.8"
 
 # Random number generation
-rand.workspace = true
-rand_distr.workspace = true
+rand = "0.8"
+rand_distr = "0.4"
 
 # Mathematical operations
-nalgebra.workspace = true
+nalgebra = "0.32"
 
 # ruv-FANN integration
-ruv-fann.workspace = true
+ruv-fann = "0.1"
 
 # Optional GPU acceleration
-candle-core = { workspace = true, optional = true }
-candle-nn = { workspace = true, optional = true }
+candle-core = { version = "0.3", optional = true }
+candle-nn = { version = "0.3", optional = true }
 
 [dev-dependencies]
-criterion.workspace = true
-proptest.workspace = true
-doc-comment.workspace = true
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1.4"
+approx = "0.5"
 
 [features]
 default = ["std"]
@@ -64,6 +64,3 @@ name = "neuro_divergent_core"
 path = "src/lib.rs"
 doctest = true
 
-[[bench]]
-name = "core_benchmarks"
-harness = false

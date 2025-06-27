@@ -13,13 +13,14 @@ use num_traits::Float;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    error::{config_error, ErrorBuilder, NeuroDivergentError, NeuroDivergentResult},
+    config_error,
+    error::{ErrorBuilder, NeuroDivergentError, NeuroDivergentResult},
     traits::{ConfigBuilder, ConfigParameter, ExogenousConfig, ModelConfig},
 };
 
 /// Generic model configuration implementation
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GenericModelConfig<T: Float> {
+#[derive(Debug, Clone)]
+pub struct GenericModelConfig<T: Float + Send + Sync + 'static> {
     /// Model type identifier
     pub model_type: String,
     /// Forecast horizon
@@ -58,7 +59,7 @@ pub struct ConfigMetadata {
 }
 
 /// Builder for generic model configurations
-pub struct ModelConfigBuilder<T: Float> {
+pub struct ModelConfigBuilder<T: Float + Send + Sync + 'static> {
     model_type: Option<String>,
     horizon: Option<usize>,
     input_size: Option<usize>,
@@ -378,7 +379,7 @@ pub struct ConfigManager {
     file_format: DataFormat,
 }
 
-impl<T: Float> GenericModelConfig<T> {
+impl<T: Float + Send + Sync + 'static> GenericModelConfig<T> {
     /// Create a new generic model configuration
     pub fn new(model_type: impl Into<String>) -> Self {
         Self {
@@ -448,25 +449,17 @@ impl<T: Float> GenericModelConfig<T> {
     }
 
     /// Save configuration to file
-    pub fn save<P: AsRef<Path>>(&self, path: P) -> NeuroDivergentResult<()> {
-        let json = serde_json::to_string_pretty(self)
-            .map_err(|e| ErrorBuilder::config(format!("Failed to serialize configuration: {}", e)).build())?;
-
-        std::fs::write(path, json)
-            .map_err(|e| ErrorBuilder::config(format!("Failed to write configuration file: {}", e)).build())?;
-
-        Ok(())
+    /// TODO: Implement serialization for generic configurations
+    #[allow(dead_code)]
+    pub fn save<P: AsRef<Path>>(&self, _path: P) -> NeuroDivergentResult<()> {
+        todo!("Configuration serialization needs to be implemented without generic type constraints")
     }
 
     /// Load configuration from file
-    pub fn load<P: AsRef<Path>>(path: P) -> NeuroDivergentResult<Self> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| ErrorBuilder::config(format!("Failed to read configuration file: {}", e)).build())?;
-
-        let config: Self = serde_json::from_str(&content)
-            .map_err(|e| ErrorBuilder::config(format!("Failed to deserialize configuration: {}", e)).build())?;
-
-        Ok(config)
+    /// TODO: Implement deserialization for generic configurations  
+    #[allow(dead_code)]
+    pub fn load<P: AsRef<Path>>(_path: P) -> NeuroDivergentResult<Self> {
+        todo!("Configuration deserialization needs to be implemented without generic type constraints")
     }
 
     /// Merge with another configuration
@@ -501,7 +494,7 @@ impl<T: Float> GenericModelConfig<T> {
     }
 }
 
-impl<T: Float> ModelConfig<T> for GenericModelConfig<T> {
+impl<T: Float + Send + Sync + 'static> ModelConfig<T> for GenericModelConfig<T> {
     fn validate(&self) -> NeuroDivergentResult<()> {
         if self.horizon == 0 {
             return Err(config_error!("Horizon must be greater than 0"));
@@ -599,12 +592,12 @@ impl<T: Float> ModelConfig<T> for GenericModelConfig<T> {
         Ok(config)
     }
 
-    fn builder() -> ConfigBuilder<Self, T> {
+    fn builder() -> impl ConfigBuilder<Self, T> {
         ModelConfigBuilder::new()
     }
 }
 
-impl<T: Float> ModelConfigBuilder<T> {
+impl<T: Float + Send + Sync + 'static> ModelConfigBuilder<T> {
     /// Create a new builder
     pub fn new() -> Self {
         Self {
@@ -637,7 +630,7 @@ impl<T: Float> ModelConfigBuilder<T> {
     }
 }
 
-impl<T: Float> ConfigBuilder<GenericModelConfig<T>, T> for ModelConfigBuilder<T> {
+impl<T: Float + Send + Sync + 'static> ConfigBuilder<GenericModelConfig<T>, T> for ModelConfigBuilder<T> {
     fn build(self) -> NeuroDivergentResult<GenericModelConfig<T>> {
         let model_type = self.model_type.ok_or_else(|| {
             config_error!("Model type is required")
@@ -734,7 +727,8 @@ impl ConfigManager {
         let mut search_paths = Vec::new();
         
         // Add default search paths
-        if let Some(home_dir) = dirs::home_dir() {
+        if let Ok(home) = std::env::var("HOME") {
+            let home_dir = PathBuf::from(home);
             search_paths.push(home_dir.join(".config").join("neuro-divergent"));
         }
         
@@ -976,7 +970,7 @@ impl Default for ConfigManager {
     }
 }
 
-impl<T: Float> Default for ModelConfigBuilder<T> {
+impl<T: Float + Send + Sync + 'static> Default for ModelConfigBuilder<T> {
     fn default() -> Self {
         Self::new()
     }

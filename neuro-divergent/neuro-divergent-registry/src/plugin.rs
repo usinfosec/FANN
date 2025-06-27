@@ -5,11 +5,10 @@
 //! and automatic registration capabilities.
 
 use crate::{
-    BaseModel, Float, ModelConfig, ModelInfo, ModelCategory, RegistryError, RegistryResult,
+    BaseModel, ModelConfig, ModelInfo, RegistryError, RegistryResult,
 };
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use parking_lot::RwLock;
 use serde_json::Value;
 use sha2::{Sha256, Digest};
@@ -192,8 +191,11 @@ pub trait PluginInterface {
     /// Shutdown the plugin
     fn shutdown(&mut self) -> RegistryResult<()>;
     
-    /// Create a model
-    fn create_model<T: Float>(&self, name: &str, config: &ModelConfig) -> RegistryResult<Box<dyn BaseModel<T>>>;
+    /// Create a model with f32 precision
+    fn create_model_f32(&self, name: &str, config: &ModelConfig) -> RegistryResult<Box<dyn BaseModel<f32>>>;
+    
+    /// Create a model with f64 precision
+    fn create_model_f64(&self, name: &str, config: &ModelConfig) -> RegistryResult<Box<dyn BaseModel<f64>>>;
     
     /// List available models
     fn list_models(&self) -> Vec<ModelInfo>;
@@ -304,36 +306,10 @@ impl Plugin {
         // Verify security
         Self::verify_security(&descriptor, path, &config)?;
         
-        // Load the library
-        let library = unsafe {
-            Library::new(path).map_err(|e| RegistryError::PluginError(format!("Failed to load library: {}", e)))?
-        };
-        
-        // Get plugin interface
-        let interface = Self::get_plugin_interface(&library)?;
-        
-        let mut plugin = Self {
-            descriptor,
-            state: RwLock::new(PluginState::Loading),
-            library: Some(Arc::new(library)),
-            interface: Some(interface),
-            config,
-            loaded_at: Some(std::time::SystemTime::now()),
-            stats: RwLock::new(PluginStats::default()),
-        };
-        
-        // Initialize plugin
-        if let Some(ref mut interface) = plugin.interface {
-            interface.initialize().map_err(|e| {
-                *plugin.state.write() = PluginState::Failed(e.to_string());
-                e
-            })?;
-        }
-        
-        *plugin.state.write() = PluginState::Active;
-        log::info!("Loaded plugin '{}' from {:?}", plugin.descriptor.name, path);
-        
-        Ok(plugin)
+        // TODO: Implement safe plugin loading without unsafe code
+        Err(RegistryError::UnsupportedOperation(
+            "Plugin system not available without unsafe code".to_string()
+        ))
     }
     
     /// Load plugin from descriptor file
@@ -371,6 +347,7 @@ impl Plugin {
     }
     
     /// Verify plugin security
+    #[allow(dead_code)]
     fn verify_security(descriptor: &PluginDescriptor, path: &Path, config: &PluginConfig) -> RegistryResult<()> {
         match config.security_level {
             SecurityLevel::None => Ok(()),
@@ -402,6 +379,7 @@ impl Plugin {
     }
     
     /// Calculate file checksum
+    #[allow(dead_code)]
     fn calculate_checksum<P: AsRef<Path>>(path: P) -> RegistryResult<String> {
         let content = std::fs::read(path)?;
         let mut hasher = Sha256::new();
@@ -412,21 +390,11 @@ impl Plugin {
     
     /// Get plugin interface from library
     #[cfg(feature = "plugin-system")]
-    fn get_plugin_interface(library: &Library) -> RegistryResult<Box<dyn PluginInterface + Send + Sync>> {
-        unsafe {
-            type PluginCreate = unsafe fn() -> *mut dyn PluginInterface;
-            
-            let constructor: Symbol<PluginCreate> = library
-                .get(b"create_plugin")
-                .map_err(|e| RegistryError::PluginError(format!("Failed to find plugin constructor: {}", e)))?;
-            
-            let plugin_ptr = constructor();
-            if plugin_ptr.is_null() {
-                return Err(RegistryError::PluginError("Plugin constructor returned null".to_string()));
-            }
-            
-            Ok(Box::from_raw(plugin_ptr))
-        }
+    fn get_plugin_interface(_library: &Library) -> RegistryResult<Box<dyn PluginInterface + Send + Sync>> {
+        // TODO: Implement safe plugin interface loading
+        Err(RegistryError::UnsupportedOperation(
+            "Plugin interface loading not available without unsafe code".to_string()
+        ))
     }
     
     /// Unload the plugin
@@ -463,8 +431,8 @@ impl Plugin {
         self.state.read().clone()
     }
     
-    /// Create a model through this plugin
-    pub fn create_model<T: Float>(&self, name: &str, config: &ModelConfig) -> RegistryResult<Box<dyn BaseModel<T>>> {
+    /// Create a model with f32 precision through this plugin
+    pub fn create_model_f32(&self, name: &str, config: &ModelConfig) -> RegistryResult<Box<dyn BaseModel<f32>>> {
         if !self.is_active() {
             return Err(RegistryError::PluginError(
                 format!("Plugin '{}' is not active", self.descriptor.name)
@@ -473,7 +441,39 @@ impl Plugin {
         
         if let Some(ref interface) = self.interface {
             let start_time = std::time::Instant::now();
-            let result = interface.create_model(name, config);
+            let result = interface.create_model_f32(name, config);
+            let creation_time = start_time.elapsed().as_millis() as f64;
+            
+            // Update statistics
+            {
+                let mut stats = self.stats.write();
+                stats.models_created += 1;
+                stats.avg_creation_time_ms = 
+                    (stats.avg_creation_time_ms + creation_time) / 2.0;
+                
+                if result.is_err() {
+                    stats.error_count += 1;
+                    stats.last_error = Some(std::time::SystemTime::now());
+                }
+            }
+            
+            result
+        } else {
+            Err(RegistryError::PluginError("Plugin interface not available".to_string()))
+        }
+    }
+    
+    /// Create a model with f64 precision through this plugin
+    pub fn create_model_f64(&self, name: &str, config: &ModelConfig) -> RegistryResult<Box<dyn BaseModel<f64>>> {
+        if !self.is_active() {
+            return Err(RegistryError::PluginError(
+                format!("Plugin '{}' is not active", self.descriptor.name)
+            ));
+        }
+        
+        if let Some(ref interface) = self.interface {
+            let start_time = std::time::Instant::now();
+            let result = interface.create_model_f64(name, config);
             let creation_time = start_time.elapsed().as_millis() as f64;
             
             // Update statistics
@@ -548,9 +548,9 @@ impl Plugin {
     /// Check version compatibility using descriptor
     fn check_version_compatibility(&self, runtime_version: &str) -> bool {
         // Simple version comparison (should use proper semver parsing)
-        if runtime_version >= &self.descriptor.min_runtime_version {
+        if runtime_version >= self.descriptor.min_runtime_version.as_str() {
             if let Some(ref max_version) = self.descriptor.max_runtime_version {
-                runtime_version <= max_version
+                runtime_version <= max_version.as_str()
             } else {
                 true
             }

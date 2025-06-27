@@ -41,7 +41,7 @@ use crate::{
 ///     // Implement required methods...
 /// }
 /// ```
-pub trait BaseModel<T: Float + Send + Sync>: Send + Sync {
+pub trait BaseModel<T: Float + Send + Sync + 'static>: Send + Sync {
     /// Configuration type for this model
     type Config: ModelConfig<T>;
     
@@ -150,7 +150,7 @@ pub trait BaseModel<T: Float + Send + Sync>: Send + Sync {
 ///
 /// This trait defines the interface for model configuration objects,
 /// ensuring consistent validation and parameter access across different models.
-pub trait ModelConfig<T: Float>: Clone + Send + Sync + 'static {
+pub trait ModelConfig<T: Float + Send + Sync + 'static>: Clone + Send + Sync + 'static {
     /// Validate configuration parameters
     ///
     /// # Returns
@@ -182,7 +182,7 @@ pub trait ModelConfig<T: Float>: Clone + Send + Sync + 'static {
         Self: Sized;
 
     /// Create a builder for this configuration type
-    fn builder() -> ConfigBuilder<Self, T>
+    fn builder() -> impl ConfigBuilder<Self, T>
     where
         Self: Sized;
 }
@@ -191,7 +191,7 @@ pub trait ModelConfig<T: Float>: Clone + Send + Sync + 'static {
 ///
 /// This trait defines the interface for model state objects that can be
 /// serialized and restored for model persistence.
-pub trait ModelState<T: Float>: Clone + Send + Sync + Serialize + for<'de> Deserialize<'de> {
+pub trait ModelState<T: Float + Send + Sync + 'static>: Clone + Send + Sync + Serialize + for<'de> Deserialize<'de> {
     /// Get the model type this state belongs to
     fn model_type(&self) -> &str;
 
@@ -199,7 +199,7 @@ pub trait ModelState<T: Float>: Clone + Send + Sync + Serialize + for<'de> Deser
     fn version(&self) -> u32;
 
     /// Check if this state is compatible with the given model configuration
-    fn is_compatible(&self, config: &dyn ModelConfig<T>) -> bool;
+    fn is_compatible<C: ModelConfig<T>>(&self, config: &C) -> bool;
 
     /// Get the training completion timestamp
     fn trained_at(&self) -> Option<DateTime<Utc>>;
@@ -212,7 +212,7 @@ pub trait ModelState<T: Float>: Clone + Send + Sync + Serialize + for<'de> Deser
 ///
 /// This trait provides advanced forecasting capabilities including
 /// batch prediction, probabilistic forecasting, and interval estimation.
-pub trait ForecastingEngine<T: Float + Send + Sync>: Send + Sync {
+pub trait ForecastingEngine<T: Float + Send + Sync + 'static>: Send + Sync {
     /// Batch prediction for multiple time series
     ///
     /// # Arguments
@@ -472,7 +472,7 @@ pub struct ExogenousConfig {
 
 /// Configuration parameter types
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ConfigParameter<T: Float> {
+pub enum ConfigParameter<T: Float + Send + Sync + 'static> {
     /// Float parameter
     Float(T),
     /// Integer parameter
@@ -493,7 +493,7 @@ pub enum ConfigParameter<T: Float> {
 pub trait ConfigBuilder<C, T>
 where
     C: ModelConfig<T>,
-    T: Float,
+    T: Float + Send + Sync + 'static,
 {
     /// Build the configuration
     fn build(self) -> NeuroDivergentResult<C>;

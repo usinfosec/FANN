@@ -11,7 +11,7 @@ use ruv_fann::{Network, TrainingData};
 use crate::errors::{NeuroDivergentError, NeuroDivergentResult};
 
 /// Core trait that all neural forecasting models must implement
-pub trait BaseModel<T: Float + Send + Sync>: Send + Sync {
+pub trait BaseModel<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>: Send + Sync {
     /// Get the model's name/identifier
     fn name(&self) -> &str;
     
@@ -56,7 +56,7 @@ pub trait BaseModel<T: Float + Send + Sync>: Send + Sync {
 }
 
 /// Configuration trait for all model configurations
-pub trait ModelConfig<T: Float>: Send + Sync {
+pub trait ModelConfig<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>: Send + Sync {
     /// Get the model type identifier
     fn model_type(&self) -> &'static str;
     
@@ -80,7 +80,7 @@ pub trait ModelConfig<T: Float>: Send + Sync {
 
 /// Generic configuration value for model parameters
 #[derive(Debug, Clone)]
-pub enum ConfigValue<T: Float> {
+pub enum ConfigValue<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     Float(T),
     Int(i64),
     UInt(usize),
@@ -93,12 +93,12 @@ pub enum ConfigValue<T: Float> {
 }
 
 /// Adapter trait for integrating ruv-FANN networks with time series models
-pub trait NetworkAdapter<T: Float> {
+pub trait NetworkAdapter<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     /// Convert time series input to network input format
     fn prepare_input(&self, ts_input: &TimeSeriesInput<T>) -> NeuroDivergentResult<Vec<T>>;
     
     /// Convert network output to forecast output format
-    fn process_output(&self, network_output: Vec<T>) -> NeuroDivergentResult<ForecastOutput<T)>;
+    fn process_output(&self, network_output: Vec<T>) -> NeuroDivergentResult<ForecastOutput<T>>;
     
     /// Create training data for the underlying network
     fn create_training_data(&self, dataset: &TimeSeriesDataset<T>) -> NeuroDivergentResult<TrainingData<T>>;
@@ -112,7 +112,7 @@ pub trait NetworkAdapter<T: Float> {
 
 /// Time series input structure for models
 #[derive(Debug, Clone)]
-pub struct TimeSeriesInput<T: Float> {
+pub struct TimeSeriesInput<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     /// Historical target values
     pub historical_targets: Vec<T>,
     
@@ -132,7 +132,7 @@ pub struct TimeSeriesInput<T: Float> {
     pub last_timestamp: Option<DateTime<Utc>>,
 }
 
-impl<T: Float> TimeSeriesInput<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> TimeSeriesInput<T> {
     /// Create a new time series input with just historical targets
     pub fn new(historical_targets: Vec<T>) -> Self {
         Self {
@@ -216,7 +216,7 @@ impl<T: Float> TimeSeriesInput<T> {
 
 /// Forecast output structure from models
 #[derive(Debug, Clone)]
-pub struct ForecastOutput<T: Float> {
+pub struct ForecastOutput<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     /// Point forecasts for each horizon step
     pub forecasts: Vec<T>,
     
@@ -236,7 +236,7 @@ pub struct ForecastOutput<T: Float> {
     pub additional_outputs: HashMap<String, Vec<T>>,
 }
 
-impl<T: Float> ForecastOutput<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> ForecastOutput<T> {
     /// Create a new forecast output with point forecasts
     pub fn new(forecasts: Vec<T>) -> Self {
         Self {
@@ -326,13 +326,13 @@ impl<T: Float> ForecastOutput<T> {
 
 /// Prediction interval structure
 #[derive(Debug, Clone)]
-pub struct PredictionInterval<T: Float> {
+pub struct PredictionInterval<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     pub lower_bound: T,
     pub upper_bound: T,
     pub confidence_level: f64,
 }
 
-impl<T: Float> PredictionInterval<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> PredictionInterval<T> {
     pub fn new(lower_bound: T, upper_bound: T, confidence_level: f64) -> Self {
         Self {
             lower_bound,
@@ -352,7 +352,7 @@ impl<T: Float> PredictionInterval<T> {
 
 /// Dataset structure for training and validation
 #[derive(Debug, Clone)]
-pub struct TimeSeriesDataset<T: Float> {
+pub struct TimeSeriesDataset<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     /// Training examples
     pub samples: Vec<TimeSeriesSample<T>>,
     
@@ -362,7 +362,7 @@ pub struct TimeSeriesDataset<T: Float> {
 
 /// Individual time series sample for training
 #[derive(Debug, Clone)]
-pub struct TimeSeriesSample<T: Float> {
+pub struct TimeSeriesSample<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     /// Input for the model
     pub input: TimeSeriesInput<T>,
     
@@ -386,7 +386,7 @@ pub struct DatasetMetadata {
 
 /// Training metrics returned after model training
 #[derive(Debug, Clone)]
-pub struct TrainingMetrics<T: Float> {
+pub struct TrainingMetrics<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     pub final_loss: T,
     pub epochs_completed: usize,
     pub training_time_seconds: f64,
@@ -397,7 +397,7 @@ pub struct TrainingMetrics<T: Float> {
 
 /// Validation metrics for model evaluation
 #[derive(Debug, Clone)]
-pub struct ValidationMetrics<T: Float> {
+pub struct ValidationMetrics<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     pub mse: T,
     pub mae: T,
     pub mape: Option<T>,
@@ -409,7 +409,7 @@ pub struct ValidationMetrics<T: Float> {
 
 /// Training history tracking
 #[derive(Debug, Clone)]
-pub struct TrainingHistory<T: Float> {
+pub struct TrainingHistory<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     pub epoch_losses: Vec<T>,
     pub validation_losses: Vec<T>,
     pub learning_rates: Vec<T>,
@@ -417,7 +417,7 @@ pub struct TrainingHistory<T: Float> {
     pub custom_metrics: HashMap<String, Vec<T>>,
 }
 
-impl<T: Float> TrainingHistory<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> TrainingHistory<T> {
     pub fn new() -> Self {
         Self {
             epoch_losses: Vec::new(),
@@ -480,7 +480,7 @@ impl Default for ValidationConfig {
 }
 
 /// Utility trait for recurrent models to manage temporal state
-pub trait RecurrentState<T: Float>: Send + Sync {
+pub trait RecurrentState<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static>: Send + Sync {
     /// Reset the internal state
     fn reset(&mut self);
     
@@ -498,11 +498,11 @@ pub trait RecurrentState<T: Float>: Send + Sync {
 }
 
 /// Sequence processing utilities for variable-length sequences
-pub struct SequenceProcessor<T: Float> {
+pub struct SequenceProcessor<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> {
     phantom: PhantomData<T>,
 }
 
-impl<T: Float> SequenceProcessor<T> {
+impl<T: Float + Send + Sync + std::fmt::Debug + std::iter::Sum + 'static> SequenceProcessor<T> {
     /// Pad sequences to the same length
     pub fn pad_sequences(
         sequences: &[Vec<T>], 

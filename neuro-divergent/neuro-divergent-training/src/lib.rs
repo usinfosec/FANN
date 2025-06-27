@@ -41,17 +41,13 @@ pub use ruv_fann::{Network, NetworkError};
 pub mod loss;
 pub mod optimizer;
 pub mod scheduler;
-pub mod trainer;
-pub mod validation;
-pub mod callbacks;
+pub mod metrics;
 
 // Re-export main types for convenience
 pub use loss::*;
 pub use optimizer::*;
 pub use scheduler::*;
-pub use trainer::*;
-pub use validation::*;
-pub use callbacks::*;
+pub use metrics::*;
 
 /// Error types for training operations
 #[derive(Error, Debug)]
@@ -97,7 +93,7 @@ pub type TrainingResult<T> = Result<T, TrainingError>;
 
 /// Core training data structure for time series
 #[derive(Debug, Clone)]
-pub struct TrainingData<T: Float> {
+pub struct TrainingData<T: Float + Send + Sync> {
     /// Input sequences [batch_size, sequence_length, input_features]
     pub inputs: Vec<Vec<Vec<T>>>,
     /// Target outputs [batch_size, horizon, output_features]
@@ -121,7 +117,7 @@ pub struct TimeSeriesMetadata {
 
 /// Training configuration
 #[derive(Debug, Clone)]
-pub struct TrainingConfig<T: Float> {
+pub struct TrainingConfig<T: Float + Send + Sync> {
     /// Maximum number of training epochs
     pub max_epochs: usize,
     /// Batch size for training
@@ -168,7 +164,7 @@ pub enum CheckpointMode {
 
 /// Training results and metrics
 #[derive(Debug, Clone)]
-pub struct TrainingResults<T: Float> {
+pub struct TrainingResults<T: Float + Send + Sync> {
     pub final_loss: T,
     pub best_loss: T,
     pub epochs_trained: usize,
@@ -180,7 +176,7 @@ pub struct TrainingResults<T: Float> {
 
 /// Metrics for a single epoch
 #[derive(Debug, Clone)]
-pub struct EpochMetrics<T: Float> {
+pub struct EpochMetrics<T: Float + Send + Sync> {
     pub epoch: usize,
     pub loss: T,
     pub learning_rate: T,
@@ -189,13 +185,13 @@ pub struct EpochMetrics<T: Float> {
 }
 
 /// Bridge for integrating with ruv-FANN training algorithms
-pub struct TrainingBridge<T: Float> {
+pub struct TrainingBridge<T: Float + Send + Sync> {
     pub(crate) ruv_fann_trainer: Option<Box<dyn ruv_fann::training::TrainingAlgorithm<T>>>,
     pub(crate) loss_adapter: Option<LossAdapter<T>>,
     pub(crate) config: Option<TrainingConfig<T>>,
 }
 
-impl<T: Float> TrainingBridge<T> {
+impl<T: Float + Send + Sync> TrainingBridge<T> {
     /// Create a new training bridge
     pub fn new() -> Self {
         Self {
@@ -227,18 +223,18 @@ impl<T: Float> TrainingBridge<T> {
     }
 }
 
-impl<T: Float> Default for TrainingBridge<T> {
+impl<T: Float + Send + Sync> Default for TrainingBridge<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
 /// Adapter for integrating different loss functions with ruv-FANN
-pub struct LossAdapter<T: Float> {
+pub struct LossAdapter<T: Float + Send + Sync> {
     loss_function: Box<dyn LossFunction<T>>,
 }
 
-impl<T: Float> LossAdapter<T> {
+impl<T: Float + Send + Sync> LossAdapter<T> {
     pub fn new(loss_function: Box<dyn LossFunction<T>>) -> Self {
         Self { loss_function }
     }
@@ -252,7 +248,7 @@ impl<T: Float> LossAdapter<T> {
     }
 }
 
-impl<T: Float> ruv_fann::training::ErrorFunction<T> for LossAdapter<T> {
+impl<T: Float + Send + Sync> ruv_fann::training::ErrorFunction<T> for LossAdapter<T> {
     fn calculate(&self, actual: &[T], desired: &[T]) -> T {
         self.calculate_loss(actual, desired).unwrap_or_else(|_| T::zero())
     }
@@ -280,7 +276,7 @@ pub mod utils {
     }
     
     /// Calculate gradient norm for monitoring
-    pub fn gradient_norm<T: Float>(gradients: &[Vec<T>]) -> T {
+    pub fn gradient_norm<T: Float + Send + Sync>(gradients: &[Vec<T>]) -> T {
         let sum_squares = gradients.iter()
             .flat_map(|layer| layer.iter())
             .map(|&g| g * g)
@@ -289,7 +285,7 @@ pub mod utils {
     }
     
     /// Clip gradients by norm
-    pub fn clip_gradients_by_norm<T: Float>(
+    pub fn clip_gradients_by_norm<T: Float + Send + Sync>(
         gradients: &mut [Vec<T>], 
         max_norm: T
     ) -> T {

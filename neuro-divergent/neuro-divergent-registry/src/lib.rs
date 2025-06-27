@@ -18,21 +18,23 @@
 //! ## Quick Start
 //!
 //! ```rust
-//! use neuro_divergent_registry::{ModelFactory, ModelRegistry, ModelCategory};
+//! use neuro_divergent_registry::{ModelFactory, global_registry, ModelCategory, ModelInfo};
 //!
-//! // Create a model using the factory
-//! let model = ModelFactory::create::<f32>("MLP")?;
+//! // Initialize the registry first
+//! neuro_divergent_registry::initialize_registry().unwrap();
 //!
 //! // List all available models
 //! let models = ModelFactory::list_models();
 //!
 //! // Get models by category
-//! let transformer_models = ModelRegistry::global()
-//!     .list_by_category(ModelCategory::Transformer);
+//! let registry = global_registry();
+//! let reg = registry.read();
+//! let transformer_models = reg.list_by_category(ModelCategory::Transformer);
 //!
-//! // Register a custom model
-//! ModelRegistry::global_mut()
-//!     .register::<MyCustomModel>("custom_model", descriptor)?;
+//! // Get model information
+//! if let Some(model_info) = reg.get_model_info("MLP") {
+//!     println!("Found model: {}", model_info.name);
+//! }
 //! ```
 //!
 //! ## Model Categories
@@ -56,16 +58,12 @@ pub mod factory;
 pub mod registry;
 pub mod plugin;
 pub mod discovery;
-pub mod serialization;
-pub mod benchmarks;
 
 // Re-exports for public API
 pub use factory::*;
 pub use registry::*;
 pub use plugin::*;
 pub use discovery::*;
-pub use serialization::*;
-pub use benchmarks::*;
 
 /// Numeric types supported by the registry system
 pub trait Float: 
@@ -371,6 +369,10 @@ pub enum RegistryError {
     #[error("Threading error: {0}")]
     ThreadingError(String),
     
+    /// Unsupported operation
+    #[error("Unsupported operation: {0}")]
+    UnsupportedOperation(String),
+    
     /// Resource error
     #[error("Resource error: {0}")]
     ResourceError(String),
@@ -385,7 +387,12 @@ pub enum ModelError {
     
     /// Invalid dimensions
     #[error("Invalid dimensions: expected {expected}, got {actual}")]
-    InvalidDimensions { expected: usize, actual: usize },
+    InvalidDimensions { 
+        /// Expected dimension size
+        expected: usize, 
+        /// Actual dimension size
+        actual: usize 
+    },
     
     /// Model not trained
     #[error("Model not trained")]
@@ -430,7 +437,7 @@ pub fn initialize_registry() -> RegistryResult<()> {
     log::info!("Initializing global model registry");
     
     let registry = global_registry();
-    let mut reg = registry.write();
+    let reg = registry.write();
     
     // Register built-in models through discovery
     let discovered = discovery::discover_builtin_models()?;
@@ -480,7 +487,7 @@ pub fn initialize_registry_with_config(config: RegistryConfig) -> RegistryResult
     log::info!("Initializing global model registry with custom configuration");
     
     let registry = global_registry();
-    let mut reg = registry.write();
+    let reg = registry.write();
     
     // Set configuration
     reg.set_config(config.clone());
@@ -518,7 +525,7 @@ pub fn shutdown_registry() -> RegistryResult<()> {
     log::info!("Shutting down global model registry");
     
     let registry = global_registry();
-    let mut reg = registry.write();
+    let reg = registry.write();
     
     // Cleanup plugins
     reg.cleanup_plugins()?;

@@ -8,7 +8,7 @@ use polars::prelude::*;
 use serde::{Serialize, Deserialize};
 use num_traits::Float;
 
-use crate::config::{Frequency, PredictionIntervals, IntervalMethod};
+use crate::config::Frequency;
 use crate::errors::{NeuroDivergentError, NeuroDivergentResult};
 
 /// Schema definition for time series data
@@ -145,10 +145,10 @@ impl<T: Float> TimeSeriesDataFrame<T> {
         schema: TimeSeriesSchema,
         frequency: Option<Frequency>,
     ) -> NeuroDivergentResult<Self> {
-        let df = LazyFrame::scan_csv(path.as_ref(), ScanArgsCSV::default())
-            .map_err(|e| NeuroDivergentError::data(format!("CSV read error: {}", e)))?
-            .collect()
-            .map_err(|e| NeuroDivergentError::data(format!("CSV collect error: {}", e)))?;
+        let df = CsvReader::from_path(path.as_ref())
+            .map_err(|e| NeuroDivergentError::data(format!("CSV reader error: {}", e)))?
+            .finish()
+            .map_err(|e| NeuroDivergentError::data(format!("CSV read error: {}", e)))?;
             
         Self::from_polars(df, schema, frequency)
     }
@@ -174,10 +174,12 @@ impl<T: Float> TimeSeriesDataFrame<T> {
             .map_err(|e| NeuroDivergentError::data(format!("Column error: {}", e)))?
             .unique()
             .map_err(|e| NeuroDivergentError::data(format!("Unique error: {}", e)))?
-            .str()
-            .map_err(|_| NeuroDivergentError::data("Unique ID column is not string type"))?
-            .into_no_null_iter()
-            .map(|s| s.to_string())
+            .cast(&DataType::Utf8)
+            .map_err(|e| NeuroDivergentError::data(format!("Cast error: {}", e)))?
+            .utf8()
+            .map_err(|_| NeuroDivergentError::data("Failed to convert to string iterator"))?
+            .into_iter()
+            .map(|s| s.unwrap_or_default().to_string())
             .collect();
             
         Ok(ids)
@@ -194,18 +196,16 @@ impl<T: Float> TimeSeriesDataFrame<T> {
             .lazy()
             .filter(
                 col(&self.schema.ds_col)
-                    .dt()
                     .gt_eq(lit(start.timestamp_millis()))
                     .and(
                         col(&self.schema.ds_col)
-                            .dt()
                             .lt_eq(lit(end.timestamp_millis()))
                     )
             )
             .collect()
             .map_err(|e| NeuroDivergentError::data(format!("Date filter error: {}", e)))?;
             
-        Self::from_polars(filtered, self.schema.clone(), self.frequency)
+        Self::from_polars(filtered, self.schema.clone(), self.frequency.clone())
     }
     
     /// Filter by unique ID
@@ -217,7 +217,7 @@ impl<T: Float> TimeSeriesDataFrame<T> {
             .collect()
             .map_err(|e| NeuroDivergentError::data(format!("ID filter error: {}", e)))?;
             
-        Self::from_polars(filtered, self.schema.clone(), self.frequency)
+        Self::from_polars(filtered, self.schema.clone(), self.frequency.clone())
     }
     
     /// Add exogenous variables
@@ -230,9 +230,9 @@ impl<T: Float> TimeSeriesDataFrame<T> {
         let joined = self.data
             .join(
                 &exogenous_data,
+                join_columns.clone(),
                 join_columns,
-                join_columns,
-                JoinArgs::default(),
+                JoinArgs::new(JoinType::Left),
             )
             .map_err(|e| NeuroDivergentError::data(format!("Join error: {}", e)))?;
             
@@ -252,18 +252,12 @@ impl<T: Float> TimeSeriesDataFrame<T> {
             .map_err(|e| NeuroDivergentError::data(format!("Column error: {}", e)))?;
             
         let min_ts = ds_col
-            .min()
-            .map_err(|e| NeuroDivergentError::data(format!("Min error: {}", e)))?
-            .map(|av| av.extract::<i64>())
-            .ok_or_else(|| NeuroDivergentError::data("No minimum timestamp found"))?
-            .map_err(|_| NeuroDivergentError::data("Invalid timestamp format"))?;
+            .min::<i64>()
+            .ok_or_else(|| NeuroDivergentError::data("Could not calculate min timestamp".to_string()))?;
             
         let max_ts = ds_col
-            .max()
-            .map_err(|e| NeuroDivergentError::data(format!("Max error: {}", e)))?
-            .map(|av| av.extract::<i64>())
-            .ok_or_else(|| NeuroDivergentError::data("No maximum timestamp found"))?
-            .map_err(|_| NeuroDivergentError::data("Invalid timestamp format"))?;
+            .max::<i64>()
+            .ok_or_else(|| NeuroDivergentError::data("Could not calculate max timestamp".to_string()))?;
             
         let start = DateTime::from_timestamp_millis(min_ts)
             .ok_or_else(|| NeuroDivergentError::data("Invalid start timestamp"))?;
@@ -518,7 +512,7 @@ impl<T: Float> CrossValidationDataFrame<T> {
         let model_cols: Vec<String> = self.data
             .get_column_names()
             .iter()
-            .filter(|col| col.contains(model_name) || col == &&self.schema.unique_id_col || col == &&self.schema.ds_col || col == &"cutoff")
+            .filter(|col| col.contains(model_name) || col == &&self.schema.unique_id_col || col == &&self.schema.ds_col || **col == "cutoff")
             .map(|s| s.to_string())
             .collect();
             

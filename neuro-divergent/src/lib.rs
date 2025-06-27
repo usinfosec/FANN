@@ -77,78 +77,21 @@ pub mod utils;
 pub mod errors;
 
 // Core abstractions
-pub mod core {
-    //! Core abstractions and traits for the forecasting system
-    pub mod base_model;
-    pub mod training;
-    pub mod forecasting;
-    pub mod registry;
-    
-    pub use base_model::{BaseModel, ModelConfig, ModelState, ModelMetadata};
-    pub use training::{TrainingConfig, TrainingEngine};
-    pub use forecasting::{ForecastingEngine, ForecastResult};
-    pub use registry::{ModelRegistry, ModelFactory};
-}
+// Re-export from external crates
+#[cfg(feature = "models")]
+pub use neuro_divergent_models as models;
 
-// Model implementations
-pub mod models {
-    //! Neural network model implementations
-    pub mod lstm;
-    pub mod nbeats;
-    pub mod deepar;
-    pub mod rnn;
-    pub mod transformer;
-    
-    pub use lstm::{LSTM, LSTMConfig, LSTMBuilder};
-    pub use nbeats::{NBEATS, NBEATSConfig, NBEATSBuilder};
-    pub use deepar::{DeepAR, DeepARConfig, DeepARBuilder};
-    pub use rnn::{RNN, RNNConfig, RNNBuilder};
-    pub use transformer::{Transformer, TransformerConfig, TransformerBuilder};
-}
+#[cfg(feature = "registry")]
+pub use neuro_divergent_registry as registry;
 
-// Data handling
-pub mod data {
-    //! Time series data handling and preprocessing
-    pub mod dataset;
-    pub mod preprocessing;
-    pub mod scaling;
-    pub mod validation;
-    pub mod transforms;
-    
-    pub use dataset::{TimeSeriesDataset, TimeSeriesSchema};
-    pub use preprocessing::{DataPreprocessor, PreprocessingConfig};
-    pub use scaling::{Scaler, StandardScaler, MinMaxScaler, RobustScaler};
-    pub use validation::{DataValidator, ValidationReport};
-    pub use transforms::{DataTransform, WindowTransform, LagsTransform};
-}
+pub use neuro_divergent_core as core;
 
-// Training infrastructure
-pub mod training {
-    //! Training algorithms and optimization
-    pub mod optimizers;
-    pub mod losses;
-    pub mod schedulers;
-    pub mod callbacks;
-    pub mod metrics;
-    
-    pub use optimizers::{Optimizer, Adam, SGD, AdamW};
-    pub use losses::{LossFunction, MSE, MAE, MAPE, SMAPE, Huber};
-    pub use schedulers::{LearningRateScheduler, StepLR, ExponentialLR};
-    pub use callbacks::{TrainingCallback, EarlyStopping, ModelCheckpoint};
-    pub use metrics::{AccuracyMetrics, ForecastingMetrics};
-}
-
-// Integration with ruv-FANN
-pub mod integration {
-    //! Integration with ruv-FANN neural networks
-    pub mod network_adapter;
-    pub mod activation_bridge;
-    pub mod training_bridge;
-    
-    pub use network_adapter::{NetworkAdapter, FannNetworkBridge};
-    pub use activation_bridge::{ActivationMapper, ActivationBridge};
-    pub use training_bridge::{TrainingBridge, FannTrainingAdapter};
-}
+// TODO: Re-enable when data and training crates are published
+// #[cfg(feature = "data")]
+// pub use neuro_divergent_data as data;
+//
+// #[cfg(feature = "training")]
+// pub use neuro_divergent_training as training;
 
 // Prelude for common imports
 pub mod prelude {
@@ -161,10 +104,11 @@ pub mod prelude {
         NeuroDivergentError, NeuroDivergentResult,
     };
     
-    pub use crate::core::{BaseModel, ModelConfig};
-    pub use crate::models::{LSTM, NBEATS, DeepAR, RNN, Transformer};
-    pub use crate::data::{TimeSeriesDataset, TimeSeriesSchema};
-    pub use crate::training::{TrainingConfig, AccuracyMetrics};
+    // TODO: Re-enable when all crates are published
+    // pub use crate::core::{BaseModel, ModelConfig};
+    // pub use crate::models::{LSTM, NBEATS, DeepAR, RNN, Transformer};
+    // pub use crate::data::{TimeSeriesDataset, TimeSeriesSchema};
+    // pub use crate::training::{TrainingConfig, AccuracyMetrics};
 }
 
 // Version information

@@ -86,7 +86,7 @@ pub mod traits;
 
 // Re-export ruv-FANN types for convenience
 pub use ruv_fann::{
-    ActivationFunction, Network, NetworkBuilder, TrainingAlgorithm, TrainingData, TrainingResult,
+    ActivationFunction, Network, NetworkBuilder, TrainingAlgorithm, TrainingData,
 };
 
 // Public API re-exports
@@ -101,7 +101,8 @@ pub use crate::{
 /// Commonly used types and traits for convenient importing
 pub mod prelude {
     pub use crate::{
-        config::{ModelConfig, ModelConfigBuilder},
+        config::ModelConfigBuilder,
+        traits::ModelConfig,
         data::{TimeSeriesDataFrame, TimeSeriesDataset, TimeSeriesDatasetBuilder, TimeSeriesSchema},
         error::{NeuroDivergentError, NeuroDivergentResult},
         integration::{NetworkAdapter, TrainingBridge},

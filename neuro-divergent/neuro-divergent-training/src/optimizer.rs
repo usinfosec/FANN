@@ -25,7 +25,7 @@ use std::marker::PhantomData;
 use crate::{TrainingError, TrainingResult};
 
 /// Core trait for optimization algorithms
-pub trait Optimizer<T: Float>: Send + Sync {
+pub trait Optimizer<T: Float + Send + Sync>: Send + Sync {
     /// Apply parameter updates given gradients
     fn step(
         &mut self,
@@ -62,7 +62,7 @@ pub trait Optimizer<T: Float>: Send + Sync {
 
 /// Optimizer state for serialization and checkpointing
 #[derive(Debug, Clone)]
-pub struct OptimizerState<T: Float> {
+pub struct OptimizerState<T: Float + Send + Sync> {
     pub step_count: usize,
     pub learning_rate: T,
     pub momentum_buffers: Vec<Vec<T>>,
@@ -72,7 +72,7 @@ pub struct OptimizerState<T: Float> {
 
 /// Optimizer wrapper enum for dynamic dispatch
 #[derive(Clone)]
-pub enum OptimizerType<T: Float> {
+pub enum OptimizerType<T: Float + Send + Sync> {
     Adam(Adam<T>),
     AdamW(AdamW<T>),
     SGD(SGD<T>),
@@ -80,7 +80,7 @@ pub enum OptimizerType<T: Float> {
     ForecastingAdam(ForecastingAdam<T>),
 }
 
-impl<T: Float> Optimizer<T> for OptimizerType<T> {
+impl<T: Float + Send + Sync> Optimizer<T> for OptimizerType<T> {
     fn step(&mut self, parameters: &mut [Vec<T>], gradients: &[Vec<T>]) -> TrainingResult<()> {
         match self {
             OptimizerType::Adam(opt) => opt.step(parameters, gradients),
@@ -158,7 +158,7 @@ impl<T: Float> Optimizer<T> for OptimizerType<T> {
 
 /// Adam: Adaptive Moment Estimation
 #[derive(Clone)]
-pub struct Adam<T: Float> {
+pub struct Adam<T: Float + Send + Sync> {
     learning_rate: T,
     beta1: T,
     beta2: T,
@@ -170,7 +170,7 @@ pub struct Adam<T: Float> {
     max_variance: Vec<Vec<T>>,
 }
 
-impl<T: Float> Adam<T> {
+impl<T: Float + Send + Sync> Adam<T> {
     pub fn new(learning_rate: T, beta1: T, beta2: T) -> Self {
         Self {
             learning_rate,
@@ -213,7 +213,7 @@ impl<T: Float> Adam<T> {
     }
 }
 
-impl<T: Float> Optimizer<T> for Adam<T> {
+impl<T: Float + Send + Sync> Optimizer<T> for Adam<T> {
     fn step(&mut self, parameters: &mut [Vec<T>], gradients: &[Vec<T>]) -> TrainingResult<()> {
         if parameters.len() != gradients.len() {
             return Err(TrainingError::OptimizerError("Parameter-gradient length mismatch".to_string()));
@@ -338,12 +338,12 @@ impl<T: Float> Optimizer<T> for Adam<T> {
 
 /// AdamW: Adam with decoupled weight decay
 #[derive(Clone)]
-pub struct AdamW<T: Float> {
+pub struct AdamW<T: Float + Send + Sync> {
     adam: Adam<T>,
     weight_decay: T,
 }
 
-impl<T: Float> AdamW<T> {
+impl<T: Float + Send + Sync> AdamW<T> {
     pub fn new(learning_rate: T, beta1: T, beta2: T, weight_decay: T) -> Self {
         Self {
             adam: Adam::new(learning_rate, beta1, beta2),
@@ -357,7 +357,7 @@ impl<T: Float> AdamW<T> {
     }
 }
 
-impl<T: Float> Optimizer<T> for AdamW<T> {
+impl<T: Float + Send + Sync> Optimizer<T> for AdamW<T> {
     fn step(&mut self, parameters: &mut [Vec<T>], gradients: &[Vec<T>]) -> TrainingResult<()> {
         // Apply weight decay before Adam update
         if !self.weight_decay.is_zero() {
@@ -413,7 +413,7 @@ impl<T: Float> Optimizer<T> for AdamW<T> {
 
 /// SGD: Stochastic Gradient Descent with momentum and Nesterov acceleration
 #[derive(Clone)]
-pub struct SGD<T: Float> {
+pub struct SGD<T: Float + Send + Sync> {
     learning_rate: T,
     momentum: T,
     dampening: T,
@@ -422,7 +422,7 @@ pub struct SGD<T: Float> {
     momentum_buffers: Vec<Vec<T>>,
 }
 
-impl<T: Float> SGD<T> {
+impl<T: Float + Send + Sync> SGD<T> {
     pub fn new(learning_rate: T) -> Self {
         Self {
             learning_rate,
@@ -463,7 +463,7 @@ impl<T: Float> SGD<T> {
     }
 }
 
-impl<T: Float> Optimizer<T> for SGD<T> {
+impl<T: Float + Send + Sync> Optimizer<T> for SGD<T> {
     fn step(&mut self, parameters: &mut [Vec<T>], gradients: &[Vec<T>]) -> TrainingResult<()> {
         if parameters.len() != gradients.len() {
             return Err(TrainingError::OptimizerError("Parameter-gradient length mismatch".to_string()));
@@ -565,7 +565,7 @@ impl<T: Float> Optimizer<T> for SGD<T> {
 
 /// RMSprop: Root Mean Square Propagation with forecasting adaptations
 #[derive(Clone)]
-pub struct RMSprop<T: Float> {
+pub struct RMSprop<T: Float + Send + Sync> {
     learning_rate: T,
     alpha: T,
     epsilon: T,
@@ -577,7 +577,7 @@ pub struct RMSprop<T: Float> {
     grad_avg: Vec<Vec<T>>,
 }
 
-impl<T: Float> RMSprop<T> {
+impl<T: Float + Send + Sync> RMSprop<T> {
     pub fn new(learning_rate: T) -> Self {
         Self {
             learning_rate,
@@ -638,7 +638,7 @@ impl<T: Float> RMSprop<T> {
     }
 }
 
-impl<T: Float> Optimizer<T> for RMSprop<T> {
+impl<T: Float + Send + Sync> Optimizer<T> for RMSprop<T> {
     fn step(&mut self, parameters: &mut [Vec<T>], gradients: &[Vec<T>]) -> TrainingResult<()> {
         if parameters.len() != gradients.len() {
             return Err(TrainingError::OptimizerError("Parameter-gradient length mismatch".to_string()));
@@ -787,7 +787,7 @@ impl<T: Float> Optimizer<T> for RMSprop<T> {
 
 /// ForecastingAdam: Custom Adam variant optimized for temporal patterns
 #[derive(Clone)]
-pub struct ForecastingAdam<T: Float> {
+pub struct ForecastingAdam<T: Float + Send + Sync> {
     adam: Adam<T>,
     temporal_momentum: T,
     seasonal_correction: bool,
@@ -796,7 +796,7 @@ pub struct ForecastingAdam<T: Float> {
     _phantom: PhantomData<T>,
 }
 
-impl<T: Float> ForecastingAdam<T> {
+impl<T: Float + Send + Sync> ForecastingAdam<T> {
     pub fn new(learning_rate: T, beta1: T, beta2: T) -> Self {
         Self {
             adam: Adam::new(learning_rate, beta1, beta2),
@@ -881,7 +881,7 @@ impl<T: Float> ForecastingAdam<T> {
     }
 }
 
-impl<T: Float> Optimizer<T> for ForecastingAdam<T> {
+impl<T: Float + Send + Sync> Optimizer<T> for ForecastingAdam<T> {
     fn step(&mut self, parameters: &mut [Vec<T>], gradients: &[Vec<T>]) -> TrainingResult<()> {
         let mut corrected_gradients = gradients.to_vec();
         
@@ -947,11 +947,11 @@ impl<T: Float> Optimizer<T> for ForecastingAdam<T> {
 // =============================================================================
 
 /// Builder for creating optimizers with fluent interface
-pub struct OptimizerBuilder<T: Float> {
+pub struct OptimizerBuilder<T: Float + Send + Sync> {
     _phantom: PhantomData<T>,
 }
 
-impl<T: Float> OptimizerBuilder<T> {
+impl<T: Float + Send + Sync> OptimizerBuilder<T> {
     pub fn new() -> Self {
         Self { _phantom: PhantomData }
     }
@@ -977,7 +977,7 @@ impl<T: Float> OptimizerBuilder<T> {
     }
 }
 
-impl<T: Float> Default for OptimizerBuilder<T> {
+impl<T: Float + Send + Sync> Default for OptimizerBuilder<T> {
     fn default() -> Self {
         Self::new()
     }

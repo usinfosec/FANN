@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use num_traits::Float;
+use num_traits::{Float, NumCast};
 use serde::{Serialize, Deserialize};
 
 use crate::config::{
@@ -166,13 +166,13 @@ impl<T: Float + From<f32>> LSTMBuilder<T> {
             input_size: None,
             hidden_size: 128,
             num_layers: 2,
-            dropout: T::from(0.1),
+            dropout: NumCast::from(0.1f64).unwrap(),
             bidirectional: false,
             encoder_hidden_size: None,
             decoder_hidden_size: None,
             max_steps: 1000,
-            learning_rate: T::from(0.001),
-            weight_decay: T::from(1e-3),
+            learning_rate: NumCast::from(0.001f64).unwrap(),
+            weight_decay: NumCast::from(1e-3f64).unwrap(),
             gradient_clip_val: None,
             scaler_type: ScalerType::StandardScaler,
             static_features: None,
@@ -317,7 +317,7 @@ impl<T: Float + From<f32>> LSTMBuilder<T> {
         self.early_stopping = Some(EarlyStoppingConfig::new(
             "val_loss".to_string(),
             patience,
-            T::from(0.001),
+            NumCast::from(0.001f64).unwrap(),
             crate::config::EarlyStoppingMode::Min,
         ));
         self
@@ -384,13 +384,13 @@ impl<T: Float + From<f32>> ModelBuilder<T, LSTMConfig<T>> for LSTMBuilder<T> {
         if self.num_layers == 0 {
             return Err(NeuroDivergentError::config("num_layers must be greater than 0"));
         }
-        if self.dropout < T::from(0.0) || self.dropout >= T::from(1.0) {
+        if self.dropout < NumCast::from(0.0f64).unwrap() || self.dropout >= NumCast::from(1.0f64).unwrap() {
             return Err(NeuroDivergentError::config("dropout must be in range [0, 1)"));
         }
         if self.max_steps == 0 {
             return Err(NeuroDivergentError::config("max_steps must be greater than 0"));
         }
-        if self.learning_rate <= T::from(0.0) {
+        if self.learning_rate <= NumCast::from(0.0f64).unwrap() {
             return Err(NeuroDivergentError::config("learning_rate must be positive"));
         }
         Ok(())
@@ -542,8 +542,8 @@ impl<T: Float + From<f32>> NBEATSBuilder<T> {
             shared_weights: true,
             activation: ActivationFunction::ReLU,
             max_steps: 1000,
-            learning_rate: T::from(0.001),
-            weight_decay: T::from(1e-3),
+            learning_rate: NumCast::from(0.001f64).unwrap(),
+            weight_decay: NumCast::from(1e-3f64).unwrap(),
             loss_function: LossFunction::MAE,
             scaler_type: ScalerType::StandardScaler,
             static_features: None,

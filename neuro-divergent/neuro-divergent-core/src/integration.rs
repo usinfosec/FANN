@@ -10,24 +10,23 @@ use std::sync::{Arc, Mutex};
 
 use ndarray::{Array1, Array2};
 use num_traits::Float;
-use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use ruv_fann::{
-    ActivationFunction, Network, NetworkBuilder, TrainingAlgorithm, TrainingData, TrainingResult,
+    ActivationFunction, Network, NetworkBuilder, TrainingAlgorithm, TrainingData,
 };
 
 use crate::{
     data::{SeriesData, TimeSeriesDataset, TimeSeriesDataFrame},
     error::{ErrorBuilder, NetworkIntegrationError, NeuroDivergentError, NeuroDivergentResult},
-    traits::{BaseModel, ForecastResult, ModelConfig, ModelState, TrainingStatistics},
+    traits::{ForecastResult, TrainingStatistics},
 };
 
 /// Adapter for integrating ruv-FANN networks with forecasting models
 ///
 /// This adapter wraps a ruv-FANN Network and provides time series-specific
 /// preprocessing and postprocessing capabilities.
-pub struct NetworkAdapter<T: Float> {
+pub struct NetworkAdapter<T: Float + Send + Sync + 'static> {
     /// The underlying ruv-FANN network
     network: Network<T>,
     /// Input preprocessing pipeline
@@ -43,8 +42,8 @@ pub struct NetworkAdapter<T: Float> {
 }
 
 /// Configuration for NetworkAdapter
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NetworkAdapterConfig<T: Float> {
+#[derive(Debug, Clone)]
+pub struct NetworkAdapterConfig<T: Float + Send + Sync + 'static> {
     /// Input dimension
     pub input_size: usize,
     /// Output dimension
@@ -62,8 +61,8 @@ pub struct NetworkAdapterConfig<T: Float> {
 }
 
 /// Training state for NetworkAdapter
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NetworkTrainingState<T: Float> {
+#[derive(Debug, Clone)]
+pub struct NetworkTrainingState<T: Float + Send + Sync + 'static> {
     /// Current epoch
     pub current_epoch: usize,
     /// Training loss history
@@ -85,7 +84,7 @@ pub struct NetworkTrainingState<T: Float> {
 }
 
 /// Input preprocessing trait for time series data
-pub trait InputPreprocessor<T: Float>: Send + Sync {
+pub trait InputPreprocessor<T: Float + Send + Sync + 'static>: Send + Sync {
     /// Process input time series data for network consumption
     fn process(&self, input: &TimeSeriesInput<T>) -> NeuroDivergentResult<Vec<T>>;
     
@@ -100,12 +99,12 @@ pub trait InputPreprocessor<T: Float>: Send + Sync {
 }
 
 /// Output postprocessing trait for network outputs
-pub trait OutputPostprocessor<T: Float>: Send + Sync {
+pub trait OutputPostprocessor<T: Float + Send + Sync + 'static>: Send + Sync {
     /// Process network output to generate forecasts
     fn process(&self, output: &[T], context: &PostprocessorContext<T>) -> NeuroDivergentResult<ForecastResult<T>>;
     
     /// Get postprocessing configuration
-    fn config(&self) -> &PostprocessorConfig<T>;
+    fn config(&self) -> &PostprocessorConfig;
     
     /// Reset internal state (if any)
     fn reset(&mut self);
@@ -113,7 +112,7 @@ pub trait OutputPostprocessor<T: Float>: Send + Sync {
 
 /// Input data structure for time series processing
 #[derive(Debug, Clone)]
-pub struct TimeSeriesInput<T: Float> {
+pub struct TimeSeriesInput<T: Float + Send + Sync + 'static> {
     /// Historical target values
     pub target_history: Vec<T>,
     /// Historical exogenous variables (if any)
@@ -132,7 +131,7 @@ pub struct TimeSeriesInput<T: Float> {
 
 /// Context for output postprocessing
 #[derive(Debug, Clone)]
-pub struct PostprocessorContext<T: Float> {
+pub struct PostprocessorContext<T: Float + Send + Sync + 'static> {
     /// Original input data
     pub input: TimeSeriesInput<T>,
     /// Forecast horizon
@@ -146,8 +145,8 @@ pub struct PostprocessorContext<T: Float> {
 }
 
 /// Configuration for input preprocessors
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PreprocessorConfig<T: Float> {
+#[derive(Debug, Clone)]
+pub struct PreprocessorConfig<T: Float + Send + Sync + 'static> {
     /// Scaling method
     pub scaling_method: ScalingMethod,
     /// Window size for input
@@ -165,8 +164,8 @@ pub struct PreprocessorConfig<T: Float> {
 }
 
 /// Configuration for output postprocessors
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PostprocessorConfig<T: Float> {
+#[derive(Debug, Clone)]
+pub struct PostprocessorConfig {
     /// Forecast horizon
     pub horizon: usize,
     /// Whether to denormalize outputs
@@ -228,8 +227,8 @@ pub enum RollingStatistic {
 }
 
 /// Normalization parameters
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NormalizationParams<T: Float> {
+#[derive(Debug, Clone)]
+pub struct NormalizationParams<T: Float + Send + Sync + 'static> {
     /// Mean values per feature
     pub means: Vec<T>,
     /// Standard deviation values per feature
@@ -267,7 +266,7 @@ pub struct ActivationMapper {
 }
 
 /// Bridge between neuro-divergent training and ruv-FANN training algorithms
-pub struct TrainingBridge<T: Float> {
+pub struct TrainingBridge<T: Float + Send + Sync + 'static> {
     /// ruv-FANN training algorithm
     algorithm: Box<dyn TrainingAlgorithm<T>>,
     /// Training configuration
@@ -277,8 +276,8 @@ pub struct TrainingBridge<T: Float> {
 }
 
 /// Configuration for training bridge
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TrainingBridgeConfig<T: Float> {
+#[derive(Debug, Clone)]
+pub struct TrainingBridgeConfig<T: Float + Send + Sync + 'static> {
     /// Maximum number of epochs
     pub max_epochs: usize,
     /// Learning rate
@@ -296,8 +295,8 @@ pub struct TrainingBridgeConfig<T: Float> {
 }
 
 /// Early stopping configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EarlyStoppingConfig<T: Float> {
+#[derive(Debug, Clone)]
+pub struct EarlyStoppingConfig<T: Float + Send + Sync + 'static> {
     /// Patience (epochs to wait)
     pub patience: usize,
     /// Minimum improvement threshold
@@ -309,8 +308,8 @@ pub struct EarlyStoppingConfig<T: Float> {
 }
 
 /// Training bridge state
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TrainingBridgeState<T: Float> {
+#[derive(Debug, Clone)]
+pub struct TrainingBridgeState<T: Float + Send + Sync + 'static> {
     /// Current epoch
     pub epoch: usize,
     /// Training metrics
@@ -334,7 +333,7 @@ pub struct EarlyStoppingState {
 
 /// Network output wrapper
 #[derive(Debug, Clone)]
-pub struct NetworkOutput<T: Float> {
+pub struct NetworkOutput<T: Float + Send + Sync + 'static> {
     /// Raw network outputs
     pub raw_outputs: Vec<T>,
     /// Processed outputs
@@ -345,12 +344,12 @@ pub struct NetworkOutput<T: Float> {
     pub metadata: HashMap<String, String>,
 }
 
-impl<T: Float> NetworkAdapter<T> {
+impl<T: Float + Send + Sync + 'static + 'static> NetworkAdapter<T> {
     /// Create adapter from ruv-FANN network
     pub fn from_network(network: Network<T>) -> Self {
         let config = NetworkAdapterConfig {
-            input_size: network.get_num_input(),
-            output_size: network.get_num_output(),
+            input_size: network.num_inputs(),
+            output_size: network.num_outputs(),
             hidden_layers: Vec::new(), // TODO: Extract from network
             activations: Vec::new(),    // TODO: Extract from network
             use_bias: true,
@@ -360,8 +359,8 @@ impl<T: Float> NetworkAdapter<T> {
 
         Self {
             network,
-            input_preprocessor: Box::new(DefaultInputPreprocessor::new()),
-            output_postprocessor: Box::new(DefaultOutputPostprocessor::new()),
+            input_preprocessor: Box::new(DefaultInputPreprocessor::<T>::new()),
+            output_postprocessor: Box::new(DefaultOutputPostprocessor::<T>::new()),
             activation_mapper: ActivationMapper::new(),
             config,
             training_state: None,
@@ -404,11 +403,7 @@ impl<T: Float> NetworkAdapter<T> {
         }
 
         // Run through network
-        let raw_outputs = self.network.run(&processed_input)
-            .map_err(|e| NetworkIntegrationError::ValidationError {
-                message: format!("Network execution failed: {}", e),
-                layer: None,
-            })?;
+        let raw_outputs = self.network.run(&processed_input);
 
         Ok(NetworkOutput {
             raw_outputs,
@@ -445,30 +440,10 @@ impl<T: Float> NetworkAdapter<T> {
         self.training_state = None;
     }
 
-    /// Save adapter configuration
-    pub fn save_config(&self, path: &std::path::Path) -> NeuroDivergentResult<()> {
-        let config_json = serde_json::to_string_pretty(&self.config)
-            .map_err(|e| ErrorBuilder::data(format!("Failed to serialize config: {}", e)).build())?;
-        
-        std::fs::write(path, config_json)
-            .map_err(|e| ErrorBuilder::data(format!("Failed to write config file: {}", e)).build())?;
-        
-        Ok(())
-    }
-
-    /// Load adapter configuration
-    pub fn load_config(path: &std::path::Path) -> NeuroDivergentResult<NetworkAdapterConfig<T>> {
-        let config_json = std::fs::read_to_string(path)
-            .map_err(|e| ErrorBuilder::data(format!("Failed to read config file: {}", e)).build())?;
-        
-        let config: NetworkAdapterConfig<T> = serde_json::from_str(&config_json)
-            .map_err(|e| ErrorBuilder::data(format!("Failed to deserialize config: {}", e)).build())?;
-        
-        Ok(config)
-    }
 }
 
-impl<T: Float> TrainingBridge<T> {
+
+impl<T: Float + Send + Sync + 'static> TrainingBridge<T> {
     /// Create new training bridge with algorithm
     pub fn new(algorithm: Box<dyn TrainingAlgorithm<T>>) -> Self {
         let config = TrainingBridgeConfig {
@@ -501,7 +476,7 @@ impl<T: Float> TrainingBridge<T> {
         network: &mut Network<T>,
         data: &TimeSeriesDataset<T>,
         config: &TrainingBridgeConfig<T>,
-    ) -> NeuroDivergentResult<TrainingResult<T>> {
+    ) -> NeuroDivergentResult<T> {
         // Convert time series data to ruv-FANN training format
         let training_data = self.prepare_training_data(data)?;
 
@@ -516,21 +491,36 @@ impl<T: Float> TrainingBridge<T> {
             state.metrics = TrainingStatistics::default();
         }
 
-        // Execute training
-        let result = self.algorithm.train(network, &training_data)
-            .map_err(|e| NetworkIntegrationError::TrainingAlgorithmError {
-                message: format!("Training failed: {}", e),
-                algorithm: Some("ruv-fann".to_string()),
-            })?;
+        // Execute training loop
+        let mut final_error = T::infinity();
+        for epoch in 0..self.config.max_epochs {
+            let epoch_error = self.algorithm.train_epoch(network, &training_data)
+                .map_err(|e| NetworkIntegrationError::TrainingAlgorithmError {
+                    message: format!("Training epoch {} failed: {}", epoch, e),
+                    algorithm: Some("ruv-fann".to_string()),
+                })?;
+            
+            final_error = epoch_error;
+            
+            // Update training state
+            {
+                let mut state = self.state.lock().unwrap();
+                state.epoch = epoch + 1;
+            }
+            
+            // Check for early stopping
+            if epoch_error < T::from(0.001).unwrap() {
+                break;
+            }
+        }
 
         // Update final state
         {
             let mut state = self.state.lock().unwrap();
             state.training_active = false;
-            state.epoch = self.config.max_epochs;
         }
 
-        Ok(result)
+        Ok(final_error)
     }
 
     /// Prepare time series data for ruv-FANN training
@@ -552,8 +542,7 @@ impl<T: Float> TrainingBridge<T> {
             }
         }
 
-        TrainingData::new(inputs, outputs)
-            .map_err(|e| ErrorBuilder::training(format!("Failed to create training data: {}", e)).build())
+        Ok(TrainingData { inputs, outputs })
     }
 
     /// Setup cascade correlation training
@@ -578,8 +567,8 @@ impl<T: Float> TrainingBridge<T> {
 }
 
 /// Cascade correlation training configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CascadeConfig<T: Float> {
+#[derive(Debug, Clone)]
+pub struct CascadeConfig<T: Float + Send + Sync + 'static> {
     /// Maximum number of candidate neurons
     pub max_candidates: usize,
     /// Correlation threshold
@@ -623,11 +612,12 @@ impl ActivationMapper {
 }
 
 /// Default input preprocessor implementation
-pub struct DefaultInputPreprocessor<T: Float> {
+pub struct DefaultInputPreprocessor<T: Float + Send + Sync + 'static> {
     config: PreprocessorConfig<T>,
 }
 
-impl<T: Float> DefaultInputPreprocessor<T> {
+impl<T: Float + Send + Sync + 'static> DefaultInputPreprocessor<T> {
+    /// Create a new default input preprocessor
     pub fn new() -> Self {
         Self {
             config: PreprocessorConfig {
@@ -643,7 +633,7 @@ impl<T: Float> DefaultInputPreprocessor<T> {
     }
 }
 
-impl<T: Float> InputPreprocessor<T> for DefaultInputPreprocessor<T> {
+impl<T: Float + Send + Sync + 'static> InputPreprocessor<T> for DefaultInputPreprocessor<T> {
     fn process(&self, input: &TimeSeriesInput<T>) -> NeuroDivergentResult<Vec<T>> {
         // Simple default preprocessing: just return the target history
         let window_size = self.config.window_size.min(input.target_history.len());
@@ -664,11 +654,13 @@ impl<T: Float> InputPreprocessor<T> for DefaultInputPreprocessor<T> {
 }
 
 /// Default output postprocessor implementation
-pub struct DefaultOutputPostprocessor<T: Float> {
-    config: PostprocessorConfig<T>,
+pub struct DefaultOutputPostprocessor<T: Float + Send + Sync + 'static> {
+    config: PostprocessorConfig,
+    _phantom: PhantomData<T>,
 }
 
-impl<T: Float> DefaultOutputPostprocessor<T> {
+impl<T: Float + Send + Sync + 'static> DefaultOutputPostprocessor<T> {
+    /// Create a new default output postprocessor
     pub fn new() -> Self {
         Self {
             config: PostprocessorConfig {
@@ -678,11 +670,12 @@ impl<T: Float> DefaultOutputPostprocessor<T> {
                 trend_adjustment: false,
                 seasonal_adjustment: None,
             },
+            _phantom: PhantomData,
         }
     }
 }
 
-impl<T: Float> OutputPostprocessor<T> for DefaultOutputPostprocessor<T> {
+impl<T: Float + Send + Sync + 'static> OutputPostprocessor<T> for DefaultOutputPostprocessor<T> {
     fn process(&self, output: &[T], context: &PostprocessorContext<T>) -> NeuroDivergentResult<ForecastResult<T>> {
         Ok(ForecastResult {
             forecasts: output.to_vec(),
@@ -694,7 +687,7 @@ impl<T: Float> OutputPostprocessor<T> for DefaultOutputPostprocessor<T> {
         })
     }
 
-    fn config(&self) -> &PostprocessorConfig<T> {
+    fn config(&self) -> &PostprocessorConfig {
         &self.config
     }
 

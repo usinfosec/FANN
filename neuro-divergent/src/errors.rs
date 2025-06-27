@@ -1,7 +1,8 @@
 //! Error types and handling for the neuro-divergent library
 
-use std::fmt;
 use thiserror::Error;
+use polars::error::PolarsError;
+use ruv_fann::errors::RuvFannError;
 
 /// Result type alias for neuro-divergent operations
 pub type NeuroDivergentResult<T> = Result<T, NeuroDivergentError>;
@@ -104,6 +105,11 @@ impl NeuroDivergentError {
         Self::FannError(message.into())
     }
     
+    /// Create a mathematical computation error
+    pub fn math<S: Into<String>>(message: S) -> Self {
+        Self::MathError(message.into())
+    }
+    
     /// Create a generic error
     pub fn generic<S: Into<String>>(message: S) -> Self {
         Self::Generic { 
@@ -160,8 +166,8 @@ impl NeuroDivergentError {
 }
 
 // Integration with polars errors
-impl From<polars::PolarsError> for NeuroDivergentError {
-    fn from(err: polars::PolarsError) -> Self {
+impl From<PolarsError> for NeuroDivergentError {
+    fn from(err: PolarsError) -> Self {
         Self::DataError(format!("Polars error: {}", err))
     }
 }
@@ -181,8 +187,8 @@ impl From<chrono::ParseError> for NeuroDivergentError {
 }
 
 // Integration with ruv-FANN errors
-impl From<ruv_fann::errors::FannError> for NeuroDivergentError {
-    fn from(err: ruv_fann::errors::FannError) -> Self {
+impl From<RuvFannError> for NeuroDivergentError {
+    fn from(err: RuvFannError) -> Self {
         Self::FannError(format!("ruv-FANN error: {}", err))
     }
 }
