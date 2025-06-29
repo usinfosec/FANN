@@ -1,0 +1,45 @@
+[package]
+name = "ruv-swarm-wasm"
+version = "0.1.0"
+edition = "2021"
+authors = ["rUv Contributors"]
+description = "WebAssembly bindings for ruv-swarm neural network orchestration"
+license = "MIT OR Apache-2.0"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["Window", "console", "Performance", "PerformanceTiming"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde-wasm-bindgen = "0.6"
+console_error_panic_hook = { version = "0.1", optional = true }
+wee_alloc = { version = "0.4", optional = true }
+getrandom = { version = "0.2", features = ["js"] }
+
+ruv-swarm-core = { path = "../ruv-swarm-core", default-features = false }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[features]
+default = ["console_error_panic_hook"]
+wee_alloc = ["dep:wee_alloc"]
+
+[profile.release]
+# Optimize for size (will be overridden by workspace profile)
+opt-level = "z"
+# Full LTO for maximum optimization
+lto = "fat"
+# Strip debug symbols  
+strip = true
+# Single codegen unit for better optimization
+codegen-units = 1
+# Reduce binary size by removing panic handling
+panic = "abort"
+# Disable overflow checks in release mode
+overflow-checks = false
