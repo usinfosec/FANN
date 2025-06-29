@@ -1,6 +1,6 @@
-# @ruv/swarm
+# ruv-swarm
 
-High-performance neural network swarm orchestration in WebAssembly.
+High-performance neural network swarm orchestration in WebAssembly with distributed agent coordination.
 
 ## Features
 
@@ -14,13 +14,13 @@ High-performance neural network swarm orchestration in WebAssembly.
 ## Installation
 
 ```bash
-npm install @ruv/swarm
+npm install ruv-swarm
 ```
 
 Or use directly via npx:
 
 ```bash
-npx @ruv/swarm --help
+npx ruv-swarm --help
 ```
 
 ## Quick Start
@@ -28,7 +28,7 @@ npx @ruv/swarm --help
 ### Node.js / JavaScript
 
 ```javascript
-const { RuvSwarm } = require('@ruv/swarm');
+const { RuvSwarm } = require('ruv-swarm');
 
 async function main() {
   // Initialize WASM module
@@ -68,7 +68,7 @@ main().catch(console.error);
 ### TypeScript
 
 ```typescript
-import { RuvSwarm, SwarmConfig, AgentConfig } from '@ruv/swarm';
+import { RuvSwarm, SwarmConfig, AgentConfig } from 'ruv-swarm';
 
 const config: SwarmConfig = {
   name: 'ai-swarm',
@@ -84,7 +84,7 @@ const swarm = await RuvSwarm.initialize().then(rs => rs.createSwarm(config));
 
 ```html
 <script type="module">
-  import { RuvSwarm } from 'https://unpkg.com/@ruv/swarm/dist/ruv-swarm.browser.js';
+  import { RuvSwarm } from 'https://unpkg.com/ruv-swarm/dist/ruv-swarm.browser.js';
   
   const ruvSwarm = await RuvSwarm.initialize();
   const swarm = await ruvSwarm.createSwarm({
@@ -99,23 +99,53 @@ const swarm = await RuvSwarm.initialize().then(rs => rs.createSwarm(config));
 
 ## CLI Usage
 
-The package includes a powerful CLI tool:
+The package includes a comprehensive CLI tool for swarm orchestration:
+
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `init [topology] [max]` | Initialize a new swarm with specified topology (mesh, hierarchical, ring, star) |
+| `spawn <type> [name]` | Spawn a new agent (researcher, coder, analyst, optimizer, coordinator) |
+| `orchestrate <task>` | Orchestrate a task across the swarm |
+| `status` | Show swarm status and agent information |
+| `monitor` | Real-time swarm monitoring (press Ctrl+C to stop) |
+| `benchmark` | Run performance benchmarks |
+| `features` | Show runtime features and capabilities |
+| `install [target]` | Show installation instructions (global, project, local) |
+| `test` | Run functionality tests |
+| `version` | Show version information |
+| `help` | Show help message |
+
+### Examples
 
 ```bash
+# Initialize a new swarm
+npx ruv-swarm init mesh 5
+
 # Spawn an agent
-npx @ruv/swarm spawn researcher my-researcher
+npx ruv-swarm spawn researcher my-researcher
 
 # Orchestrate a task
-npx @ruv/swarm orchestrate "Analyze this dataset and generate insights"
+npx ruv-swarm orchestrate "Analyze this dataset and generate insights"
 
 # Check swarm status
-npx @ruv/swarm status
+npx ruv-swarm status
+
+# Monitor in real-time
+npx ruv-swarm monitor
+
+# Run functionality tests
+npx ruv-swarm test
 
 # Run benchmarks
-npx @ruv/swarm benchmark
+npx ruv-swarm benchmark
 
 # Check runtime features
-npx @ruv/swarm features
+npx ruv-swarm features
+
+# Installation help
+npx ruv-swarm install
 ```
 
 ## Agent Types

@@ -1,5 +1,5 @@
 {
-  "name": "@ruv/swarm",
+  "name": "ruv-swarm",
   "version": "0.1.0",
   "description": "High-performance neural network swarm orchestration in WebAssembly",
   "main": "src/index.js",

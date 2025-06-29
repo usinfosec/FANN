@@ -45,7 +45,20 @@ class WASMLoader {
       return wasmModule;
     }
 
-    const moduleFile = this.useSIMD ? 'ruv_swarm_simd.wasm' : 'ruv_swarm_bg.wasm';
+    // Use the generated WASM bindings directly (ES module import)
+    try {
+      const wasmJsPath = path.join(this.wasmPath, 'ruv_swarm_wasm.js');
+      const wasmBindings = await import(path.resolve(wasmJsPath));
+      wasmModule = wasmBindings;
+      return wasmModule;
+    } catch (error) {
+      if (this.debug) {
+        console.error('Failed to load WASM bindings:', error);
+      }
+    }
+
+    // Fallback to manual loading
+    const moduleFile = this.useSIMD ? 'ruv_swarm_simd.wasm' : 'ruv_swarm_wasm_bg.wasm';
     const wasmFilePath = path.join(this.wasmPath, moduleFile);
 
     try {
@@ -146,12 +159,15 @@ class RuvSwarm {
     const loader = new WASMLoader(options);
     const wasmResult = await loader.loadModule();
 
-    // Load the WASM bindings
-    const bindings = await import(path.join(loader.wasmPath, 'ruv_swarm_bg.js'));
+    // Load the WASM bindings (ES module import with proper file URL)
+    const wasmJsPath = path.join(loader.wasmPath, 'ruv_swarm_wasm.js');
+    const bindings = await import(path.resolve(wasmJsPath));
     
-    // Initialize WASM module
-    if (bindings.init) {
-      await bindings.init();
+    // Initialize WASM module with file buffer for Node.js
+    if (bindings.default) {
+      const wasmPath = path.join(loader.wasmPath, 'ruv_swarm_wasm_bg.wasm');
+      const wasmBuffer = await fs.readFile(wasmPath);
+      await bindings.default({ module_or_path: wasmBuffer });
     }
 
     // Get runtime features
