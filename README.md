@@ -729,8 +729,9 @@ cargo doc --open
 
 ### ruv-FANN Family
 
-- **[neuro-divergent](./neuro-divergent/)**: Advanced neural forecasting library with 27+ models
 - **[ruv-fann](.)**: Core neural network library (this repository)
+- **[neuro-divergent](./neuro-divergent/)**: Advanced neural forecasting library with 27+ models
+- **[ruv-swarm](./ruv-swarm/)**: Distributed agent orchestration with MCP support
 
 ### Related Crates
 
@@ -784,4 +785,5 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 *Building the future of neural networks and time series forecasting in Rust - one safe, fast, and reliable layer at a time.*
 
 🧠 **ruv-FANN**: Foundation neural networks  
-📈 **neuro-divergent**: Advanced forecasting models
+📈 **neuro-divergent**: Advanced forecasting models  
+🐝 **ruv-swarm**: Distributed agent orchestration

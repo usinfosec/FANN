@@ -361,11 +361,26 @@ const formatJsError = (error) => {
   return error.toString();
 };
 
+// Import neural agent capabilities
+const {
+  NeuralAgent,
+  NeuralAgentFactory,
+  NeuralNetwork,
+  COGNITIVE_PATTERNS,
+  AGENT_COGNITIVE_PROFILES
+} = require('./neural-agent');
+
 // Export main class and utilities
 module.exports = {
   RuvSwarm,
   consoleLog,
   consoleError,
   consoleWarn,
-  formatJsError
+  formatJsError,
+  // Neural agent exports
+  NeuralAgent,
+  NeuralAgentFactory,
+  NeuralNetwork,
+  COGNITIVE_PATTERNS,
+  AGENT_COGNITIVE_PROFILES
 };
