@@ -429,44 +429,60 @@ async function startMcpServer(args) {
   const port = args.find(arg => arg.startsWith('--port='))?.split('=')[1] || '3000';
   const host = args.find(arg => arg.startsWith('--host='))?.split('=')[1] || 'localhost';
   
-  console.log(`Starting ruv-swarm MCP server...`);
-  console.log(`Protocol: ${protocol}`);
-  
   try {
     if (protocol === 'stdio') {
-      console.log('Starting MCP server in stdio mode for Claude Code integration');
-      console.log('\nMCP Server Configuration:');
-      console.log('  Name: ruv-swarm');
-      console.log('  Protocol: stdio');
-      console.log('  Transport: WASM + Node.js');
-      console.log('  Tools: 12 swarm orchestration tools');
+      // In stdio mode, only JSON-RPC messages should go to stdout
+      // All debug messages go to stderr
+      console.error('ruv-swarm MCP server starting in stdio mode...');
       
-      // In stdio mode, we'd typically exec the Rust binary
-      console.log('\nTo use with Claude Code, add this to your MCP settings:');
-      console.log('```json');
-      console.log('{');
-      console.log('  "mcpServers": {');
-      console.log('    "ruv-swarm": {');
-      console.log('      "command": "npx",');
-      console.log('      "args": ["ruv-swarm", "mcp", "start", "--protocol=stdio"]');
-      console.log('    }');
-      console.log('  }');
-      console.log('}');
-      console.log('```');
+      // Initialize WASM if needed
+      let ruvSwarm;
+      try {
+        ruvSwarm = await RuvSwarm.initialize({
+          wasmPath: path.join(__dirname, '..', 'wasm'),
+          useSIMD: RuvSwarm.detectSIMDSupport(),
+          debug: false // No debug output in MCP mode
+        });
+      } catch (error) {
+        console.error('Failed to initialize WASM:', error.message);
+      }
       
       // Start stdio MCP server loop
-      console.log('\nMCP server ready for stdio communication...');
       process.stdin.setEncoding('utf8');
-      process.stdin.on('readable', () => {
-        let chunk;
-        while (null !== (chunk = process.stdin.read())) {
-          try {
-            const request = JSON.parse(chunk.trim());
-            handleMcpRequest(request);
-          } catch (error) {
-            console.error('Invalid MCP request:', error.message);
+      
+      let buffer = '';
+      process.stdin.on('data', (chunk) => {
+        buffer += chunk;
+        
+        // Process complete JSON messages
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+        
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const request = JSON.parse(line);
+              handleMcpRequest(request, ruvSwarm);
+            } catch (error) {
+              // Send error response for parse errors
+              const errorResponse = {
+                jsonrpc: '2.0',
+                error: {
+                  code: -32700,
+                  message: 'Parse error',
+                  data: error.message
+                },
+                id: null
+              };
+              process.stdout.write(JSON.stringify(errorResponse) + '\n');
+            }
           }
         }
+      });
+      
+      process.stdin.on('end', () => {
+        console.error('MCP server stdin closed, exiting...');
+        process.exit(0);
       });
       
     } else if (protocol === 'http') {
@@ -490,8 +506,8 @@ async function startMcpServer(args) {
   }
 }
 
-async function handleMcpRequest(request) {
-  // Basic MCP request handling
+async function handleMcpRequest(request, ruvSwarm) {
+  // MCP request handling - only JSON-RPC to stdout
   const response = {
     jsonrpc: '2.0',
     id: request.id
@@ -516,37 +532,143 @@ async function handleMcpRequest(request) {
       case 'tools/list':
         response.result = {
           tools: [
+            // Swarm Management
             {
               name: 'swarm_init',
               description: 'Initialize a new swarm with specified topology',
               inputSchema: {
                 type: 'object',
                 properties: {
-                  topology: { type: 'string', enum: ['mesh', 'hierarchical', 'ring', 'star'] },
-                  maxAgents: { type: 'number', minimum: 1, maximum: 100 }
+                  topology: { type: 'string', enum: ['mesh', 'hierarchical', 'ring', 'star'], description: 'Swarm topology type' },
+                  maxAgents: { type: 'number', minimum: 1, maximum: 100, default: 5, description: 'Maximum number of agents' },
+                  strategy: { type: 'string', enum: ['balanced', 'specialized', 'adaptive'], default: 'balanced', description: 'Distribution strategy' }
+                },
+                required: ['topology']
+              }
+            },
+            {
+              name: 'swarm_status',
+              description: 'Get current swarm status and agent information',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  verbose: { type: 'boolean', default: false, description: 'Include detailed agent information' }
                 }
               }
             },
+            {
+              name: 'swarm_monitor',
+              description: 'Monitor swarm activity in real-time',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  duration: { type: 'number', default: 10, description: 'Monitoring duration in seconds' },
+                  interval: { type: 'number', default: 1, description: 'Update interval in seconds' }
+                }
+              }
+            },
+            // Agent Operations
             {
               name: 'agent_spawn',
               description: 'Spawn a new agent in the swarm',
               inputSchema: {
                 type: 'object',
                 properties: {
-                  type: { type: 'string', enum: ['researcher', 'coder', 'analyst', 'optimizer', 'coordinator'] },
-                  name: { type: 'string' },
-                  capabilities: { type: 'array', items: { type: 'string' } }
+                  type: { type: 'string', enum: ['researcher', 'coder', 'analyst', 'optimizer', 'coordinator'], description: 'Agent type' },
+                  name: { type: 'string', description: 'Custom agent name' },
+                  capabilities: { type: 'array', items: { type: 'string' }, description: 'Agent capabilities' }
+                },
+                required: ['type']
+              }
+            },
+            {
+              name: 'agent_list',
+              description: 'List all active agents in the swarm',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  filter: { type: 'string', enum: ['all', 'active', 'idle', 'busy'], default: 'all', description: 'Filter agents by status' }
                 }
               }
             },
+            {
+              name: 'agent_metrics',
+              description: 'Get performance metrics for agents',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  agentId: { type: 'string', description: 'Specific agent ID (optional)' },
+                  metric: { type: 'string', enum: ['all', 'cpu', 'memory', 'tasks', 'performance'], default: 'all' }
+                }
+              }
+            },
+            // Task Management
             {
               name: 'task_orchestrate',
               description: 'Orchestrate a task across the swarm',
               inputSchema: {
                 type: 'object',
                 properties: {
-                  task: { type: 'string' },
-                  priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] }
+                  task: { type: 'string', description: 'Task description or instructions' },
+                  priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'], default: 'medium' },
+                  strategy: { type: 'string', enum: ['parallel', 'sequential', 'adaptive'], default: 'adaptive' },
+                  maxAgents: { type: 'number', minimum: 1, maximum: 10, description: 'Maximum agents to use' }
+                },
+                required: ['task']
+              }
+            },
+            {
+              name: 'task_status',
+              description: 'Check progress of running tasks',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  taskId: { type: 'string', description: 'Specific task ID (optional)' },
+                  detailed: { type: 'boolean', default: false, description: 'Include detailed progress' }
+                }
+              }
+            },
+            {
+              name: 'task_results',
+              description: 'Retrieve results from completed tasks',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  taskId: { type: 'string', description: 'Task ID to retrieve results for' },
+                  format: { type: 'string', enum: ['summary', 'detailed', 'raw'], default: 'summary' }
+                },
+                required: ['taskId']
+              }
+            },
+            // Analytics
+            {
+              name: 'benchmark_run',
+              description: 'Execute performance benchmarks',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  type: { type: 'string', enum: ['all', 'wasm', 'swarm', 'agent', 'task'], default: 'all' },
+                  iterations: { type: 'number', minimum: 1, maximum: 100, default: 10 }
+                }
+              }
+            },
+            {
+              name: 'features_detect',
+              description: 'Detect runtime features and capabilities',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  category: { type: 'string', enum: ['all', 'wasm', 'simd', 'memory', 'platform'], default: 'all' }
+                }
+              }
+            },
+            {
+              name: 'memory_usage',
+              description: 'Get current memory usage statistics',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  detail: { type: 'string', enum: ['summary', 'detailed', 'by-agent'], default: 'summary' }
                 }
               }
             }
@@ -558,12 +680,9 @@ async function handleMcpRequest(request) {
         const toolName = request.params.name;
         const args = request.params.arguments || {};
         
-        response.result = {
-          content: [{
-            type: 'text',
-            text: `Executed ${toolName} with args: ${JSON.stringify(args)}`
-          }]
-        };
+        // Execute actual tool functionality
+        const result = await executeSwarmTool(toolName, args, ruvSwarm);
+        response.result = result;
         break;
         
       default:
@@ -580,6 +699,105 @@ async function handleMcpRequest(request) {
   }
   
   process.stdout.write(JSON.stringify(response) + '\n');
+}
+
+// Actual tool execution
+async function executeSwarmTool(toolName, args, ruvSwarm) {
+  try {
+    let result;
+    let swarm;
+    
+    // Initialize swarm if needed
+    if (!global.mcpSwarm && ruvSwarm) {
+      try {
+        global.mcpSwarm = await ruvSwarm.createSwarm({
+          name: 'mcp-swarm',
+          strategy: 'development',
+          mode: 'centralized',
+          maxAgents: 5
+        });
+      } catch (error) {
+        console.error('Failed to create swarm:', error.message);
+      }
+    }
+    swarm = global.mcpSwarm;
+    
+    switch (toolName) {
+      case 'swarm_init':
+        const { topology = 'mesh', maxAgents = 5, strategy = 'balanced' } = args;
+        result = `Initialized ${topology} swarm with max ${maxAgents} agents using ${strategy} strategy`;
+        break;
+        
+      case 'swarm_status':
+        if (swarm) {
+          const status = swarm.getStatus();
+          result = `Swarm: ${status.name}\nAgents: ${status.agentCount}/${status.maxAgents}\nStrategy: ${status.strategy}\nMode: ${status.mode}`;
+        } else {
+          result = 'No active swarm. Use swarm_init to create one.';
+        }
+        break;
+        
+      case 'agent_spawn':
+        if (swarm) {
+          const { type, name = `${type}-${Date.now()}`, capabilities = [] } = args;
+          const agent = await swarm.spawn({ name, type, capabilities });
+          result = `Spawned agent ${agent.id} (${type}) with capabilities: ${agent.getCapabilities().join(', ')}`;
+        } else {
+          result = 'No active swarm. Initialize a swarm first.';
+        }
+        break;
+        
+      case 'task_orchestrate':
+        if (swarm) {
+          const { task, priority = 'medium', strategy = 'adaptive', maxAgents } = args;
+          const orchestration = await swarm.orchestrate({
+            id: `task-${Date.now()}`,
+            description: task,
+            priority,
+            dependencies: [],
+            metadata: { strategy, maxAgents }
+          });
+          result = `Task orchestrated: ${orchestration.taskId}\nStatus: ${orchestration.status}\nAgents used: ${orchestration.metrics.agentsSpawned}`;
+        } else {
+          result = 'No active swarm. Initialize a swarm first.';
+        }
+        break;
+        
+      case 'memory_usage':
+        const memUsage = RuvSwarm.getMemoryUsage();
+        result = `Memory usage: ${(memUsage / 1024 / 1024).toFixed(2)} MB`;
+        break;
+        
+      case 'features_detect':
+        const features = {
+          wasm: typeof WebAssembly !== 'undefined',
+          simd: RuvSwarm.detectSIMDSupport(),
+          version: RuvSwarm.getVersion(),
+          platform: process.platform,
+          nodeVersion: process.version
+        };
+        result = Object.entries(features).map(([k, v]) => `${k}: ${v}`).join('\n');
+        break;
+        
+      default:
+        result = `Tool ${toolName} not implemented yet`;
+    }
+    
+    return {
+      content: [{
+        type: 'text',
+        text: result
+      }]
+    };
+  } catch (error) {
+    return {
+      content: [{
+        type: 'text',
+        text: `Error executing ${toolName}: ${error.message}`
+      }],
+      isError: true
+    };
+  }
 }
 
 async function getMcpStatus() {
