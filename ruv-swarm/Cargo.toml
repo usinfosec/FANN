@@ -4,9 +4,9 @@ members = [
     "crates/ruv-swarm-agents",
     "crates/ruv-swarm-ml",
     "crates/ruv-swarm-cli",
-    # "crates/ruv-swarm-mcp",
-    # "crates/ruv-swarm-persistence",
-    # "crates/ruv-swarm-transport",
+    "crates/ruv-swarm-mcp",
+    "crates/ruv-swarm-persistence", # Fixed dependency conflicts
+    "crates/ruv-swarm-transport",   # Fixed dependency conflicts
     "crates/ruv-swarm-wasm",
 ]
 
@@ -69,22 +69,16 @@ axum = "0.7"
 tower = "0.4"
 tokio-tungstenite = "0.23"
 schemars = "0.8"
-uuid = { version = "1.0", features = ["v4"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
 
 # Transport dependencies
-tungstenite = "0.21"
+tungstenite = "0.23"
 shared_memory = "0.12"
 
 # Persistence dependencies
-rusqlite = { version = "0.30", features = ["bundled"] }
+rusqlite = { version = "0.29", features = ["bundled"] }
 r2d2 = "0.8"
 r2d2_sqlite = "0.22"
-js-sys = "0.3"
-web-sys = "0.3"
-
-# Testing
-criterion = "0.5"
-proptest = "1.5"
 
 [profile.dev]
 opt-level = 0
@@ -101,3 +95,4 @@ overflow-checks = false  # Disable overflow checks in release mode
 [profile.bench]
 inherits = "release"
 debug = true
+

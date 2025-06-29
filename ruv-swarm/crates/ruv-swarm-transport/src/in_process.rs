@@ -101,8 +101,10 @@ impl InProcessRegistry {
 }
 
 impl Default for InProcessRegistry {
-    fn default() -> Arc<Self> {
-        Self::new()
+    fn default() -> Self {
+        Self {
+            transports: DashMap::new(),
+        }
     }
 }
 

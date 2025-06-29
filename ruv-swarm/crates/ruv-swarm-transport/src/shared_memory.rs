@@ -27,7 +27,7 @@ pub struct SharedMemoryInfo {
 
 /// Lock-free ring buffer for message passing
 pub struct RingBuffer {
-    buffer: Vec<u8>,
+    buffer: Arc<parking_lot::Mutex<Vec<u8>>>,
     capacity: usize,
     head: AtomicUsize,
     tail: AtomicUsize,
@@ -38,7 +38,7 @@ impl RingBuffer {
     /// Create a new ring buffer
     pub fn new(capacity: usize) -> Self {
         Self {
-            buffer: vec![0; capacity],
+            buffer: Arc::new(parking_lot::Mutex::new(vec![0; capacity])),
             capacity,
             head: AtomicUsize::new(0),
             tail: AtomicUsize::new(0),
@@ -63,20 +63,21 @@ impl RingBuffer {
         let len_bytes = (data_len as u32).to_le_bytes();
         let mut write_pos = self.tail.load(Ordering::Acquire);
         
-        // Write length
-        for &byte in &len_bytes {
-            unsafe {
-                *self.buffer.as_ptr().add(write_pos) = byte;
+        // Write length and data
+        {
+            let mut buffer = self.buffer.lock();
+            
+            // Write length
+            for &byte in &len_bytes {
+                buffer[write_pos] = byte;
+                write_pos = (write_pos + 1) % self.capacity;
             }
-            write_pos = (write_pos + 1) % self.capacity;
-        }
-        
-        // Write data
-        for &byte in data {
-            unsafe {
-                *self.buffer.as_ptr().add(write_pos) = byte;
+            
+            // Write data
+            for &byte in data {
+                buffer[write_pos] = byte;
+                write_pos = (write_pos + 1) % self.capacity;
             }
-            write_pos = (write_pos + 1) % self.capacity;
         }
         
         // Update tail and size
@@ -93,32 +94,34 @@ impl RingBuffer {
             return None;
         }
         
-        // Read length prefix
+        // Read length prefix and data
         let mut read_pos = self.head.load(Ordering::Acquire);
-        let mut len_bytes = [0u8; 4];
-        
-        for i in 0..4 {
-            unsafe {
-                len_bytes[i] = *self.buffer.as_ptr().add(read_pos);
+        let (data_len, data) = {
+            let buffer = self.buffer.lock();
+            let mut len_bytes = [0u8; 4];
+            
+            // Read length
+            for i in 0..4 {
+                len_bytes[i] = buffer[read_pos];
+                read_pos = (read_pos + 1) % self.capacity;
             }
-            read_pos = (read_pos + 1) % self.capacity;
-        }
-        
-        let data_len = u32::from_le_bytes(len_bytes) as usize;
-        
-        // Check if we have enough data
-        if current_size < size_of::<u32>() + data_len {
-            return None;
-        }
-        
-        // Read data
-        let mut data = vec![0u8; data_len];
-        for i in 0..data_len {
-            unsafe {
-                data[i] = *self.buffer.as_ptr().add(read_pos);
+            
+            let data_len = u32::from_le_bytes(len_bytes) as usize;
+            
+            // Check if we have enough data
+            if current_size < size_of::<u32>() + data_len {
+                return None;
             }
-            read_pos = (read_pos + 1) % self.capacity;
-        }
+            
+            // Read data
+            let mut data = vec![0u8; data_len];
+            for i in 0..data_len {
+                data[i] = buffer[read_pos];
+                read_pos = (read_pos + 1) % self.capacity;
+            }
+            
+            (data_len, data)
+        };
         
         // Update head and size
         self.head.store(read_pos, Ordering::Release);
@@ -150,8 +153,15 @@ pub struct SharedMemoryTransport {
     is_running: Arc<AtomicBool>,
     stats: Arc<RwLock<TransportStats>>,
     #[cfg(not(target_arch = "wasm32"))]
-    shmem: Option<Shmem>,
+    shmem: Option<Arc<parking_lot::Mutex<Shmem>>>,
 }
+
+// SAFETY: SharedMemoryTransport is safe to send between threads because:
+// 1. All fields except shmem are Send/Sync
+// 2. shmem is protected by Arc<Mutex<>> and only accessed through the mutex
+// 3. The shared memory itself is just a memory-mapped region that doesn't need to be moved between threads
+unsafe impl Send for SharedMemoryTransport {}
+unsafe impl Sync for SharedMemoryTransport {}
 
 impl SharedMemoryTransport {
     /// Create a new shared memory transport
@@ -159,7 +169,7 @@ impl SharedMemoryTransport {
         let (incoming_tx, incoming_rx) = mpsc::channel(1024);
         
         #[cfg(not(target_arch = "wasm32"))]
-        let shmem = Self::create_or_open_shmem(&info)?;
+        let shmem = Some(Arc::new(parking_lot::Mutex::new(Self::create_or_open_shmem(&info)?)));
         
         let transport = Self {
             info,
@@ -172,7 +182,9 @@ impl SharedMemoryTransport {
             is_running: Arc::new(AtomicBool::new(true)),
             stats: Arc::new(RwLock::new(TransportStats::default())),
             #[cfg(not(target_arch = "wasm32"))]
-            shmem,
+            shmem: shmem,
+            #[cfg(target_arch = "wasm32")]
+            shmem: None,
         };
         
         transport.start_polling();

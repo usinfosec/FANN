@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use dashmap::DashMap;
+use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, RwLock};
 use uuid::Uuid;
 
@@ -33,7 +34,7 @@ struct TaskInfo {
 }
 
 /// Task status
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum TaskStatus {
     Pending,
     Running,
@@ -42,7 +43,7 @@ enum TaskStatus {
 }
 
 /// Swarm event
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SwarmEvent {
     pub event_type: String,
     pub timestamp: chrono::DateTime<chrono::Utc>,
@@ -76,7 +77,7 @@ impl SwarmOrchestrator {
         &self,
         agent_type: AgentType,
         name: Option<String>,
-        capabilities: AgentCapabilities,
+        _capabilities: AgentCapabilities,
     ) -> anyhow::Result<Uuid> {
         let agent_id = Uuid::new_v4();
         
@@ -164,10 +165,10 @@ impl SwarmOrchestrator {
     
     /// Subscribe to events
     pub async fn subscribe_events(&self) -> anyhow::Result<mpsc::Receiver<SwarmEvent>> {
-        let (tx, rx) = mpsc::channel(100);
+        let (_tx, rx) = mpsc::channel(100);
         
         // Forward events from main channel
-        let event_tx = self.event_tx.clone();
+        let _event_tx = self.event_tx.clone();
         tokio::spawn(async move {
             // In a real implementation, this would forward events
         });
@@ -247,7 +248,7 @@ impl SwarmOrchestrator {
     /// Execute workflow
     pub async fn execute_workflow(
         &self,
-        workflow_id: &Uuid,
+        _workflow_id: &Uuid,
         workflow_path: &str,
         parameters: serde_json::Value,
     ) -> anyhow::Result<WorkflowResult> {

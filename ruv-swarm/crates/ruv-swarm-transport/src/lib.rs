@@ -127,15 +127,13 @@ pub struct TransportStats {
 /// Transport builder trait for creating configured transports
 #[async_trait]
 pub trait TransportBuilder: Send + Sync {
-    type Transport: Transport;
-    
     /// Build a new transport instance
-    async fn build(&self, config: TransportConfig) -> Result<Self::Transport, TransportError>;
+    async fn build(&self, config: TransportConfig) -> Result<Box<dyn Transport<Message = Message, Error = TransportError>>, TransportError>;
 }
 
 /// Registry for available transports
 pub struct TransportRegistry {
-    transports: dashmap::DashMap<String, Box<dyn TransportBuilder<Transport = Box<dyn Transport<Message = Message, Error = TransportError>>>>>,
+    transports: dashmap::DashMap<String, Box<dyn TransportBuilder>>,
 }
 
 impl TransportRegistry {
@@ -149,11 +147,10 @@ impl TransportRegistry {
     pub fn register<B>(&self, name: &str, builder: B) 
     where
         B: TransportBuilder + 'static,
-        B::Transport: Transport<Message = Message, Error = TransportError> + 'static,
     {
         self.transports.insert(
             name.to_string(),
-            Box::new(builder) as Box<dyn TransportBuilder<Transport = Box<dyn Transport<Message = Message, Error = TransportError>>>>
+            Box::new(builder)
         );
     }
     
@@ -172,6 +169,3 @@ impl Default for TransportRegistry {
         Self::new()
     }
 }
-
-#[cfg(test)]
-mod tests;

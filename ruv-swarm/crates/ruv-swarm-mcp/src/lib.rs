@@ -13,9 +13,8 @@ use axum::{
     Router,
     Json,
 };
-use axum_extra::headers;
 use dashmap::DashMap;
-use futures::StreamExt;
+use futures::{StreamExt, SinkExt};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::sync::{mpsc, RwLock};
@@ -23,7 +22,6 @@ use tower_http::cors::CorsLayer;
 use tracing::{info, error, debug};
 use uuid::Uuid;
 
-use ruv_swarm_core::SwarmConfig;
 
 pub mod tools;
 pub mod handlers;
@@ -32,7 +30,7 @@ pub mod orchestrator;
 
 use crate::orchestrator::SwarmOrchestrator;
 
-use crate::tools::{Tool, ToolRegistry};
+use crate::tools::ToolRegistry;
 use crate::handlers::RequestHandler;
 
 /// MCP Server configuration
@@ -66,7 +64,7 @@ pub struct McpServerState {
     /// Tool registry
     tools: Arc<ToolRegistry>,
     /// Active sessions
-    sessions: Arc<DashMap<Uuid, Session>>,
+    sessions: Arc<DashMap<Uuid, Arc<Session>>>,
     /// Server configuration
     config: McpConfig,
 }
@@ -315,6 +313,7 @@ mod tests {
     
     #[tokio::test]
     async fn test_mcp_server_creation() {
+        use ruv_swarm_core::SwarmConfig;
         let config = SwarmConfig::default();
         let orchestrator = Arc::new(SwarmOrchestrator::new(config));
         let mcp_config = McpConfig::default();

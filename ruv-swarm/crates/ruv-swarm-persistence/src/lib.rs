@@ -7,8 +7,6 @@
 //! - Repository pattern with type-safe queries
 //! - Transaction support and connection pooling
 
-#![cfg_attr(not(feature = "std"), no_std)]
-
 pub mod memory;
 pub mod migrations;
 pub mod models;

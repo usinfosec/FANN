@@ -1,12 +1,13 @@
 use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId};
 use ruv_swarm_core::{
-    task::{Task, Priority},
-    agent::CognitivePattern,
+    task::{Task, TaskPriority},
+    agent::DynamicAgent,
 };
 
 #[cfg(feature = "std")]
 use ruv_swarm_core::{
-    swarm::{Swarm, SwarmConfig, OrchestrationStrategy, Topology},
+    swarm::{Swarm, SwarmConfig},
+    task::DistributionStrategy,
 };
 
 fn task_creation_benchmark(c: &mut Criterion) {
@@ -18,8 +19,8 @@ fn task_creation_benchmark(c: &mut Criterion) {
                 for i in 0..size {
                     let _task = Task::new(
                         format!("task_{}", i),
-                        Priority::Medium,
-                    );
+                        "compute"
+                    ).with_priority(TaskPriority::Normal);
                 }
             });
         });
@@ -37,14 +38,14 @@ fn swarm_agent_registration(c: &mut Criterion) {
         b.iter(|| {
             rt.block_on(async {
                 let config = SwarmConfig::default();
-                let swarm = Swarm::new(config);
+                let mut swarm = Swarm::new(config);
                 
                 for i in 0..100 {
-                    let _ = swarm.register_agent(
+                    let agent = DynamicAgent::new(
                         format!("agent_{}", i),
-                        vec!["compute".to_string()],
-                        CognitivePattern::Convergent,
-                    ).await;
+                        vec!["compute".to_string()]
+                    );
+                    let _ = swarm.register_agent(agent);
                 }
             });
         });
@@ -59,37 +60,38 @@ fn task_distribution_strategies(c: &mut Criterion) {
     let mut group = c.benchmark_group("task_distribution");
     
     let strategies = [
-        ("round_robin", OrchestrationStrategy::RoundRobin),
-        ("least_loaded", OrchestrationStrategy::LeastLoaded),
-        ("capability_based", OrchestrationStrategy::CapabilityBased),
-        ("priority_based", OrchestrationStrategy::PriorityBased),
+        ("round_robin", DistributionStrategy::RoundRobin),
+        ("least_loaded", DistributionStrategy::LeastLoaded),
+        ("capability_based", DistributionStrategy::CapabilityBased),
+        ("priority_based", DistributionStrategy::Priority),
     ];
     
     for (name, strategy) in strategies.iter() {
-        group.bench_function(name, |b| {
+        group.bench_function(*name, |b| {
             b.iter(|| {
                 rt.block_on(async {
                     let mut config = SwarmConfig::default();
-                    config.strategy = *strategy;
-                    let swarm = Swarm::new(config);
+                    config.distribution_strategy = *strategy;
+                    let mut swarm = Swarm::new(config);
                     
                     // Register agents
                     for i in 0..10 {
-                        let _ = swarm.register_agent(
+                        let agent = DynamicAgent::new(
                             format!("agent_{}", i),
-                            vec!["compute".to_string()],
-                            CognitivePattern::Convergent,
-                        ).await;
+                            vec!["compute".to_string()]
+                        );
+                        let _ = swarm.register_agent(agent);
                     }
                     
                     // Submit tasks
                     for i in 0..100 {
                         let task = Task::new(
-                            format!("payload_{}", i),
-                            Priority::Medium,
-                        ).with_capabilities(vec!["compute".to_string()]);
+                            format!("task_{}", i),
+                            "compute"
+                        ).with_priority(TaskPriority::Normal)
+                         .require_capability("compute");
                         
-                        let _ = swarm.submit_task(task).await;
+                        let _ = swarm.submit_task(task);
                     }
                 });
             });

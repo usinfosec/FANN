@@ -9,7 +9,7 @@ use tracing::{info, debug, error};
 use uuid::Uuid;
 
 use crate::{
-    McpRequest, McpResponse, McpError,
+    McpRequest, McpResponse,
     tools::ToolRegistry,
     orchestrator::SwarmOrchestrator,
     types::*,
@@ -103,7 +103,8 @@ impl RequestHandler {
             .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow::anyhow!("Missing tool name"))?;
         
-        let tool_params = params.get("arguments").unwrap_or(&json!({}));
+        let default_params = json!({});
+        let tool_params = params.get("arguments").unwrap_or(&default_params);
         
         debug!("Calling tool: {} with params: {:?}", tool_name, tool_params);
         
@@ -222,11 +223,11 @@ impl RequestHandler {
         // Start orchestration
         let task_id = Uuid::new_v4();
         let orchestrator = self.orchestrator.clone();
-        let objective = objective.to_string();
+        let objective_str = objective.to_string();
         
         // Spawn async task
         tokio::spawn(async move {
-            match orchestrator.orchestrate_task(&task_id, &objective, config).await {
+            match orchestrator.orchestrate_task(&task_id, &objective_str, config).await {
                 Ok(result) => {
                     info!("Orchestration completed: {:?}", result);
                 }
@@ -250,7 +251,7 @@ impl RequestHandler {
     
     /// Handle query tool
     async fn handle_query(&self, id: Option<Value>, params: &Value) -> anyhow::Result<McpResponse> {
-        let filter = params.get("filter").cloned();
+        let _filter = params.get("filter").cloned();
         let include_metrics = params.get("include_metrics")
             .and_then(|v| v.as_bool())
             .unwrap_or(false);

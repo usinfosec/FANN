@@ -54,11 +54,11 @@ enum Commands {
         topology: String,
 
         /// Persistence backend (memory, sqlite, postgres, redis)
-        #[arg(short, long)]
+        #[arg(short = 'b', long)]
         persistence: Option<String>,
 
         /// Initial swarm configuration file
-        #[arg(short, long)]
+        #[arg(short = 'f', long)]
         config_file: Option<String>,
 
         /// Skip interactive setup
@@ -72,7 +72,7 @@ enum Commands {
         agent_type: String,
 
         /// Agent capabilities (comma-separated)
-        #[arg(short, long, value_delimiter = ',')]
+        #[arg(short = 'a', long, value_delimiter = ',')]
         capabilities: Vec<String>,
 
         /// Agent name (auto-generated if not provided)
@@ -84,7 +84,7 @@ enum Commands {
         memory: Option<String>,
 
         /// Parent agent ID for hierarchical topologies
-        #[arg(short, long)]
+        #[arg(short = 'P', long)]
         parent: Option<String>,
     },
 
@@ -106,7 +106,7 @@ enum Commands {
         timeout: Option<u64>,
 
         /// Priority level (1-10)
-        #[arg(short, long, default_value = "5")]
+        #[arg(short = 'r', long, default_value = "5")]
         priority: u8,
 
         /// Watch task progress in real-time
@@ -121,7 +121,7 @@ enum Commands {
         detailed: bool,
 
         /// Filter by agent type
-        #[arg(short, long)]
+        #[arg(short = 't', long)]
         agent_type: Option<String>,
 
         /// Show only active agents

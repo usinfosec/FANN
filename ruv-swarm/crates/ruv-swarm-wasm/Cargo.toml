@@ -30,6 +30,12 @@ wasm-bindgen-test = "0.3"
 default = ["console_error_panic_hook"]
 wee_alloc = ["dep:wee_alloc"]
 
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[package.metadata.wasm-pack.profile.dev]
+wasm-opt = false
+
 [profile.release]
 # Optimize for size (will be overridden by workspace profile)
 opt-level = "z"

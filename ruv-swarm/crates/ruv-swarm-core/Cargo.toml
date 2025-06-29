@@ -54,3 +54,7 @@ tracing-subscriber = { workspace = true }
 [[bench]]
 name = "swarm_benchmarks"
 harness = false
+
+[[example]]
+name = "basic_swarm"
+path = "../../examples/basic_swarm.rs"

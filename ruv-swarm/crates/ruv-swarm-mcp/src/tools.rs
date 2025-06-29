@@ -1,10 +1,8 @@
 //! MCP Tool definitions for RUV-Swarm
 
 use std::sync::Arc;
-use std::collections::HashMap;
 
 use dashmap::DashMap;
-use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -23,7 +21,7 @@ pub struct ToolParameter {
 }
 
 /// Tool definition
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Tool {
     pub name: String,
     pub description: String,
@@ -35,6 +33,17 @@ pub struct Tool {
 /// Tool handler trait
 pub trait ToolHandler: Send + Sync {
     fn handle(&self, params: Value) -> anyhow::Result<Value>;
+}
+
+impl std::fmt::Debug for Tool {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Tool")
+            .field("name", &self.name)
+            .field("description", &self.description)
+            .field("parameters", &self.parameters)
+            .field("handler", &self.handler.as_ref().map(|_| "<handler>"))
+            .finish()
+    }
 }
 
 /// Tool registry
@@ -49,7 +58,7 @@ impl ToolRegistry {
         }
     }
     
-    pub fn register(&self, mut tool: Tool) {
+    pub fn register(&self, tool: Tool) {
         let name = tool.name.clone();
         self.tools.insert(name, tool);
     }

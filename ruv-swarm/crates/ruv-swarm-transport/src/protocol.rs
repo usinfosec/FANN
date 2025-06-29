@@ -34,7 +34,7 @@ impl std::fmt::Display for ProtocolVersion {
 }
 
 /// Message types in the swarm protocol
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum MessageType {
     /// Request message expecting a response
@@ -96,7 +96,7 @@ pub struct ErrorResponse {
 }
 
 /// Control operations for protocol management
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "op", rename_all = "snake_case")]
 pub enum ControlOperation {
     /// Handshake initiation

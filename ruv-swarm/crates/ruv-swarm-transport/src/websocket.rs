@@ -122,7 +122,7 @@ impl WebSocketTransport {
                             url.clone(),
                             connections.clone(),
                             incoming_tx.clone(),
-                            broadcast_tx.clone(),
+                            broadcast_tx.subscribe(),
                             codec.clone(),
                             config.clone(),
                             stats.clone(),
@@ -185,7 +185,7 @@ impl WebSocketTransport {
                                         peer_addr,
                                         connections,
                                         incoming_tx,
-                                        broadcast_tx,
+                                        broadcast_tx.subscribe(),
                                         codec,
                                         config,
                                         stats,
@@ -217,7 +217,7 @@ impl WebSocketTransport {
         
         let duration = Duration::from_millis(config.connection_timeout_ms);
         
-        match timeout(duration, connect_async(url)).await {
+        match timeout(duration, connect_async(url.as_str())).await {
             Ok(Ok((ws_stream, _))) => Ok(ws_stream),
             Ok(Err(e)) => Err(TransportError::ConnectionError(format!("WebSocket error: {}", e))),
             Err(_) => Err(TransportError::Timeout),
@@ -230,7 +230,7 @@ impl WebSocketTransport {
         peer_addr: String,
         connections: Arc<DashMap<String, mpsc::Sender<Message>>>,
         incoming_tx: mpsc::Sender<(String, Message)>,
-        broadcast_tx: broadcast::Sender<Message>,
+        broadcast_rx: broadcast::Receiver<Message>,
         codec: Arc<dyn MessageCodec>,
         config: TransportConfig,
         stats: Arc<RwLock<TransportStats>>,
@@ -241,7 +241,7 @@ impl WebSocketTransport {
             peer_addr,
             connections,
             incoming_tx,
-            broadcast_tx,
+            broadcast_rx,
             codec,
             config,
             stats,
@@ -251,27 +251,167 @@ impl WebSocketTransport {
     
     /// Handle server connection
     async fn handle_server_connection(
-        ws_stream: WsStream,
+        ws_stream: WebSocketStream<TcpStream>,
         peer_addr: String,
         connections: Arc<DashMap<String, mpsc::Sender<Message>>>,
         incoming_tx: mpsc::Sender<(String, Message)>,
-        broadcast_tx: broadcast::Sender<Message>,
+        broadcast_rx: broadcast::Receiver<Message>,
         codec: Arc<dyn MessageCodec>,
         config: TransportConfig,
         stats: Arc<RwLock<TransportStats>>,
         is_running: Arc<AtomicBool>,
     ) -> Result<(), TransportError> {
-        Self::handle_connection(
+        // Handle the connection directly without type conversion
+        Self::handle_raw_connection(
             ws_stream,
             peer_addr,
             connections,
             incoming_tx,
-            broadcast_tx,
+            broadcast_rx,
             codec,
             config,
             stats,
             is_running,
         ).await
+    }
+    
+    /// Handle raw WebSocket connection (TcpStream)
+    async fn handle_raw_connection(
+        mut ws_stream: WebSocketStream<TcpStream>,
+        peer_addr: String,
+        connections: Arc<DashMap<String, mpsc::Sender<Message>>>,
+        incoming_tx: mpsc::Sender<(String, Message)>,
+        mut broadcast_rx: broadcast::Receiver<Message>,
+        codec: Arc<dyn MessageCodec>,
+        config: TransportConfig,
+        stats: Arc<RwLock<TransportStats>>,
+        is_running: Arc<AtomicBool>,
+    ) -> Result<(), TransportError> {
+        use futures_util::{SinkExt, StreamExt};
+        
+        let (outgoing_tx, mut outgoing_rx) = mpsc::channel::<Message>(256);
+        connections.insert(peer_addr.clone(), outgoing_tx);
+        
+        loop {
+            if !is_running.load(Ordering::SeqCst) {
+                break;
+            }
+            
+            tokio::select! {
+                // Handle incoming messages
+                Some(result) = ws_stream.next() => {
+                    match result {
+                        Ok(WsMessage::Binary(data)) => {
+                            // Decompress if needed
+                            let data = if config.enable_compression && data.len() > config.compression_threshold {
+                                Self::decompress(&data)?
+                            } else {
+                                data
+                            };
+                            
+                            // Decode message
+                            match codec.decode(&data) {
+                                Ok(msg) => {
+                                    // Update stats
+                                    {
+                                        let mut stats = stats.write().await;
+                                        stats.messages_received += 1;
+                                        stats.bytes_received += data.len() as u64;
+                                        stats.last_activity = Some(chrono::Utc::now());
+                                    }
+                                    
+                                    // Forward to incoming channel
+                                    if incoming_tx.send((peer_addr.clone(), msg)).await.is_err() {
+                                        error!("Failed to forward incoming message");
+                                        break;
+                                    }
+                                }
+                                Err(e) => {
+                                    error!("Failed to decode message: {}", e);
+                                    stats.write().await.errors += 1;
+                                }
+                            }
+                        }
+                        Ok(WsMessage::Close(_)) => {
+                            info!("Connection closed by peer: {}", peer_addr);
+                            break;
+                        }
+                        Ok(WsMessage::Ping(data)) => {
+                            if ws_stream.send(WsMessage::Pong(data)).await.is_err() {
+                                break;
+                            }
+                        }
+                        Ok(_) => {} // Ignore other message types
+                        Err(e) => {
+                            error!("WebSocket error: {}", e);
+                            break;
+                        }
+                    }
+                }
+                
+                // Handle outgoing messages
+                Some(msg) = outgoing_rx.recv() => {
+                    // Encode message
+                    match codec.encode(&msg) {
+                        Ok(mut data) => {
+                            // Compress if needed
+                            if config.enable_compression && data.len() > config.compression_threshold {
+                                data = Self::compress(&data)?;
+                            }
+                            
+                            // Send message
+                            if ws_stream.send(WsMessage::Binary(data.clone())).await.is_err() {
+                                error!("Failed to send message");
+                                break;
+                            }
+                            
+                            // Update stats
+                            let mut stats = stats.write().await;
+                            stats.messages_sent += 1;
+                            stats.bytes_sent += data.len() as u64;
+                            stats.last_activity = Some(chrono::Utc::now());
+                        }
+                        Err(e) => {
+                            error!("Failed to encode message: {}", e);
+                            stats.write().await.errors += 1;
+                        }
+                    }
+                }
+                
+                // Handle broadcast messages
+                Ok(msg) = broadcast_rx.recv() => {
+                    // Skip if this message is not for us
+                    if let Some(dest) = &msg.destination {
+                        if dest != &peer_addr {
+                            continue;
+                        }
+                    }
+                    
+                    // Send broadcast message
+                    match codec.encode(&msg) {
+                        Ok(mut data) => {
+                            if config.enable_compression && data.len() > config.compression_threshold {
+                                data = Self::compress(&data)?;
+                            }
+                            
+                            if ws_stream.send(WsMessage::Binary(data)).await.is_err() {
+                                error!("Failed to send broadcast");
+                                break;
+                            }
+                        }
+                        Err(e) => {
+                            error!("Failed to encode broadcast: {}", e);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Clean up connection
+        connections.remove(&peer_addr);
+        info!("Connection closed: {}", peer_addr);
+        
+        Ok(())
     }
     
     /// Common connection handler
