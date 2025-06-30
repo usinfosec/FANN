@@ -1,246 +1,174 @@
-# Claude Code Configuration
+# Claude Code Configuration for ruv-swarm
+#ruv 
+## 🎯 IMPORTANT: Separation of Responsibilities
 
-## Build Commands
-- `npm run build`: Build the project
-- `npm run test`: Run the full test suite
-- `npm run lint`: Run ESLint and format checks
-- `npm run typecheck`: Run TypeScript type checking
-- `./claude-flow --help`: Show all available commands
+### Claude Code Handles:
+- ✅ **ALL file operations** (Read, Write, Edit, MultiEdit)
+- ✅ **ALL code generation** and development tasks
+- ✅ **ALL bash commands** and system operations
+- ✅ **ALL actual implementation** work
+- ✅ **Project navigation** and code analysis
 
-## Claude-Flow Complete Command Reference
+### ruv-swarm MCP Tools Handle:
+- 🧠 **Coordination only** - Orchestrating Claude Code's actions
+- 💾 **Memory management** - Persistent state across sessions
+- 🤖 **Neural features** - Cognitive patterns and learning
+- 📊 **Performance tracking** - Monitoring and metrics
+- 🐝 **Swarm orchestration** - Multi-agent coordination
 
-### Core System Commands
-- `./claude-flow start [--ui] [--port 3000] [--host localhost]`: Start orchestration system with optional web UI
-- `./claude-flow status`: Show comprehensive system status
-- `./claude-flow monitor`: Real-time system monitoring dashboard
-- `./claude-flow config <subcommand>`: Configuration management (show, get, set, init, validate)
+### ⚠️ Key Principle:
+**MCP tools DO NOT create content or write code.** They coordinate and enhance Claude Code's native capabilities. Think of them as an orchestration layer that helps Claude Code work more efficiently.
 
-### Agent Management
-- `./claude-flow agent spawn <type> [--name <name>]`: Create AI agents (researcher, coder, analyst, etc.)
-- `./claude-flow agent list`: List all active agents
-- `./claude-flow spawn <type>`: Quick agent spawning (alias for agent spawn)
+## 🚀 Quick Setup (Stdio MCP - Recommended)
 
-### Task Orchestration
-- `./claude-flow task create <type> [description]`: Create and manage tasks
-- `./claude-flow task list`: View active task queue
-- `./claude-flow workflow <file>`: Execute workflow automation files
-
-### Memory Management
-- `./claude-flow memory store <key> <data>`: Store persistent data across sessions
-- `./claude-flow memory get <key>`: Retrieve stored information
-- `./claude-flow memory list`: List all memory keys
-- `./claude-flow memory export <file>`: Export memory to file
-- `./claude-flow memory import <file>`: Import memory from file
-- `./claude-flow memory stats`: Memory usage statistics
-- `./claude-flow memory cleanup`: Clean unused memory entries
-
-### SPARC Development Modes
-- `./claude-flow sparc "<task>"`: Run orchestrator mode (default)
-- `./claude-flow sparc run <mode> "<task>"`: Run specific SPARC mode
-- `./claude-flow sparc tdd "<feature>"`: Test-driven development mode
-- `./claude-flow sparc modes`: List all 17 available SPARC modes
-
-Available SPARC modes: orchestrator, coder, researcher, tdd, architect, reviewer, debugger, tester, analyzer, optimizer, documenter, designer, innovator, swarm-coordinator, memory-manager, batch-executor, workflow-manager
-
-### Swarm Coordination
-- `./claude-flow swarm "<objective>" [options]`: Multi-agent swarm coordination
-- `--strategy`: research, development, analysis, testing, optimization, maintenance
-- `--mode`: centralized, distributed, hierarchical, mesh, hybrid
-- `--max-agents <n>`: Maximum number of agents (default: 5)
-- `--parallel`: Enable parallel execution
-- `--monitor`: Real-time monitoring
-- `--output <format>`: json, sqlite, csv, html
-
-### MCP Server Integration
-- `./claude-flow mcp start [--port 3000] [--host localhost]`: Start MCP server
-- `./claude-flow mcp status`: Show MCP server status
-- `./claude-flow mcp tools`: List available MCP tools
-
-### Claude Integration
-- `./claude-flow claude auth`: Authenticate with Claude API
-- `./claude-flow claude models`: List available Claude models
-- `./claude-flow claude chat`: Interactive chat mode
-
-### Session Management
-- `./claude-flow session`: Manage terminal sessions
-- `./claude-flow repl`: Start interactive REPL mode
-
-### Enterprise Features
-- `./claude-flow project <subcommand>`: Project management (Enterprise)
-- `./claude-flow deploy <subcommand>`: Deployment operations (Enterprise)
-- `./claude-flow cloud <subcommand>`: Cloud infrastructure management (Enterprise)
-- `./claude-flow security <subcommand>`: Security and compliance tools (Enterprise)
-- `./claude-flow analytics <subcommand>`: Analytics and insights (Enterprise)
-
-### Project Initialization
-- `./claude-flow init`: Initialize Claude-Flow project
-- `./claude-flow init --sparc`: Initialize with full SPARC development environment
-
-## Quick Start Workflows
-
-### Research Workflow
+### 1. Add MCP Server (Stdio - No Port Needed)
 ```bash
-# Start a research swarm with distributed coordination
-./claude-flow swarm "Research modern web frameworks" --strategy research --mode distributed --parallel --monitor
-
-# Or use SPARC researcher mode for focused research
-./claude-flow sparc run researcher "Analyze React vs Vue vs Angular performance characteristics"
-
-# Store findings in memory for later use
-./claude-flow memory store "research_findings" "Key insights from framework analysis"
+# Add ruv-swarm MCP server to Claude Code using stdio
+claude mcp add ruv-swarm npx ruv-swarm mcp start
 ```
 
-### Development Workflow
-```bash
-# Start orchestration system with web UI
-./claude-flow start --ui --port 3000
+### 2. Use MCP Tools for Coordination in Claude Code
+Once configured, ruv-swarm MCP tools enhance Claude Code's coordination:
 
-# Run TDD workflow for new feature
-./claude-flow sparc tdd "User authentication system with JWT tokens"
+**Initialize a swarm:**
+- Use the `mcp__ruv-swarm__swarm_init` tool to set up coordination topology
+- Choose: mesh, hierarchical, ring, or star
+- This creates a coordination framework for Claude Code's work
 
-# Development swarm for complex projects
-./claude-flow swarm "Build e-commerce API with payment integration" --strategy development --mode hierarchical --max-agents 8 --monitor
+**Spawn agents:**
+- Use `mcp__ruv-swarm__agent_spawn` tool to create specialized coordinators
+- Agent types represent different thinking patterns, not actual coders
+- They help Claude Code approach problems from different angles
 
-# Check system status
-./claude-flow status
-```
+**Orchestrate tasks:**
+- Use `mcp__ruv-swarm__task_orchestrate` tool to coordinate complex workflows
+- This breaks down tasks for Claude Code to execute systematically
+- The agents don't write code - they coordinate Claude Code's actions
 
-### Analysis Workflow
-```bash
-# Analyze codebase performance
-./claude-flow sparc run analyzer "Identify performance bottlenecks in current codebase"
+## Available MCP Tools for Coordination
 
-# Data analysis swarm
-./claude-flow swarm "Analyze user behavior patterns from logs" --strategy analysis --mode mesh --parallel --output sqlite
+### Coordination Tools:
+- `mcp__ruv-swarm__swarm_init` - Set up coordination topology for Claude Code
+- `mcp__ruv-swarm__agent_spawn` - Create cognitive patterns to guide Claude Code
+- `mcp__ruv-swarm__task_orchestrate` - Break down and coordinate complex tasks
 
-# Store analysis results
-./claude-flow memory store "performance_analysis" "Bottlenecks identified in database queries"
-```
+### Monitoring Tools:
+- `mcp__ruv-swarm__swarm_status` - Monitor coordination effectiveness
+- `mcp__ruv-swarm__agent_list` - View active cognitive patterns
+- `mcp__ruv-swarm__agent_metrics` - Track coordination performance
+- `mcp__ruv-swarm__task_status` - Check workflow progress
+- `mcp__ruv-swarm__task_results` - Review coordination outcomes
 
-### Maintenance Workflow
-```bash
-# System maintenance with safety controls
-./claude-flow swarm "Update dependencies and security patches" --strategy maintenance --mode centralized --monitor
+### Memory & Neural Tools:
+- `mcp__ruv-swarm__memory_usage` - Persistent memory across sessions
+- `mcp__ruv-swarm__neural_status` - Neural pattern effectiveness
+- `mcp__ruv-swarm__neural_train` - Improve coordination patterns
+- `mcp__ruv-swarm__neural_patterns` - Analyze thinking approaches
 
-# Security review
-./claude-flow sparc run reviewer "Security audit of authentication system"
+### System Tools:
+- `mcp__ruv-swarm__benchmark_run` - Measure coordination efficiency
+- `mcp__ruv-swarm__features_detect` - Available capabilities
+- `mcp__ruv-swarm__swarm_monitor` - Real-time coordination tracking
 
-# Export maintenance logs
-./claude-flow memory export maintenance_log.json
-```
+## Workflow Examples (Coordination-Focused)
 
-## Integration Patterns
+### Research Coordination Example
+**Context:** Claude Code needs to research a complex topic systematically
 
-### Memory-Driven Coordination
-Use Memory to coordinate information across multiple SPARC modes and swarm operations:
+**Step 1:** Set up research coordination
+- Tool: `mcp__ruv-swarm__swarm_init`
+- Parameters: `{"topology": "mesh", "maxAgents": 5, "strategy": "balanced"}`
+- Result: Creates a mesh topology for comprehensive exploration
 
-```bash
-# Store architecture decisions
-./claude-flow memory store "system_architecture" "Microservices with API Gateway pattern"
+**Step 2:** Define research perspectives
+- Tool: `mcp__ruv-swarm__agent_spawn`
+- Parameters: `{"type": "researcher", "name": "Literature Review"}`
+- Tool: `mcp__ruv-swarm__agent_spawn`
+- Parameters: `{"type": "analyst", "name": "Data Analysis"}`
+- Result: Different cognitive patterns for Claude Code to use
 
-# All subsequent operations can reference this decision
-./claude-flow sparc run coder "Implement user service based on system_architecture in memory"
-./claude-flow sparc run tester "Create integration tests for microservices architecture"
-```
+**Step 3:** Coordinate research execution
+- Tool: `mcp__ruv-swarm__task_orchestrate`
+- Parameters: `{"task": "Research neural architecture search papers", "strategy": "adaptive"}`
+- Result: Claude Code systematically searches, reads, and analyzes papers
 
-### Multi-Stage Development
-Coordinate complex development through staged execution:
+**What Actually Happens:**
+1. The swarm sets up a coordination framework
+2. Agents represent different analytical approaches
+3. Claude Code uses its native Read, WebSearch, and Task tools
+4. The swarm coordinates how Claude Code approaches the research
+5. Results are synthesized by Claude Code, not the agents
 
-```bash
-# Stage 1: Research and planning
-./claude-flow sparc run researcher "Research authentication best practices"
-./claude-flow sparc run architect "Design authentication system architecture"
+### Development Coordination Example
+**Context:** Claude Code needs to build a complex system with multiple components
 
-# Stage 2: Implementation
-./claude-flow sparc tdd "User registration and login functionality"
-./claude-flow sparc run coder "Implement JWT token management"
+**Step 1:** Set up development coordination
+- Tool: `mcp__ruv-swarm__swarm_init`
+- Parameters: `{"topology": "hierarchical", "maxAgents": 8, "strategy": "specialized"}`
+- Result: Hierarchical structure for organized development
 
-# Stage 3: Testing and deployment
-./claude-flow sparc run tester "Comprehensive security testing"
-./claude-flow swarm "Deploy authentication system" --strategy maintenance --mode centralized
-```
+**Step 2:** Define development perspectives
+- Tool: `mcp__ruv-swarm__agent_spawn`
+- Parameters: `{"type": "architect", "name": "System Design"}`
+- Result: Architectural thinking pattern for Claude Code
 
-### Enterprise Integration
-For enterprise environments with additional tooling:
+**Step 3:** Coordinate implementation
+- Tool: `mcp__ruv-swarm__task_orchestrate`
+- Parameters: `{"task": "Implement user authentication with JWT", "strategy": "parallel"}`
+- Result: Claude Code implements features using its native tools
 
-```bash
-# Project management integration
-./claude-flow project create "authentication-system"
-./claude-flow project switch "authentication-system"
+**What Actually Happens:**
+1. The swarm creates a development coordination plan
+2. Agents guide Claude Code's approach to the problem
+3. Claude Code uses Write, Edit, Bash tools for implementation
+4. The swarm ensures systematic coverage of all aspects
+5. All code is written by Claude Code, not the agents
 
-# Security compliance
-./claude-flow security scan
-./claude-flow security audit
+## Best Practices for Coordination
 
-# Analytics and monitoring
-./claude-flow analytics dashboard
-./claude-flow deploy production --monitor
-```
+### ✅ DO:
+- Use MCP tools to coordinate Claude Code's approach to complex tasks
+- Let the swarm break down problems into manageable pieces
+- Use memory tools to maintain context across sessions
+- Monitor coordination effectiveness with status tools
+- Train neural patterns for better coordination over time
 
-## Advanced Batch Tool Patterns
+### ❌ DON'T:
+- Expect agents to write code (Claude Code does all implementation)
+- Use MCP tools for file operations (use Claude Code's native tools)
+- Try to make agents execute bash commands (Claude Code handles this)
+- Confuse coordination with execution (MCP coordinates, Claude executes)
 
-### TodoWrite Coordination
-Always use TodoWrite for complex task coordination:
+## Memory and Persistence
 
-```javascript
-TodoWrite([
-  {
-    id: "architecture_design",
-    content: "Design system architecture and component interfaces",
-    status: "pending",
-    priority: "high",
-    dependencies: [],
-    estimatedTime: "60min",
-    assignedAgent: "architect"
-  },
-  {
-    id: "frontend_development", 
-    content: "Develop React components and user interface",
-    status: "pending",
-    priority: "medium",
-    dependencies: ["architecture_design"],
-    estimatedTime: "120min",
-    assignedAgent: "frontend_team"
-  }
-]);
-```
+The swarm provides persistent memory that helps Claude Code:
+- Remember project context across sessions
+- Track decisions and rationale
+- Maintain consistency in large projects
+- Learn from previous coordination patterns
 
-### Task and Memory Integration
-Launch coordinated agents with shared memory:
+## Performance Benefits
 
-```javascript
-// Store architecture in memory
-Task("System Architect", "Design architecture and store specs in Memory");
+When using ruv-swarm coordination with Claude Code:
+- **84.8% SWE-Bench solve rate** - Better problem-solving through coordination
+- **32.3% token reduction** - Efficient task breakdown reduces redundancy
+- **2.8-4.4x speed improvement** - Parallel coordination strategies
+- **27+ neural models** - Diverse cognitive approaches
 
-// Other agents use memory for coordination
-Task("Frontend Team", "Develop UI using Memory architecture specs");
-Task("Backend Team", "Implement APIs according to Memory specifications");
-```
+## Integration Tips
 
-## Code Style Preferences
-- Use ES modules (import/export) syntax
-- Destructure imports when possible
-- Use TypeScript for all new code
-- Follow existing naming conventions
-- Add JSDoc comments for public APIs
-- Use async/await instead of Promise chains
-- Prefer const/let over var
+1. **Start Simple**: Begin with basic swarm init and single agent
+2. **Scale Gradually**: Add more agents as task complexity increases
+3. **Use Memory**: Store important decisions and context
+4. **Monitor Progress**: Regular status checks ensure effective coordination
+5. **Train Patterns**: Let neural agents learn from successful coordinations
 
-## Workflow Guidelines
-- Always run typecheck after making code changes
-- Run tests before committing changes
-- Use meaningful commit messages
-- Create feature branches for new functionality
-- Ensure all tests pass before merging
+## Support
 
-## Important Notes
-- **Use TodoWrite extensively** for all complex task coordination
-- **Leverage Task tool** for parallel agent execution on independent work
-- **Store all important information in Memory** for cross-agent coordination
-- **Use batch file operations** whenever reading/writing multiple files
-- **Check .claude/commands/** for detailed command documentation
-- **All swarm operations include automatic batch tool coordination**
-- **Monitor progress** with TodoRead during long-running operations
-- **Enable parallel execution** with --parallel flags for maximum efficiency
+- Documentation: https://github.com/ruvnet/ruv-FANN/tree/main/ruv-swarm
+- Issues: https://github.com/ruvnet/ruv-FANN/issues
+- Examples: https://github.com/ruvnet/ruv-FANN/tree/main/ruv-swarm/examples
 
-This configuration ensures optimal use of Claude Code's batch tools for swarm orchestration and parallel task execution with full Claude-Flow capabilities.
+---
+
+Remember: **ruv-swarm coordinates, Claude Code creates!** Start with `mcp__ruv-swarm__swarm_init` to enhance your development workflow.
