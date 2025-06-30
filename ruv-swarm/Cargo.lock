@@ -2933,7 +2933,16 @@ dependencies = [
 name = "ruv-swarm-agents"
 version = "0.1.0"
 dependencies = [
- "ruv-swarm-core",
+ "ruv-swarm-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "ruv-swarm-agents"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9fdf8c9eba680101dffa48632c39248b5443fe68dbc3cc74a140703593f00e71"
+dependencies = [
+ "ruv-swarm-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2955,8 +2964,8 @@ dependencies = [
  "mockall",
  "predicates",
  "reqwest",
- "ruv-swarm-agents",
- "ruv-swarm-core",
+ "ruv-swarm-agents 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ruv-swarm-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -2994,6 +3003,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "ruv-swarm-core"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "184e8a9823b4c3b187627feda3678065d94ea214b8312dd1ab0ee7a3b8f88a7a"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "dashmap",
+ "futures",
+ "getrandom 0.2.16",
+ "parking_lot",
+ "pin-project",
+ "rand 0.8.5",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "ruv-swarm-mcp"
 version = "0.1.0"
 dependencies = [
@@ -3007,7 +3037,7 @@ dependencies = [
  "futures",
  "jsonschema",
  "proptest",
- "ruv-swarm-core",
+ "ruv-swarm-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "schemars",
  "serde",
  "serde_json",
@@ -3028,7 +3058,22 @@ name = "ruv-swarm-ml"
 version = "0.1.0"
 dependencies = [
  "js-sys",
- "ruv-swarm-core",
+ "ruv-swarm-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde",
+ "serde-wasm-bindgen",
+ "serde_json",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "ruv-swarm-ml"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "28f376c923e445b3ac8e0a228eff7edf2a7077752af514388899439d5e177e0b"
+dependencies = [
+ "js-sys",
+ "ruv-swarm-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
@@ -3111,8 +3156,8 @@ dependencies = [
  "js-sys",
  "num-traits",
  "ruv-fann",
- "ruv-swarm-core",
- "ruv-swarm-ml",
+ "ruv-swarm-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ruv-swarm-ml 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
