@@ -515,8 +515,15 @@ async function handleMcpRequest(request) {
                 }
                 
                 // Execute tool using enhanced MCP tools
-                const result = await globalMCPTools[toolName](toolArgs);
-                response.result = result;
+                if (typeof globalMCPTools[toolName] === 'function') {
+                    const result = await globalMCPTools[toolName](toolArgs);
+                    response.result = result;
+                } else {
+                    response.error = {
+                        code: -32601,
+                        message: `Tool not found: ${toolName}. Available: ${Object.keys(globalMCPTools).filter(k => typeof globalMCPTools[k] === 'function').join(', ')}`
+                    };
+                }
                 break;
                 
             default:
@@ -532,7 +539,21 @@ async function handleMcpRequest(request) {
         };
     }
     
-    process.stdout.write(JSON.stringify(response) + '\n');
+    // Ensure response is properly formatted and sent
+    try {
+        const responseStr = JSON.stringify(response);
+        process.stdout.write(responseStr + '\n');
+    } catch (formatError) {
+        const errorResponse = {
+            jsonrpc: '2.0',
+            id: request.id,
+            error: {
+                code: -32603,
+                message: 'Response formatting error: ' + formatError.message
+            }
+        };
+        process.stdout.write(JSON.stringify(errorResponse) + '\n');
+    }
 }
 
 function getMcpStatus() {

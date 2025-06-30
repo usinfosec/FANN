@@ -16,9 +16,15 @@ resolver = "2"
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-authors = ["rUv Contributors"]
+authors = ["rUv Contributors <noreply@ruvnet.com>"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/ruvnet/ruv-FANN"
+homepage = "https://github.com/ruvnet/ruv-FANN/tree/main/ruv-swarm"
+documentation = "https://docs.rs/ruv-swarm"
+description = "High-performance neural network swarm orchestration framework with WebAssembly acceleration and MCP integration"
+readme = "README.md"
+keywords = ["neural-network", "wasm", "swarm", "ai", "mcp"]
+categories = ["algorithms", "science", "wasm", "web-programming"]
 rust-version = "1.75"
 
 [workspace.dependencies]
