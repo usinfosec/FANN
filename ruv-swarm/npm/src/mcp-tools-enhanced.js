@@ -7,22 +7,32 @@ const { RuvSwarm } = require('./index-enhanced');
 const { NeuralNetworkManager } = require('./neural-network-manager');
 
 class EnhancedMCPTools {
-    constructor() {
-        this.ruvSwarm = null;
+    constructor(ruvSwarmInstance = null) {
+        this.ruvSwarm = ruvSwarmInstance;
         this.activeSwarms = new Map();
         this.toolMetrics = new Map();
     }
 
-    async initialize() {
-        if (!this.ruvSwarm) {
-            this.ruvSwarm = await RuvSwarm.initialize({
-                loadingStrategy: 'progressive',
-                enablePersistence: true,
-                enableNeuralNetworks: true,
-                enableForecasting: true,
-                useSIMD: true
-            });
+    async initialize(ruvSwarmInstance = null) {
+        // If instance provided, use it
+        if (ruvSwarmInstance) {
+            this.ruvSwarm = ruvSwarmInstance;
+            return this.ruvSwarm;
         }
+        
+        // If already initialized, return existing instance
+        if (this.ruvSwarm) {
+            return this.ruvSwarm;
+        }
+        
+        // Only initialize if no instance exists
+        this.ruvSwarm = await RuvSwarm.initialize({
+            loadingStrategy: 'progressive',
+            enablePersistence: true,
+            enableNeuralNetworks: true,
+            enableForecasting: true,
+            useSIMD: true
+        });
         return this.ruvSwarm;
     }
 
@@ -31,7 +41,10 @@ class EnhancedMCPTools {
         const startTime = performance.now();
         
         try {
-            await this.initialize();
+            // Ensure we have a RuvSwarm instance (but don't re-initialize)
+            if (!this.ruvSwarm) {
+                await this.initialize();
+            }
             
             const {
                 topology = 'mesh',

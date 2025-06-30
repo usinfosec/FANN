@@ -32,6 +32,11 @@ class RuvSwarm {
     }
 
     static async initialize(options = {}) {
+        // Return existing instance if already initialized
+        if (global._ruvSwarmInstance) {
+            return global._ruvSwarmInstance;
+        }
+        
         const instance = new RuvSwarm();
         
         const {
@@ -44,7 +49,20 @@ class RuvSwarm {
             debug = false
         } = options;
 
-        console.log('🧠 Initializing ruv-swarm with WASM capabilities...');
+        // Use global to track initialization across module instances
+        if (!global._ruvSwarmInitialized) {
+            global._ruvSwarmInitialized = 0;
+        }
+        global._ruvSwarmInitialized++;
+        
+        if (global._ruvSwarmInitialized > 1) {
+            // Skip duplicate initialization messages
+            if (debug) {
+                console.log(`[DEBUG] RuvSwarm.initialize called ${global._ruvSwarmInitialized} times`);
+            }
+        } else {
+            console.log('🧠 Initializing ruv-swarm with WASM capabilities...');
+        }
 
         try {
             // Initialize WASM modules
@@ -87,8 +105,13 @@ class RuvSwarm {
                 }
             }
 
-            console.log('✅ ruv-swarm initialized successfully');
-            console.log('📊 Features:', instance.features);
+            if (global._ruvSwarmInitialized <= 1) {
+                console.log('✅ ruv-swarm initialized successfully');
+                console.log('📊 Features:', instance.features);
+            }
+            
+            // Store instance globally to prevent duplicate initialization
+            global._ruvSwarmInstance = instance;
             
             return instance;
         } catch (error) {

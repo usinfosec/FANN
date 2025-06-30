@@ -16,8 +16,7 @@ let globalMCPTools = null;
 
 async function initializeSystem() {
     if (!globalRuvSwarm) {
-        console.log('🧠 Initializing ruv-swarm with WASM capabilities...');
-        
+        // RuvSwarm.initialize already prints initialization messages
         globalRuvSwarm = await RuvSwarm.initialize({
             loadingStrategy: 'progressive',
             enablePersistence: true,
@@ -26,9 +25,6 @@ async function initializeSystem() {
             useSIMD: RuvSwarm.detectSIMDSupport(),
             debug: process.argv.includes('--debug')
         });
-
-        console.log('✅ ruv-swarm initialized successfully');
-        console.log('📊 Available features:', globalRuvSwarm.features);
     }
     
     if (!globalMCPTools) {
