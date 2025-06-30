@@ -2,6 +2,13 @@
 name = "claude-parser"
 version = "0.2.0"
 edition = "2021"
+description = "Claude Code CLI stream-JSON parser for ruv-swarm multi-agent orchestration"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ruvnet/ruv-FANN"
+homepage = "https://github.com/ruvnet/ruv-FANN/tree/main/ruv-swarm"
+documentation = "https://docs.rs/claude-parser"
+keywords = ["claude", "parser", "json", "stream", "ai"]
+categories = ["parsing", "development-tools", "api-bindings"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }

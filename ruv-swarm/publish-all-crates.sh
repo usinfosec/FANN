@@ -90,11 +90,25 @@ publish_crate() {
     
     cd "$crate_path"
     
+    # Temporarily modify Cargo.toml to use only path dependencies for publishing
+    if [ -f "Cargo.toml.backup" ]; then
+        echo -e "${YELLOW}⚠️  Backup already exists, restoring first${NC}"
+        mv Cargo.toml.backup Cargo.toml
+    fi
+    
+    # Create backup and modify for publishing
+    cp Cargo.toml Cargo.toml.backup
+    
+    # Remove version requirements from path dependencies for publishing
+    sed -i 's/ruv-swarm-\([a-z-]*\) = { path = "\([^"]*\)", version = "[^"]*"/ruv-swarm-\1 = { path = "\2"/g' Cargo.toml
+    
     # Run tests unless skipped
     if [ "$SKIP_TESTS" != "true" ]; then
         echo -e "${BLUE}🧪 Running tests for $crate_name...${NC}"
         if ! cargo test --release; then
             echo -e "${RED}❌ Tests failed for $crate_name${NC}"
+            # Restore original Cargo.toml
+            mv Cargo.toml.backup Cargo.toml
             return 1
         fi
         echo -e "${GREEN}✅ Tests passed for $crate_name${NC}"
@@ -104,6 +118,9 @@ publish_crate() {
     if [ "$DRY_RUN" = "true" ]; then
         echo -e "${YELLOW}🔍 DRY RUN: Would publish $crate_name v$version${NC}"
         cargo publish --dry-run --allow-dirty
+        
+        # Restore original Cargo.toml
+        mv Cargo.toml.backup Cargo.toml
         return 0
     fi
     
@@ -112,6 +129,9 @@ publish_crate() {
     if cargo publish --token "$CARGO_REGISTRY_TOKEN" --allow-dirty; then
         echo -e "${GREEN}✅ Successfully published $crate_name v$version${NC}"
         
+        # Restore original Cargo.toml
+        mv Cargo.toml.backup Cargo.toml
+        
         # Wait a bit for crates.io to process
         echo -e "${YELLOW}⏳ Waiting 30 seconds for crates.io to process...${NC}"
         sleep 30
@@ -119,6 +139,8 @@ publish_crate() {
         return 0
     else
         echo -e "${RED}❌ Failed to publish $crate_name${NC}"
+        # Restore original Cargo.toml
+        mv Cargo.toml.backup Cargo.toml
         return 1
     fi
 }

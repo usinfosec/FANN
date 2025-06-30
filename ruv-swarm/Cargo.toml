@@ -1,18 +1,18 @@
 [workspace]
 members = [
     "crates/ruv-swarm-core",
+    "crates/claude-parser",
+    "crates/ruv-swarm-transport",   # Fixed dependency conflicts
+    "crates/ruv-swarm-persistence", # Fixed dependency conflicts
     "crates/ruv-swarm-agents",
     "crates/ruv-swarm-ml",
-    "crates/ruv-swarm-cli",
     "crates/ruv-swarm-mcp",
-    "crates/ruv-swarm-persistence", # Fixed dependency conflicts
-    "crates/ruv-swarm-transport",   # Fixed dependency conflicts
     "crates/ruv-swarm-wasm",
-    "crates/claude-parser",
     "crates/swe-bench-adapter",      # SWE-Bench adapter for evaluation
-    # "crates/ruv-swarm-wasm-unified", # Temporarily disabled due to path resolution issues
+    "crates/ruv-swarm-cli",
     "ml-training",
     "benchmarking",                   # Comprehensive benchmarking framework
+    # "crates/ruv-swarm-wasm-unified", # Temporarily disabled due to path resolution issues
 ]
 
 resolver = "2"

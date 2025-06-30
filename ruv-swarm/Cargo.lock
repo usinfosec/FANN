@@ -588,7 +588,7 @@ checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
 
 [[package]]
 name = "claude-parser"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -679,6 +679,19 @@ dependencies = [
  "once_cell",
  "unicode-width",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "console"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e09ced7ebbccb63b4c65413d821f2e00ce54c5ca4514ddc6b3c892fdbcbc69d"
+dependencies = [
+ "encode_unicode",
+ "libc",
+ "once_cell",
+ "unicode-width",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -957,7 +970,7 @@ version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "658bce805d770f407bc62102fca7c2c64ceef2fbcb2b8bd19d2765ce093980de"
 dependencies = [
- "console",
+ "console 0.15.11",
  "shell-words",
  "tempfile",
  "thiserror 1.0.69",
@@ -1931,14 +1944,14 @@ dependencies = [
 
 [[package]]
 name = "indicatif"
-version = "0.17.11"
+version = "0.17.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "183b3088984b400f4cfac3620d5e076c84da5364016b4f49473de574b2586235"
+checksum = "4adb2ee6ad319a912210a36e56e3623555817bcc877a7e6e8802d1d69c4d8056"
 dependencies = [
- "console",
- "number_prefix",
+ "console 0.16.0",
  "portable-atomic",
  "unicode-width",
+ "unit-prefix",
  "web-time",
 ]
 
@@ -1948,7 +1961,7 @@ version = "1.43.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "154934ea70c58054b556dd430b99a98c2a7ff5309ac9891597e339b5c28f4371"
 dependencies = [
- "console",
+ "console 0.15.11",
  "once_cell",
  "similar",
 ]
@@ -2686,12 +2699,6 @@ dependencies = [
  "hermit-abi 0.5.2",
  "libc",
 ]
-
-[[package]]
-name = "number_prefix"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
 
 [[package]]
 name = "object"
@@ -3722,23 +3729,23 @@ dependencies = [
 
 [[package]]
 name = "ruv-swarm-agents"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
- "ruv-swarm-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ruv-swarm-core 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "ruv-swarm-agents"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fdf8c9eba680101dffa48632c39248b5443fe68dbc3cc74a140703593f00e71"
+checksum = "5eb4abfbbeca7d7816f91761ef8c881ee103ae13eab5211b35ed933444e9a4ea"
 dependencies = [
- "ruv-swarm-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ruv-swarm-core 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "ruv-swarm-benchmarking"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3753,7 +3760,7 @@ dependencies = [
  "ndarray",
  "pin-project",
  "pretty_assertions",
- "ruv-swarm-core 0.1.0",
+ "ruv-swarm-core 0.2.0",
  "ruv-swarm-persistence",
  "serde",
  "serde_json",
@@ -3772,7 +3779,7 @@ dependencies = [
 
 [[package]]
 name = "ruv-swarm-cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -3789,8 +3796,8 @@ dependencies = [
  "mockall 0.13.1",
  "predicates",
  "reqwest",
- "ruv-swarm-agents 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ruv-swarm-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ruv-swarm-agents 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ruv-swarm-core 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -3805,7 +3812,7 @@ dependencies = [
 
 [[package]]
 name = "ruv-swarm-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3829,9 +3836,9 @@ dependencies = [
 
 [[package]]
 name = "ruv-swarm-core"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "184e8a9823b4c3b187627feda3678065d94ea214b8312dd1ab0ee7a3b8f88a7a"
+checksum = "2fc6895c5481b5bd9553d8c92eeaa2c3f4ea19de8f373423ff857c9d50a4f615"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3850,7 +3857,7 @@ dependencies = [
 
 [[package]]
 name = "ruv-swarm-mcp"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3862,7 +3869,7 @@ dependencies = [
  "futures",
  "jsonschema",
  "proptest",
- "ruv-swarm-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ruv-swarm-core 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "schemars",
  "serde",
  "serde_json",
@@ -3880,10 +3887,10 @@ dependencies = [
 
 [[package]]
 name = "ruv-swarm-ml"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "js-sys",
- "ruv-swarm-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ruv-swarm-core 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
@@ -3893,12 +3900,12 @@ dependencies = [
 
 [[package]]
 name = "ruv-swarm-ml"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28f376c923e445b3ac8e0a228eff7edf2a7077752af514388899439d5e177e0b"
+checksum = "a6b49e609c67aaa3bdf111b057fc55e5c2fb2a6f48a716ce3c7bf329ef47826b"
 dependencies = [
  "js-sys",
- "ruv-swarm-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ruv-swarm-core 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
@@ -3908,7 +3915,7 @@ dependencies = [
 
 [[package]]
 name = "ruv-swarm-ml-training"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "criterion",
@@ -3927,7 +3934,7 @@ dependencies = [
 
 [[package]]
 name = "ruv-swarm-persistence"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3956,7 +3963,7 @@ dependencies = [
 
 [[package]]
 name = "ruv-swarm-transport"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3992,7 +3999,7 @@ dependencies = [
 
 [[package]]
 name = "ruv-swarm-wasm"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bincode",
  "console_error_panic_hook",
@@ -4000,8 +4007,8 @@ dependencies = [
  "js-sys",
  "num-traits",
  "ruv-fann",
- "ruv-swarm-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ruv-swarm-ml 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ruv-swarm-core 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ruv-swarm-ml 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
@@ -4688,7 +4695,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "swe-bench-adapter"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -4702,8 +4709,8 @@ dependencies = [
  "pretty_assertions",
  "regex",
  "reqwest",
- "ruv-swarm-agents 0.1.0",
- "ruv-swarm-core 0.1.0",
+ "ruv-swarm-agents 0.2.0",
+ "ruv-swarm-core 0.2.0",
  "ruv-swarm-persistence",
  "serde",
  "serde_json",
@@ -5360,6 +5367,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39ec24b3121d976906ece63c9daad25b85969647682eee313cb5779fdd69e14e"
 
 [[package]]
+name = "unit-prefix"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "323402cff2dd658f39ca17c789b502021b3f18707c91cdf22e3838e1b4023817"
+
+[[package]]
 name = "unsafe-libyaml"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5827,6 +5840,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "windows-sys"
+version = "0.60.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2f500e4d28234f72040990ec9d39e3a6b950f9f22d3dba18416c35882612bcb"
+dependencies = [
+ "windows-targets 0.53.2",
+]
+
+[[package]]
 name = "windows-targets"
 version = "0.48.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5850,11 +5872,27 @@ dependencies = [
  "windows_aarch64_gnullvm 0.52.6",
  "windows_aarch64_msvc 0.52.6",
  "windows_i686_gnu 0.52.6",
- "windows_i686_gnullvm",
+ "windows_i686_gnullvm 0.52.6",
  "windows_i686_msvc 0.52.6",
  "windows_x86_64_gnu 0.52.6",
  "windows_x86_64_gnullvm 0.52.6",
  "windows_x86_64_msvc 0.52.6",
+]
+
+[[package]]
+name = "windows-targets"
+version = "0.53.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c66f69fcc9ce11da9966ddb31a40968cad001c5bedeb5c2b82ede4253ab48aef"
+dependencies = [
+ "windows_aarch64_gnullvm 0.53.0",
+ "windows_aarch64_msvc 0.53.0",
+ "windows_i686_gnu 0.53.0",
+ "windows_i686_gnullvm 0.53.0",
+ "windows_i686_msvc 0.53.0",
+ "windows_x86_64_gnu 0.53.0",
+ "windows_x86_64_gnullvm 0.53.0",
+ "windows_x86_64_msvc 0.53.0",
 ]
 
 [[package]]
@@ -5868,6 +5906,12 @@ name = "windows_aarch64_gnullvm"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32a4622180e7a0ec044bb555404c800bc9fd9ec262ec147edd5989ccd0c02cd3"
+
+[[package]]
+name = "windows_aarch64_gnullvm"
+version = "0.53.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "86b8d5f90ddd19cb4a147a5fa63ca848db3df085e25fee3cc10b39b6eebae764"
 
 [[package]]
 name = "windows_aarch64_msvc"
@@ -5888,6 +5932,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09ec2a7bb152e2252b53fa7803150007879548bc709c039df7627cabbd05d469"
 
 [[package]]
+name = "windows_aarch64_msvc"
+version = "0.53.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7651a1f62a11b8cbd5e0d42526e55f2c99886c77e007179efff86c2b137e66c"
+
+[[package]]
 name = "windows_i686_gnu"
 version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5906,10 +5956,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e9b5ad5ab802e97eb8e295ac6720e509ee4c243f69d781394014ebfe8bbfa0b"
 
 [[package]]
+name = "windows_i686_gnu"
+version = "0.53.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1dc67659d35f387f5f6c479dc4e28f1d4bb90ddd1a5d3da2e5d97b42d6272c3"
+
+[[package]]
 name = "windows_i686_gnullvm"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0eee52d38c090b3caa76c563b86c3a4bd71ef1a819287c19d586d7334ae8ed66"
+
+[[package]]
+name = "windows_i686_gnullvm"
+version = "0.53.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ce6ccbdedbf6d6354471319e781c0dfef054c81fbc7cf83f338a4296c0cae11"
 
 [[package]]
 name = "windows_i686_msvc"
@@ -5930,6 +5992,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "240948bc05c5e7c6dabba28bf89d89ffce3e303022809e73deaefe4f6ec56c66"
 
 [[package]]
+name = "windows_i686_msvc"
+version = "0.53.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "581fee95406bb13382d2f65cd4a908ca7b1e4c2f1917f143ba16efe98a589b5d"
+
+[[package]]
 name = "windows_x86_64_gnu"
 version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5948,6 +6016,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "147a5c80aabfbf0c7d901cb5895d1de30ef2907eb21fbbab29ca94c5b08b1a78"
 
 [[package]]
+name = "windows_x86_64_gnu"
+version = "0.53.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e55b5ac9ea33f2fc1716d1742db15574fd6fc8dadc51caab1c16a3d3b4190ba"
+
+[[package]]
 name = "windows_x86_64_gnullvm"
 version = "0.48.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5958,6 +6032,12 @@ name = "windows_x86_64_gnullvm"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24d5b23dc417412679681396f2b49f3de8c1473deb516bd34410872eff51ed0d"
+
+[[package]]
+name = "windows_x86_64_gnullvm"
+version = "0.53.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a6e035dd0599267ce1ee132e51c27dd29437f63325753051e71dd9e42406c57"
 
 [[package]]
 name = "windows_x86_64_msvc"
@@ -5976,6 +6056,12 @@ name = "windows_x86_64_msvc"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
+
+[[package]]
+name = "windows_x86_64_msvc"
+version = "0.53.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "271414315aff87387382ec3d271b52d7ae78726f5d44ac98b4f4030c91880486"
 
 [[package]]
 name = "winnow"
