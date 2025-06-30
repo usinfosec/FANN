@@ -2,9 +2,9 @@
 node_modules/
 
 # Build output
-dist/
-wasm/
-wasm-simd/
+# dist/
+# wasm/
+# wasm-simd/
 
 # Logs
 npm-debug.log*
