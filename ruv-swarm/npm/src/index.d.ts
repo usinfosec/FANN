@@ -1,6 +1,10 @@
 /**
  * @ruv/swarm - High-performance neural network swarm orchestration in WebAssembly
+ * Enhanced version with progressive WASM loading and full feature set
  */
+
+// Re-export all types from the enhanced definitions
+export * from './index-enhanced';
 
 export interface InitOptions {
   /** Path to WASM files */

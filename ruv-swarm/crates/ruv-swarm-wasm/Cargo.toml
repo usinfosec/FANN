@@ -20,26 +20,48 @@ serde-wasm-bindgen = "0.6"
 console_error_panic_hook = { version = "0.1", optional = true }
 wee_alloc = { version = "0.4", optional = true }
 getrandom = { version = "0.2", features = ["js"] }
+bincode = "1.3"
+num-traits = "0.2"
 
-ruv-swarm-core = { path = "../ruv-swarm-core", default-features = false }
+# SIMD optimization dependencies
+wide = { version = "0.7", features = ["serde"] }
+
+# Core dependencies with full functionality
+ruv-fann = { path = "../../../", default-features = false, features = ["no_std", "serde", "logging"] }
+ruv-swarm-core = { path = "../ruv-swarm-core", default-features = false, features = ["wasm"], optional = true }
+ruv-swarm-ml = { path = "../ruv-swarm-ml", features = ["wasm"], optional = true }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 
 [features]
-default = ["console_error_panic_hook"]
+default = ["console_error_panic_hook", "simd"]
 wee_alloc = ["dep:wee_alloc"]
+simd = []  # SIMD support using 'wide' crate
+simd128 = ["simd"]
+no-simd = []
+full = ["ruv-swarm-core", "ruv-swarm-ml"]
+core = ["ruv-swarm-core"]
+ml = ["ruv-swarm-ml"]
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false
+[package.metadata.wasm-pack.profile.release.wasm-bindgen]
+debug-js-glue = false
+demangle-name-section = true
+dwarf-debug-info = false
 
 [package.metadata.wasm-pack.profile.dev]
 wasm-opt = false
+[package.metadata.wasm-pack.profile.dev.wasm-bindgen]
+debug-js-glue = true
+demangle-name-section = true
+dwarf-debug-info = true
 
 [profile.release]
-# Optimize for size (will be overridden by workspace profile)
-opt-level = "z"
-# Full LTO for maximum optimization
+# Optimize for performance while keeping size reasonable
+opt-level = 3
+# Full LTO for maximum optimization including SIMD
 lto = "fat"
 # Strip debug symbols  
 strip = true
@@ -49,3 +71,7 @@ codegen-units = 1
 panic = "abort"
 # Disable overflow checks in release mode
 overflow-checks = false
+
+# Enable SIMD target features
+[build]
+rustflags = ["-C", "target-feature=+simd128"]

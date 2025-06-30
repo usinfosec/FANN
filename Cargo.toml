@@ -57,6 +57,9 @@ io = ["binary", "compression", "serde"]
 # no_std support
 no_std = []
 
+# WASM support
+wasm = ["no_std", "serde", "logging"]
+
 [[example]]
 name = "basic_usage"
 path = "examples/basic_usage.rs"

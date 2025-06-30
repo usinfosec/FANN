@@ -1088,11 +1088,73 @@ class EnhancedMCPTools {
     }
 
     async runNeuralBenchmarks(iterations) {
-        // TODO: Implement neural network specific benchmarks
+        const benchmarks = {
+            network_creation: [],
+            forward_pass: [],
+            training_epoch: [],
+            fine_tuning: [],
+            collaborative_sync: []
+        };
+
+        // Initialize neural network manager
+        const nnManager = new NeuralNetworkManager(this.ruvSwarm.wasmLoader);
+
+        for (let i = 0; i < iterations; i++) {
+            // Benchmark network creation
+            let start = performance.now();
+            const agentId = `bench_agent_${i}`;
+            await nnManager.createAgentNeuralNetwork(agentId, {
+                layers: [64, 128, 64, 32]
+            });
+            benchmarks.network_creation.push(performance.now() - start);
+
+            // Benchmark forward pass
+            const network = nnManager.neuralNetworks.get(agentId);
+            const input = new Array(64).fill(0.5);
+            start = performance.now();
+            for (let j = 0; j < 100; j++) {
+                network.forward(input);
+            }
+            benchmarks.forward_pass.push((performance.now() - start) / 100);
+
+            // Benchmark training epoch
+            const trainingData = {
+                samples: Array(32).fill(null).map(() => ({
+                    input: new Array(64).fill(Math.random()),
+                    target: new Array(32).fill(Math.random())
+                }))
+            };
+            start = performance.now();
+            await nnManager.fineTuneNetwork(agentId, trainingData, { epochs: 1 });
+            benchmarks.training_epoch.push(performance.now() - start);
+
+            // Benchmark fine-tuning
+            start = performance.now();
+            await nnManager.fineTuneNetwork(agentId, trainingData, {
+                epochs: 5,
+                learningRate: 0.001,
+                freezeLayers: [0, 1]
+            });
+            benchmarks.fine_tuning.push((performance.now() - start) / 5);
+        }
+
+        // Calculate statistics
+        const calculateStats = (data) => ({
+            avg_ms: data.reduce((a, b) => a + b, 0) / data.length,
+            min_ms: Math.min(...data),
+            max_ms: Math.max(...data),
+            std_dev: Math.sqrt(data.reduce((sq, n) => {
+                const diff = n - (data.reduce((a, b) => a + b, 0) / data.length);
+                return sq + diff * diff;
+            }, 0) / data.length)
+        });
+
         return {
-            network_creation: { avg_ms: 15.0, min_ms: 12.0, max_ms: 20.0 },
-            forward_pass: { avg_ms: 2.3, min_ms: 1.8, max_ms: 3.1 },
-            training_epoch: { avg_ms: 45.0, min_ms: 40.0, max_ms: 52.0 }
+            network_creation: calculateStats(benchmarks.network_creation),
+            forward_pass: calculateStats(benchmarks.forward_pass),
+            training_epoch: calculateStats(benchmarks.training_epoch),
+            fine_tuning: calculateStats(benchmarks.fine_tuning),
+            neural_memory_overhead_mb: nnManager.neuralNetworks.size * 5.0
         };
     }
 
@@ -1512,3 +1574,583 @@ module.exports = { main, initializeSystem };
 - Performance-optimized user experience
 
 This integration layer ensures that all the powerful Rust capabilities are accessible through a simple, user-friendly NPX interface while maintaining the advanced features needed for professional AI development.
+
+## 🎯 Claude Code Integration Commands
+
+### NPX Package Development and Testing
+```bash
+# Initialize NPX package development with Claude Code
+./claude-flow sparc run coder "Develop enhanced NPX package with progressive WASM loading"
+
+# Launch NPX integration development swarm
+./claude-flow swarm "Create comprehensive NPX package with WASM integration and MCP enhancement" \
+  --strategy development --mode mesh --max-agents 4 --parallel --monitor
+
+# Store NPX architecture in memory
+./claude-flow memory store "npx_architecture" "Progressive WASM loading, enhanced MCP tools, zero-config deployment"
+./claude-flow memory store "integration_targets" "Backward compatibility, 10x performance, <100MB memory usage"
+```
+
+### NPX Package Testing Commands
+```bash
+# Comprehensive NPX package testing workflow
+./claude-flow sparc tdd "Complete NPX package testing with WASM module validation"
+
+# Test NPX commands in isolated environment
+./claude-flow task create testing "Test 'npx ruv-swarm init' command with all topology options"
+./claude-flow task create testing "Test 'npx ruv-swarm neural status' with WASM module loading"
+./claude-flow task create testing "Test 'npx ruv-swarm benchmark' with performance validation"
+
+# MCP tools integration testing
+./claude-flow sparc run tester "Test enhanced MCP tools with full WASM capabilities"
+```
+
+### Package Validation and Performance Testing
+```bash
+# Performance benchmarking for NPX package
+./claude-flow sparc run analyzer "Benchmark NPX package performance vs previous version"
+
+# Memory usage validation
+./claude-flow monitor --duration 300 --output json | \
+  jq '.metrics.memory_usage | "NPX Memory: " + (.total_mb | tostring) + "MB (Target: <100MB)"'
+
+# Load time optimization
+./claude-flow sparc run optimizer "Optimize NPX package load times with progressive WASM loading"
+```
+
+### MCP Tools Enhancement Commands
+```bash
+# Develop enhanced MCP tools
+./claude-flow task create development "Enhance swarm_init MCP tool with full WASM capabilities"
+./claude-flow task create development "Add neural network support to agent_spawn MCP tool"
+./claude-flow task create development "Implement comprehensive benchmark_run with WASM metrics"
+
+# Test MCP tools integration
+./claude-flow sparc run tester "Test all MCP tools with Claude Code integration"
+```
+
+## 🔧 Batch Tool Coordination
+
+### TodoWrite for NPX Integration Coordination
+```javascript
+// NPX package development coordination
+TodoWrite([
+  {
+    id: "progressive_wasm_loader",
+    content: "Implement progressive WASM module loading system with on-demand and eager strategies",
+    status: "pending",
+    priority: "high",
+    dependencies: [],
+    estimatedTime: "4 hours",
+    assignedAgent: "integration_specialist",
+    deliverables: ["wasm_loader_class", "loading_strategies", "module_manifest"]
+  },
+  {
+    id: "enhanced_ruv_swarm_class",
+    content: "Create enhanced RuvSwarm main class with full WASM capabilities and feature detection",
+    status: "pending",
+    priority: "high",
+    dependencies: ["progressive_wasm_loader"],
+    estimatedTime: "6 hours",
+    assignedAgent: "integration_specialist",
+    deliverables: ["ruv_swarm_class", "feature_detection", "wasm_bridges"]
+  },
+  {
+    id: "enhanced_mcp_tools",
+    content: "Implement enhanced MCP tools with comprehensive WASM capabilities",
+    status: "pending",
+    priority: "high",
+    dependencies: ["enhanced_ruv_swarm_class"],
+    estimatedTime: "5 hours",
+    assignedAgent: "integration_specialist",
+    deliverables: ["enhanced_mcp_class", "wasm_benchmarks", "feature_detection"]
+  },
+  {
+    id: "enhanced_cli_interface",
+    content: "Update NPX CLI with neural network and forecasting commands",
+    status: "pending",
+    priority: "medium",
+    dependencies: ["enhanced_mcp_tools"],
+    estimatedTime: "3 hours",
+    assignedAgent: "integration_specialist",
+    deliverables: ["neural_commands", "forecast_commands", "help_system"]
+  },
+  {
+    id: "typescript_definitions",
+    content: "Generate comprehensive TypeScript definitions for all NPX interfaces",
+    status: "pending",
+    priority: "medium",
+    dependencies: ["enhanced_cli_interface"],
+    estimatedTime: "2 hours",
+    assignedAgent: "integration_specialist",
+    deliverables: ["type_definitions", "api_documentation", "usage_examples"]
+  },
+  {
+    id: "performance_optimization",
+    content: "Optimize NPX package for memory usage and load time performance",
+    status: "pending",
+    priority: "medium",
+    dependencies: ["enhanced_cli_interface"],
+    estimatedTime: "3 hours",
+    assignedAgent: "integration_specialist",
+    deliverables: ["memory_optimization", "load_time_reduction", "bundle_analysis"]
+  },
+  {
+    id: "comprehensive_testing",
+    content: "Create comprehensive test suite for NPX package with WASM integration",
+    status: "pending",
+    priority: "high",
+    dependencies: ["performance_optimization", "typescript_definitions"],
+    estimatedTime: "4 hours",
+    assignedAgent: "integration_specialist",
+    deliverables: ["unit_tests", "integration_tests", "performance_tests"]
+  }
+]);
+```
+
+### Task Tool for NPX Development
+```javascript
+// Parallel NPX development tasks
+Task("WASM Loader Development", "Implement progressive WASM loading using Memory('npx_architecture') specifications");
+Task("MCP Tools Enhancement", "Enhance MCP tools with WASM capabilities from Memory('integration_targets')");
+Task("CLI Interface Update", "Update NPX CLI with neural and forecasting commands using enhanced WASM modules");
+Task("Performance Testing", "Test NPX package performance against Memory('integration_targets') requirements");
+Task("Documentation Generation", "Generate comprehensive documentation for enhanced NPX package");
+```
+
+## 📊 Stream JSON Processing
+
+### NPX Package Testing and Validation
+```bash
+# Test NPX package installation and functionality
+./claude-flow sparc run tester "Test NPX package functionality" --output json | \
+  jq '.test_results | {
+    installation_success: .installation.success,
+    command_tests: .commands | map({command: .name, success: .success, time_ms: .execution_time}),
+    wasm_loading: .wasm_modules | map({module: .name, loaded: .loaded, size_mb: .size_mb}),
+    performance_metrics: .performance | {memory_mb: .memory_usage, load_time_ms: .load_time}
+  }'
+
+# Monitor NPX package performance during testing
+./claude-flow monitor --duration 600 --output json | \
+  jq -r 'select(.event_type == "npx_test") | 
+    "Test: " + .test_name + 
+    " | Status: " + .status + 
+    " | Memory: " + (.memory_usage_mb | tostring) + "MB" +
+    " | Time: " + (.execution_time_ms | tostring) + "ms"'
+
+# Analyze MCP tools performance
+./claude-flow memory get "mcp_performance" --output json | \
+  jq '.mcp_tools | map({
+    tool_name: .name,
+    avg_execution_time_ms: .metrics.avg_execution_time,
+    success_rate: (.successful_calls / .total_calls * 100),
+    wasm_enhancement: .wasm_features_enabled
+  })'
+```
+
+### Package Deployment Validation
+```javascript
+// NPX package validation and deployment
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execAsync = promisify(exec);
+
+async function validateNpxPackage() {
+  const { stdout } = await execAsync('./claude-flow sparc run tester "Validate NPX package deployment" --output json');
+  const validation = JSON.parse(stdout);
+  
+  return {
+    package_integrity: validation.integrity.valid,
+    wasm_modules: {
+      total_count: validation.wasm_modules.total,
+      loaded_successfully: validation.wasm_modules.successful_loads,
+      total_size_mb: (validation.wasm_modules.total_size / (1024 * 1024)).toFixed(2),
+      load_time_ms: validation.wasm_modules.average_load_time
+    },
+    command_functionality: validation.commands.map(cmd => ({
+      command: cmd.name,
+      working: cmd.success,
+      execution_time_ms: cmd.time,
+      memory_usage_mb: (cmd.memory_bytes / (1024 * 1024)).toFixed(2)
+    })),
+    mcp_integration: {
+      tools_available: validation.mcp.available_tools.length,
+      enhanced_features: validation.mcp.wasm_enhanced_count,
+      performance_improvement: validation.mcp.performance_improvement_factor
+    },
+    performance_metrics: {
+      overall_score: validation.performance.score,
+      memory_efficiency: validation.performance.memory_efficiency,
+      load_time_score: validation.performance.load_time_score
+    }
+  };
+}
+
+async function analyzeMcpToolsPerformance() {
+  const { stdout } = await execAsync('./claude-flow memory get "mcp_performance_data" --output json');
+  const performance = JSON.parse(stdout);
+  
+  return {
+    enhanced_tools: performance.tools
+      .filter(tool => tool.wasm_enhanced)
+      .map(tool => ({
+        name: tool.name,
+        performance_improvement: tool.wasm_speedup_factor,
+        memory_efficiency: tool.memory_optimization_ratio,
+        feature_completeness: tool.feature_coverage_percentage
+      })),
+    benchmark_results: {
+      wasm_vs_js_speedup: performance.benchmarks.wasm_speedup_factor,
+      memory_usage_reduction: performance.benchmarks.memory_reduction_percentage,
+      bundle_size_impact: performance.benchmarks.bundle_size_increase_mb
+    },
+    user_experience: {
+      zero_config_maintained: performance.ux.zero_config_deployment,
+      backward_compatibility: performance.ux.backward_compatibility_score,
+      progressive_enhancement: performance.ux.progressive_loading_success
+    }
+  };
+}
+```
+
+## 🚀 Development Workflow
+
+### Step-by-Step Claude Code Usage for NPX Integration
+
+#### 1. NPX Package Architecture Design
+```bash
+# Design NPX package architecture
+./claude-flow sparc run architect "Design NPX package architecture with progressive WASM loading"
+
+# Store architectural decisions
+./claude-flow memory store "npx_design" "Progressive loading, zero-config deployment, backward compatibility"
+./claude-flow memory store "wasm_strategy" "On-demand loading with fallback, SIMD detection, memory optimization"
+
+# Validate architecture against requirements
+./claude-flow sparc run reviewer "Review NPX architecture against Memory('integration_targets') requirements"
+```
+
+#### 2. Progressive WASM Loading Implementation
+```bash
+# Implement WASM loading system
+./claude-flow sparc run coder "Implement WasmModuleLoader with progressive loading strategies"
+
+# Test loading strategies
+./claude-flow task create testing "Test eager WASM loading strategy with all modules"
+./claude-flow task create testing "Test on-demand WASM loading with lazy proxy objects"
+./claude-flow task create testing "Test progressive WASM loading with core modules first"
+
+# Optimize loading performance
+./claude-flow sparc run optimizer "Optimize WASM module loading for minimum time-to-first-use"
+```
+
+#### 3. Enhanced RuvSwarm Class Development
+```bash
+# Develop main RuvSwarm class
+./claude-flow sparc run coder "Implement enhanced RuvSwarm class with full WASM integration"
+
+# Add feature detection
+./claude-flow task create development "Implement runtime feature detection for WASM capabilities"
+./claude-flow task create development "Add SIMD support detection and optimization"
+./claude-flow task create development "Create memory usage monitoring and optimization"
+
+# Test RuvSwarm class functionality
+./claude-flow sparc tdd "Test RuvSwarm class with all WASM modules and feature combinations"
+```
+
+#### 4. MCP Tools Enhancement
+```bash
+# Enhance MCP tools with WASM capabilities
+./claude-flow sparc run coder "Enhance all MCP tools with comprehensive WASM capabilities"
+
+# Implement enhanced tool methods
+./claude-flow task create development "Enhance swarm_init with cognitive diversity and neural agents"
+./claude-flow task create development "Enhance agent_spawn with neural network configuration"
+./claude-flow task create development "Enhance benchmark_run with WASM performance metrics"
+
+# Test MCP tools integration
+./claude-flow sparc run tester "Test enhanced MCP tools with Claude Code integration"
+```
+
+#### 5. CLI Interface Enhancement
+```bash
+# Update NPX CLI with new commands
+./claude-flow sparc run coder "Update NPX CLI with neural network and forecasting commands"
+
+# Implement neural commands
+./claude-flow task create development "Add 'neural status', 'neural create', 'neural train' commands"
+./claude-flow task create development "Add 'forecast models', 'forecast create', 'forecast predict' commands"
+
+# Create comprehensive help system
+./claude-flow task create development "Create contextual help system with usage examples"
+```
+
+#### 6. Performance Optimization and Testing
+```bash
+# Optimize NPX package performance
+./claude-flow sparc run optimizer "Optimize NPX package for memory usage and load time"
+
+# Comprehensive testing suite
+./claude-flow sparc tdd "Create comprehensive test suite for NPX package"
+
+# Performance validation
+./claude-flow task create testing "Validate NPX package meets all performance targets"
+./claude-flow task create testing "Test backward compatibility with existing users"
+./claude-flow task create testing "Test progressive enhancement across different environments"
+```
+
+### NPX Package Testing Workflow
+
+#### npx-testing.yaml
+```yaml
+# .claude/workflows/npx-testing.yaml
+name: "NPX Package Testing"
+description: "Comprehensive NPX package testing and validation"
+
+steps:
+  - name: "Package Installation Test"
+    agent: "tester"
+    task: "Test NPX package installation in clean environment"
+    validation: "Installation succeeds without errors"
+    
+  - name: "Command Functionality Tests"
+    type: "parallel"
+    tasks:
+      - task: "Test 'npx ruv-swarm init' with all topology options"
+      - task: "Test 'npx ruv-swarm spawn' with all agent types"
+      - task: "Test 'npx ruv-swarm neural' commands"
+      - task: "Test 'npx ruv-swarm forecast' commands"
+      - task: "Test 'npx ruv-swarm benchmark' with WASM metrics"
+    
+  - name: "WASM Module Loading Tests"
+    agent: "tester"
+    task: "Test WASM module loading with all strategies"
+    depends_on: ["Command Functionality Tests"]
+    memory_load: ["wasm_strategy"]
+    
+  - name: "Performance Validation"
+    agent: "tester"
+    task: "Validate NPX package meets performance targets"
+    depends_on: ["WASM Module Loading Tests"]
+    memory_load: ["integration_targets"]
+    
+  - name: "MCP Tools Integration Test"
+    agent: "tester"
+    task: "Test enhanced MCP tools with Claude Code"
+    depends_on: ["Performance Validation"]
+    
+  - name: "Backward Compatibility Test"
+    agent: "tester"
+    task: "Test backward compatibility with existing usage patterns"
+    depends_on: ["MCP Tools Integration Test"]
+```
+
+### Continuous NPX Package Validation
+```bash
+# Set up continuous NPX package monitoring
+./claude-flow config set npx.continuous_testing "enabled"
+./claude-flow config set npx.performance_monitoring "enabled"
+./claude-flow config set npx.compatibility_checking "enabled"
+
+# Monitor NPX package health
+./claude-flow monitor --duration 0 --continuous --filter "npx_package" | \
+  jq -r 'select(.event_type == "npx_test_complete") | 
+    "NPX Test: " + .test_suite + 
+    " | Status: " + .status + 
+    " | Performance: " + (.performance_score | tostring) + "/100" +
+    " | Memory: " + (.memory_usage_mb | tostring) + "MB"'
+
+# Automated optimization triggers
+./claude-flow sparc run optimizer "Optimize NPX package when performance score < 85 or memory > 100MB"
+```
+
+### NPX Package Deployment Pattern
+```bash
+# Pre-deployment validation
+./claude-flow sparc run tester "Comprehensive pre-deployment validation of NPX package"
+
+# Package publishing workflow
+./claude-flow workflow npx-publish.yaml
+
+# Post-deployment monitoring
+./claude-flow monitor --duration 3600 --filter "npx_deployment" | \
+  jq -r '.deployment_metrics | 
+    "Deployment: " + .status + 
+    " | Downloads: " + (.download_count | tostring) + 
+    " | Success Rate: " + (.success_rate | tostring) + "%"'
+```
+
+## 🔧 Enhanced MCP Tools for Neural Networks Per Agent
+
+### Available MCP Tools
+
+#### Neural Network Management
+- **neural_status** - Get neural network status and performance metrics
+  - Per-agent network information
+  - Training history and performance
+  - Real-time inference metrics
+  
+- **neural_create** - Create custom neural network for specific agent
+  - Pre-configured templates
+  - Custom architecture support
+  - Task-specific optimizations
+
+- **neural_train** - Fine-tune agent neural networks
+  - Task-specific training
+  - Transfer learning support
+  - Automatic hyperparameter tuning
+
+- **neural_patterns** - Query cognitive pattern information
+  - Pattern descriptions
+  - Agent-pattern mappings
+  - Performance correlations
+
+- **neural_collaborate** - Enable collaborative learning between agents
+  - Federated learning
+  - Peer-to-peer knowledge sharing
+  - Privacy-preserving aggregation
+
+- **neural_save** - Save neural network state
+  - Complete network serialization
+  - Training history preservation
+  - Performance metrics export
+
+- **neural_load** - Load neural network state
+  - State restoration
+  - Transfer learning initialization
+  - Cross-agent knowledge transfer
+
+### MCP Tool Usage Examples
+
+```javascript
+// Create neural network for specific agent
+await mcpTools.neural_create({
+    agentId: 'researcher_001',
+    template: 'deep_analyzer',
+    customConfig: {
+        layers: [128, 256, 512, 256, 128],
+        dropoutRate: 0.3
+    }
+});
+
+// Fine-tune network for specific task
+await mcpTools.neural_train({
+    agentId: 'researcher_001',
+    taskType: 'data_analysis',
+    iterations: 50,
+    options: {
+        learningRate: 0.001,
+        freezeLayers: [0, 1]
+    }
+});
+
+// Enable collaborative learning
+await mcpTools.neural_collaborate({
+    agentIds: ['researcher_001', 'analyst_002', 'optimizer_003'],
+    strategy: 'federated',
+    options: {
+        syncInterval: 30000,
+        privacyLevel: 'high'
+    }
+});
+
+// Monitor neural network performance
+const status = await mcpTools.neural_status({
+    agentId: 'researcher_001'
+});
+console.log(`Accuracy: ${status.performance.accuracy}%`);
+console.log(`Inference Speed: ${status.performance.inferenceSpeed} ops/ms`);
+```
+
+## 📊 Neural Network Integration Benefits
+
+### 1. Agent Specialization
+- Each agent can have a custom neural network architecture
+- Networks adapt to specific task requirements
+- Continuous learning from experience
+
+### 2. Performance Optimization
+- Task-specific network configurations
+- Automatic architecture selection
+- Real-time performance monitoring
+
+### 3. Collaborative Intelligence
+- Agents share learned knowledge
+- Federated learning preserves privacy
+- Collective intelligence emergence
+
+### 4. Developer Experience
+- Pre-configured templates for common tasks
+- Simple API for network creation and training
+- Comprehensive monitoring and debugging tools
+
+### 5. Production Ready
+- State persistence and recovery
+- Memory-efficient implementations
+- Scalable to hundreds of agents
+
+## 🚀 Getting Started with Neural Networks Per Agent
+
+### Quick Start
+```bash
+# Initialize swarm with neural capabilities
+npx ruv-swarm init mesh 10
+
+# Create specialized agents with custom networks
+npx ruv-swarm neural-create researcher_001 deep_analyzer
+npx ruv-swarm neural-create coder_001 nlp_processor
+npx ruv-swarm neural-create analyst_001 reinforcement_learner
+
+# Train agents on specific tasks
+npx ruv-swarm neural-train researcher_001 50 data_analysis
+npx ruv-swarm neural-train coder_001 50 code_generation
+
+# Enable collaborative learning
+npx ruv-swarm neural-collaborate researcher_001,coder_001,analyst_001
+
+# Monitor performance
+npx ruv-swarm neural status
+```
+
+### Advanced Configuration
+```javascript
+const { RuvSwarm } = require('ruv-swarm');
+const { NeuralNetworkManager, NeuralNetworkTemplates } = require('ruv-swarm/neural');
+
+// Initialize with neural capabilities
+const swarm = await RuvSwarm.initialize({
+    enableNeuralNetworks: true,
+    neuralConfig: {
+        defaultTemplate: 'deep_analyzer',
+        autoTraining: true,
+        collaborativeLearning: true
+    }
+});
+
+// Create agent with custom neural network
+const agent = await swarm.spawn({
+    type: 'researcher',
+    name: 'alice',
+    neuralConfig: {
+        layers: [256, 512, 1024, 512, 256],
+        activationFunction: 'gelu',
+        learningRate: 0.0001,
+        optimizer: 'adamw'
+    }
+});
+
+// Fine-tune for specific task
+await agent.fineTune({
+    taskType: 'pattern_recognition',
+    trainingData: myTrainingData,
+    epochs: 100,
+    callbacks: {
+        onEpochEnd: (metrics) => {
+            console.log(`Epoch complete - Loss: ${metrics.loss}`);
+        }
+    }
+});
+```
+
+This comprehensive Claude Code integration provides complete NPX package development, testing, and deployment automation with neural network per agent support, offering full visibility into performance, compatibility, and agent intelligence metrics.

@@ -118,6 +118,785 @@ ruv-swarm/
 │       └── assertion-helpers.js
 ```
 
+## 🔧 SWE-bench Integration Testing
+
+### Overview
+SWE-bench (Software Engineering Benchmark) integration provides comprehensive evaluation of ruv-swarm's coding capabilities on real-world software engineering tasks. This section outlines how to leverage SWE-bench to test swarm-based solutions for bug fixes, feature implementations, and code optimization challenges.
+
+### SWE-bench Integration Architecture
+
+```
+ruv-swarm/
+├── tests/
+│   ├── swe-bench/
+│   │   ├── integration/               # SWE-bench integration tests
+│   │   │   ├── swarm-swe-runner.js   # Core SWE-bench runner for swarms
+│   │   │   ├── problem-loader.js     # Load and parse SWE-bench problems
+│   │   │   └── result-evaluator.js   # Evaluate swarm solutions
+│   │   ├── benchmarks/               # SWE-bench benchmark categories
+│   │   │   ├── bug-fixes/            # Bug fixing benchmark tests
+│   │   │   ├── feature-impl/         # Feature implementation tests
+│   │   │   ├── code-optimization/    # Code optimization challenges
+│   │   │   └── refactoring/          # Code refactoring tasks
+│   │   ├── datasets/                 # SWE-bench dataset management
+│   │   │   ├── swe-bench-lite.json   # Curated subset for CI/CD
+│   │   │   ├── swe-bench-full.json   # Complete benchmark dataset
+│   │   │   └── custom-problems.json  # Custom ruv-swarm specific problems
+│   │   ├── workflows/                # Claude Code + SWE-bench workflows
+│   │   │   ├── stream-processing/    # Stream-based solution workflows
+│   │   │   ├── batch-processing/     # Batch solution workflows
+│   │   │   └── interactive-mode/     # Interactive debugging workflows
+│   │   ├── metrics/                  # Performance and quality metrics
+│   │   │   ├── success-criteria.js   # Success rate calculations
+│   │   │   ├── performance-metrics.js # Speed and efficiency metrics
+│   │   │   └── quality-assessment.js # Code quality evaluation
+│   │   └── regression/               # Regression testing
+│   │       ├── wasm-regression.js    # WASM optimization regression tests
+│   │       └── neural-regression.js  # Neural network regression tests
+```
+
+### Benchmark Categories
+
+#### 1. Bug Fixing Benchmarks
+Test swarm performance on identifying and fixing software bugs from real GitHub issues.
+
+```javascript
+// tests/swe-bench/benchmarks/bug-fixes/bug-fix-swarm.test.js
+
+const { SWEBenchRunner } = require('../../integration/swarm-swe-runner');
+const { RuvSwarm } = require('../../../../npm/src');
+
+describe('SWE-bench Bug Fixing Benchmarks', () => {
+    let ruvSwarm;
+    let sweBenchRunner;
+    
+    beforeAll(async () => {
+        ruvSwarm = await RuvSwarm.initialize({
+            enableNeuralNetworks: true,
+            enableCognitiveDiversity: true,
+            useSIMD: true
+        });
+        
+        sweBenchRunner = new SWEBenchRunner({
+            ruvSwarm,
+            datasetPath: '../datasets/swe-bench-lite.json',
+            category: 'bug-fixes',
+            maxTimePerProblem: 300000 // 5 minutes
+        });
+    });
+
+    test('swarm solves Python bug fixing problems', async () => {
+        const bugFixProblems = await sweBenchRunner.loadProblems({
+            language: 'python',
+            category: 'bug-fix',
+            difficulty: 'easy',
+            limit: 10
+        });
+        
+        const results = [];
+        
+        for (const problem of bugFixProblems) {
+            const swarm = await ruvSwarm.createSwarm({
+                name: `bug-fix-swarm-${problem.id}`,
+                topology: 'hierarchical',
+                maxAgents: 5,
+                enableNeuralAgents: true
+            });
+            
+            // Spawn specialized agents for bug fixing
+            const debugger = await swarm.spawn({
+                type: 'debugger',
+                name: 'bug-analyzer',
+                capabilities: ['code_analysis', 'error_detection', 'debugging']
+            });
+            
+            const coder = await swarm.spawn({
+                type: 'coder',
+                name: 'bug-fixer',
+                capabilities: ['code_writing', 'refactoring', 'testing']
+            });
+            
+            const tester = await swarm.spawn({
+                type: 'tester',
+                name: 'test-validator',
+                capabilities: ['test_writing', 'validation', 'regression_testing']
+            });
+            
+            // Orchestrate bug fixing task
+            const solution = await swarm.orchestrate({
+                description: `Fix bug in ${problem.repository}: ${problem.issue_title}`,
+                priority: 'high',
+                metadata: {
+                    problem_id: problem.id,
+                    repository: problem.repository,
+                    issue_url: problem.issue_url,
+                    failing_tests: problem.failing_tests,
+                    problem_statement: problem.problem_statement
+                },
+                maxAgents: 3,
+                strategy: 'collaborative',
+                timeout: 300000 // 5 minutes
+            });
+            
+            // Evaluate solution
+            const evaluation = await sweBenchRunner.evaluateSolution(problem, solution);
+            results.push({
+                problem_id: problem.id,
+                success: evaluation.tests_passed,
+                solution_quality: evaluation.quality_score,
+                time_taken: evaluation.execution_time,
+                agents_used: solution.assignedAgents.length
+            });
+        }
+        
+        const successRate = results.filter(r => r.success).length / results.length;
+        const averageTime = results.reduce((sum, r) => sum + r.time_taken, 0) / results.length;
+        const averageQuality = results.reduce((sum, r) => sum + r.solution_quality, 0) / results.length;
+        
+        console.log(`Bug Fixing Benchmark Results:
+            Success Rate: ${(successRate * 100).toFixed(1)}% (${results.filter(r => r.success).length}/${results.length})
+            Average Time: ${(averageTime / 1000).toFixed(1)}s
+            Average Quality Score: ${averageQuality.toFixed(2)}/10
+            Target Success Rate: >70%`);
+        
+        expect(successRate).toBeGreaterThan(0.7); // Target: >70% success rate
+        expect(averageTime).toBeLessThan(240000); // Target: <4 minutes average
+        expect(averageQuality).toBeGreaterThan(7.0); // Target: >7.0 quality score
+    });
+
+    test('swarm handles complex multi-file bug fixes', async () => {
+        const complexProblems = await sweBenchRunner.loadProblems({
+            category: 'bug-fix',
+            difficulty: 'hard',
+            files_modified: '>3',
+            limit: 5
+        });
+        
+        const results = [];
+        
+        for (const problem of complexProblems) {
+            const swarm = await ruvSwarm.createSwarm({
+                name: `complex-bug-swarm-${problem.id}`,
+                topology: 'mesh',
+                maxAgents: 8,
+                enableCognitiveDiversity: true
+            });
+            
+            // Spawn diverse team for complex problems
+            await Promise.all([
+                swarm.spawn({ type: 'researcher', name: 'code-explorer', cognitivePattern: 'divergent' }),
+                swarm.spawn({ type: 'analyst', name: 'system-analyzer', cognitivePattern: 'systems' }),
+                swarm.spawn({ type: 'debugger', name: 'error-detective', cognitivePattern: 'critical' }),
+                swarm.spawn({ type: 'coder', name: 'solution-implementer', cognitivePattern: 'convergent' }),
+                swarm.spawn({ type: 'tester', name: 'quality-assurer', cognitivePattern: 'lateral' }),
+                swarm.spawn({ type: 'coordinator', name: 'team-orchestrator', cognitivePattern: 'abstract' })
+            ]);
+            
+            const solution = await swarm.orchestrate({
+                description: `Solve complex multi-file bug: ${problem.issue_title}`,
+                priority: 'critical',
+                metadata: {
+                    problem_id: problem.id,
+                    complexity: 'high',
+                    files_count: problem.files_modified,
+                    estimated_difficulty: problem.difficulty_rating
+                },
+                strategy: 'hierarchical',
+                timeout: 600000 // 10 minutes for complex problems
+            });
+            
+            const evaluation = await sweBenchRunner.evaluateSolution(problem, solution);
+            results.push(evaluation);
+        }
+        
+        const successRate = results.filter(r => r.tests_passed).length / results.length;
+        
+        expect(successRate).toBeGreaterThan(0.4); // Lower target for complex problems: >40%
+    });
+});
+```
+
+#### 2. Feature Implementation Benchmarks
+Evaluate swarm capabilities in implementing new features based on specifications.
+
+```javascript
+// tests/swe-bench/benchmarks/feature-impl/feature-implementation.test.js
+
+describe('SWE-bench Feature Implementation Benchmarks', () => {
+    test('swarm implements new API endpoints', async () => {
+        const featureProblems = await sweBenchRunner.loadProblems({
+            category: 'feature-implementation',
+            type: 'api-endpoint',
+            limit: 8
+        });
+        
+        const results = [];
+        
+        for (const problem of featureProblems) {
+            const swarm = await ruvSwarm.createSwarm({
+                name: `api-feature-swarm-${problem.id}`,
+                topology: 'star',
+                maxAgents: 6
+            });
+            
+            // Specialized agents for API development
+            await Promise.all([
+                swarm.spawn({ type: 'architect', name: 'api-designer', capabilities: ['system_design', 'api_design'] }),
+                swarm.spawn({ type: 'coder', name: 'backend-developer', capabilities: ['backend_development', 'database'] }),
+                swarm.spawn({ type: 'tester', name: 'api-tester', capabilities: ['api_testing', 'integration_testing'] }),
+                swarm.spawn({ type: 'documenter', name: 'api-documenter', capabilities: ['documentation', 'openapi'] })
+            ]);
+            
+            const solution = await swarm.orchestrate({
+                description: `Implement API feature: ${problem.feature_description}`,
+                priority: 'high',
+                metadata: {
+                    problem_id: problem.id,
+                    feature_type: 'api-endpoint',
+                    requirements: problem.requirements,
+                    acceptance_criteria: problem.acceptance_criteria
+                },
+                strategy: 'sequential',
+                phases: ['design', 'implementation', 'testing', 'documentation']
+            });
+            
+            const evaluation = await sweBenchRunner.evaluateSolution(problem, solution);
+            results.push(evaluation);
+        }
+        
+        const successRate = results.filter(r => r.tests_passed && r.meets_requirements).length / results.length;
+        expect(successRate).toBeGreaterThan(0.6); // Target: >60% for feature implementation
+    });
+});
+```
+
+#### 3. Code Optimization Benchmarks
+Test swarm performance on identifying and implementing performance optimizations.
+
+```javascript
+// tests/swe-bench/benchmarks/code-optimization/optimization-swarm.test.js
+
+describe('SWE-bench Code Optimization Benchmarks', () => {
+    test('swarm optimizes performance bottlenecks', async () => {
+        const optimizationProblems = await sweBenchRunner.loadProblems({
+            category: 'optimization',
+            type: 'performance',
+            limit: 6
+        });
+        
+        for (const problem of optimizationProblems) {
+            const swarm = await ruvSwarm.createSwarm({
+                name: `optimization-swarm-${problem.id}`,
+                topology: 'mesh',
+                maxAgents: 4,
+                enableNeuralAgents: true
+            });
+            
+            // Optimization-focused team
+            await Promise.all([
+                swarm.spawn({ type: 'analyzer', name: 'performance-profiler', cognitivePattern: 'critical' }),
+                swarm.spawn({ type: 'optimizer', name: 'code-optimizer', cognitivePattern: 'convergent' }),
+                swarm.spawn({ type: 'tester', name: 'benchmark-tester', cognitivePattern: 'lateral' })
+            ]);
+            
+            const solution = await swarm.orchestrate({
+                description: `Optimize performance: ${problem.optimization_target}`,
+                priority: 'high',
+                metadata: {
+                    problem_id: problem.id,
+                    baseline_performance: problem.baseline_metrics,
+                    target_improvement: problem.target_improvement,
+                    constraints: problem.constraints
+                }
+            });
+            
+            const evaluation = await sweBenchRunner.evaluateSolution(problem, solution);
+            
+            expect(evaluation.performance_improvement).toBeGreaterThan(problem.target_improvement);
+            expect(evaluation.tests_passed).toBe(true);
+        }
+    });
+});
+```
+
+### Claude Code + SWE-bench Workflows
+
+#### Stream Processing Workflow
+```javascript
+// tests/swe-bench/workflows/stream-processing/claude-swe-stream.test.js
+
+describe('Claude Code + SWE-bench Stream Processing', () => {
+    test('claude stream-json workflow with SWE-bench', async () => {
+        const testCommand = `claude "create swarm to solve SWE-bench problem django__django-12345 using ruv-FANN neural networks" --swe-bench-mode --output-format stream-json`;
+        
+        const result = await executeClaudeCommand(testCommand);
+        
+        // Verify stream-json output format
+        const streamLines = result.split('\n').filter(line => line.startsWith('data: '));
+        expect(streamLines.length).toBeGreaterThan(0);
+        
+        // Parse and validate JSON stream
+        for (const line of streamLines) {
+            const data = JSON.parse(line.substring(6)); // Remove 'data: ' prefix
+            
+            expect(data).toHaveProperty('type');
+            expect(data).toHaveProperty('timestamp');
+            
+            if (data.type === 'swarm_creation') {
+                expect(data).toHaveProperty('swarm_id');
+                expect(data).toHaveProperty('topology');
+            } else if (data.type === 'agent_spawn') {
+                expect(data).toHaveProperty('agent_id');
+                expect(data).toHaveProperty('agent_type');
+                expect(data).toHaveProperty('capabilities');
+            } else if (data.type === 'task_orchestration') {
+                expect(data).toHaveProperty('task_id');
+                expect(data).toHaveProperty('swe_bench_problem_id');
+            } else if (data.type === 'solution_progress') {
+                expect(data).toHaveProperty('progress_percentage');
+                expect(data).toHaveProperty('current_phase');
+            } else if (data.type === 'solution_complete') {
+                expect(data).toHaveProperty('success');
+                expect(data).toHaveProperty('tests_passed');
+                expect(data).toHaveProperty('solution_quality');
+            }
+        }
+    });
+
+    test('interactive debugging workflow', async () => {
+        const interactiveCommands = [
+            `claude "initialize SWE-bench debugging session for problem flask__flask-4567" --swe-bench-mode --interactive`,
+            `claude "spawn debugging swarm with cognitive diversity" --continue-session`,
+            `claude "analyze failing tests and identify root cause" --continue-session`,
+            `claude "implement fix with test validation" --continue-session`,
+            `claude "generate solution report" --continue-session --output-format detailed-json`
+        ];
+        
+        let sessionContext = null;
+        
+        for (const command of interactiveCommands) {
+            const result = await executeClaudeCommand(command, sessionContext);
+            
+            if (command.includes('--continue-session') && sessionContext) {
+                expect(result).toContain('session_id');
+            }
+            
+            if (command.includes('initialize')) {
+                sessionContext = extractSessionContext(result);
+                expect(sessionContext).toHaveProperty('session_id');
+                expect(sessionContext).toHaveProperty('problem_id', 'flask__flask-4567');
+            }
+            
+            if (command.includes('solution report')) {
+                const report = JSON.parse(result);
+                expect(report).toHaveProperty('problem_analysis');
+                expect(report).toHaveProperty('solution_approach');
+                expect(report).toHaveProperty('implementation_details');
+                expect(report).toHaveProperty('test_results');
+                expect(report).toHaveProperty('quality_metrics');
+            }
+        }
+    });
+});
+```
+
+#### Batch Processing Workflow
+```javascript
+// tests/swe-bench/workflows/batch-processing/claude-swe-batch.test.js
+
+describe('Claude Code + SWE-bench Batch Processing', () => {
+    test('batch solve multiple SWE-bench problems', async () => {
+        const batchCommand = `claude "solve SWE-bench problems: django__django-12345,flask__flask-4567,requests__requests-2345" --swe-bench-mode --batch-processing --max-parallel-swarms 3 --output-format comprehensive-json`;
+        
+        const result = await executeClaudeCommand(batchCommand);
+        const batchResults = JSON.parse(result);
+        
+        expect(batchResults).toHaveProperty('batch_id');
+        expect(batchResults).toHaveProperty('problems_solved');
+        expect(batchResults).toHaveProperty('overall_success_rate');
+        expect(batchResults).toHaveProperty('performance_metrics');
+        
+        expect(batchResults.problems_solved).toHaveLength(3);
+        
+        for (const problemResult of batchResults.problems_solved) {
+            expect(problemResult).toHaveProperty('problem_id');
+            expect(problemResult).toHaveProperty('swarm_composition');
+            expect(problemResult).toHaveProperty('solution_approach');
+            expect(problemResult).toHaveProperty('execution_time');
+            expect(problemResult).toHaveProperty('success');
+            expect(problemResult).toHaveProperty('test_results');
+            
+            if (problemResult.success) {
+                expect(problemResult.test_results.passed).toBeGreaterThan(0);
+                expect(problemResult.test_results.failed).toBe(0);
+            }
+        }
+        
+        expect(batchResults.overall_success_rate).toBeGreaterThan(0.5);
+    });
+
+    test('adaptive swarm sizing for different problem complexities', async () => {
+        const adaptiveCommand = `claude "solve SWE-bench problems with adaptive swarm sizing" --swe-bench-mode --adaptive-sizing --problem-set swe-bench-mixed-difficulty --output-format stream-json`;
+        
+        const result = await executeClaudeCommand(adaptiveCommand);
+        const streamData = parseStreamJson(result);
+        
+        const swarmCreations = streamData.filter(d => d.type === 'swarm_creation');
+        
+        // Verify adaptive sizing
+        const easyProblems = swarmCreations.filter(s => s.problem_difficulty === 'easy');
+        const hardProblems = swarmCreations.filter(s => s.problem_difficulty === 'hard');
+        
+        if (easyProblems.length > 0 && hardProblems.length > 0) {
+            const avgEasyAgents = easyProblems.reduce((sum, s) => sum + s.max_agents, 0) / easyProblems.length;
+            const avgHardAgents = hardProblems.reduce((sum, s) => sum + s.max_agents, 0) / hardProblems.length;
+            
+            expect(avgHardAgents).toBeGreaterThan(avgEasyAgents);
+        }
+    });
+});
+```
+
+### Performance Metrics and Success Criteria
+
+#### Success Rate Calculations
+```javascript
+// tests/swe-bench/metrics/success-criteria.js
+
+class SWEBenchSuccessCriteria {
+    static calculateSuccessRate(results) {
+        const totalProblems = results.length;
+        const successfulSolutions = results.filter(result => {
+            return result.tests_passed && 
+                   result.no_regression && 
+                   result.code_quality_score >= 7.0 &&
+                   result.execution_time <= result.timeout;
+        });
+        
+        return {
+            overall_success_rate: successfulSolutions.length / totalProblems,
+            test_pass_rate: results.filter(r => r.tests_passed).length / totalProblems,
+            quality_success_rate: results.filter(r => r.code_quality_score >= 7.0).length / totalProblems,
+            efficiency_success_rate: results.filter(r => r.execution_time <= r.timeout * 0.8).length / totalProblems,
+            breakdown_by_difficulty: this.calculateByDifficulty(results),
+            breakdown_by_category: this.calculateByCategory(results)
+        };
+    }
+    
+    static calculatePerformanceMetrics(results) {
+        return {
+            average_execution_time: results.reduce((sum, r) => sum + r.execution_time, 0) / results.length,
+            median_execution_time: this.calculateMedian(results.map(r => r.execution_time)),
+            average_agents_used: results.reduce((sum, r) => sum + r.agents_used, 0) / results.length,
+            average_code_quality: results.reduce((sum, r) => sum + r.code_quality_score, 0) / results.length,
+            neural_network_utilization: results.filter(r => r.used_neural_networks).length / results.length,
+            cognitive_diversity_score: this.calculateCognitiveDiversityScore(results)
+        };
+    }
+    
+    static defineTargets() {
+        return {
+            bug_fixes: {
+                easy: { success_rate: 0.85, avg_time: 120000 },    // 85% success, <2 min
+                medium: { success_rate: 0.70, avg_time: 240000 },  // 70% success, <4 min
+                hard: { success_rate: 0.45, avg_time: 600000 }     // 45% success, <10 min
+            },
+            feature_implementation: {
+                simple: { success_rate: 0.75, avg_time: 300000 },  // 75% success, <5 min
+                complex: { success_rate: 0.55, avg_time: 900000 }  // 55% success, <15 min
+            },
+            optimization: {
+                performance: { success_rate: 0.65, improvement: 1.5 }, // 65% success, 50% improvement
+                memory: { success_rate: 0.60, improvement: 1.3 }       // 60% success, 30% improvement
+            },
+            refactoring: {
+                simple: { success_rate: 0.80, quality_improvement: 1.2 },
+                complex: { success_rate: 0.60, quality_improvement: 1.5 }
+            }
+        };
+    }
+}
+```
+
+#### Quality Assessment Metrics
+```javascript
+// tests/swe-bench/metrics/quality-assessment.js
+
+class SWEBenchQualityAssessment {
+    static evaluateCodeQuality(solution) {
+        return {
+            correctness: this.evaluateCorrectness(solution),
+            maintainability: this.evaluateMaintainability(solution),
+            performance: this.evaluatePerformance(solution),
+            security: this.evaluateSecurity(solution),
+            documentation: this.evaluateDocumentation(solution),
+            test_coverage: this.evaluateTestCoverage(solution),
+            overall_score: this.calculateOverallScore(solution)
+        };
+    }
+    
+    static evaluateSwarmPerformance(swarmExecution) {
+        return {
+            coordination_efficiency: this.evaluateCoordination(swarmExecution),
+            agent_utilization: this.evaluateAgentUtilization(swarmExecution),
+            cognitive_diversity_impact: this.evaluateCognitiveDiversity(swarmExecution),
+            neural_network_contribution: this.evaluateNeuralContribution(swarmExecution),
+            time_efficiency: this.evaluateTimeEfficiency(swarmExecution)
+        };
+    }
+}
+```
+
+### Automated Testing Pipeline
+
+#### CI/CD Integration
+```yaml
+# .github/workflows/swe-bench-integration.yml
+name: SWE-bench Integration Testing
+
+on:
+  push:
+    branches: [ main, ruv-swarm ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM
+
+jobs:
+  swe-bench-lite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: ruv-swarm/npm/package-lock.json
+    
+    - name: Setup SWE-bench Dataset
+      run: |
+        cd ruv-swarm/tests/swe-bench/datasets
+        # Download SWE-bench lite dataset (subset for CI)
+        curl -L -o swe-bench-lite.json "https://github.com/princeton-nlp/SWE-bench/releases/download/v1.0/swe-bench-lite.json"
+    
+    - name: Install dependencies and build
+      run: |
+        cd ruv-swarm/npm
+        npm ci
+        cd ..
+        node build/wasm-build.js
+    
+    - name: Run SWE-bench Bug Fix Tests
+      run: |
+        cd ruv-swarm/npm
+        npm run test:swe-bench:bug-fixes
+      env:
+        SWE_BENCH_MODE: lite
+        MAX_TIME_PER_PROBLEM: 300000
+        MAX_PROBLEMS: 10
+    
+    - name: Run SWE-bench Feature Implementation Tests
+      run: |
+        cd ruv-swarm/npm
+        npm run test:swe-bench:features
+      env:
+        SWE_BENCH_MODE: lite
+        MAX_PROBLEMS: 5
+    
+    - name: Upload SWE-bench Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: swe-bench-results
+        path: ruv-swarm/npm/swe-bench-results/
+
+  swe-bench-full:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    timeout-minutes: 480  # 8 hours for full benchmark
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup environment
+      run: |
+        # Setup for full SWE-bench run
+        cd ruv-swarm/tests/swe-bench/datasets
+        curl -L -o swe-bench-full.json "https://github.com/princeton-nlp/SWE-bench/releases/download/v1.0/swe-bench.json"
+    
+    - name: Run Full SWE-bench Evaluation
+      run: |
+        cd ruv-swarm/npm
+        npm run test:swe-bench:full
+      env:
+        SWE_BENCH_MODE: full
+        ENABLE_DETAILED_LOGGING: true
+        SAVE_INTERMEDIATE_RESULTS: true
+    
+    - name: Generate Performance Report
+      run: |
+        cd ruv-swarm/npm
+        npm run swe-bench:generate-report
+    
+    - name: Upload Full Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: swe-bench-full-results
+        path: |
+          ruv-swarm/npm/swe-bench-results/
+          ruv-swarm/npm/performance-reports/
+
+  claude-code-integration:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Test Claude Code SWE-bench Commands
+      run: |
+        # Test Claude Code integration with SWE-bench
+        cd ruv-swarm/npm
+        
+        # Test stream-json output
+        timeout 300 npx claude "create swarm to solve SWE-bench problem test-problem-1" --swe-bench-mode --output-format stream-json > stream-output.json || true
+        
+        # Validate stream output
+        npm run validate:stream-output stream-output.json
+        
+        # Test batch processing
+        timeout 600 npx claude "solve SWE-bench problems: test-problem-1,test-problem-2" --swe-bench-mode --batch-processing --output-format comprehensive-json > batch-output.json || true
+        
+        # Validate batch output
+        npm run validate:batch-output batch-output.json
+```
+
+### Regression Testing
+
+#### WASM Optimization Regression Tests
+```javascript
+// tests/swe-bench/regression/wasm-regression.js
+
+describe('WASM Optimization Regression Tests', () => {
+    test('WASM optimizations maintain SWE-bench performance', async () => {
+        // Test with and without WASM optimizations
+        const baselineResults = await runSWEBenchSuite({
+            useWASM: false,
+            problemSet: 'regression-test-set',
+            maxProblems: 20
+        });
+        
+        const optimizedResults = await runSWEBenchSuite({
+            useWASM: true,
+            useSIMD: true,
+            problemSet: 'regression-test-set',
+            maxProblems: 20
+        });
+        
+        // Performance should improve or stay the same
+        expect(optimizedResults.averageExecutionTime).toBeLessThanOrEqual(baselineResults.averageExecutionTime * 1.1);
+        
+        // Success rate should not decrease
+        expect(optimizedResults.successRate).toBeGreaterThanOrEqual(baselineResults.successRate - 0.05);
+        
+        // WASM should provide speedup for neural operations
+        if (optimizedResults.neuralOperationTime && baselineResults.neuralOperationTime) {
+            const speedup = baselineResults.neuralOperationTime / optimizedResults.neuralOperationTime;
+            expect(speedup).toBeGreaterThan(1.5); // At least 50% speedup
+        }
+    });
+    
+    test('neural network optimizations maintain solution quality', async () => {
+        const problems = await loadSWEBenchProblems({
+            category: 'neural-intensive',
+            limit: 10
+        });
+        
+        const results = [];
+        
+        for (const problem of problems) {
+            const baselineSolution = await solveProblemWithSwarm(problem, {
+                enableNeuralNetworks: false
+            });
+            
+            const neuralSolution = await solveProblemWithSwarm(problem, {
+                enableNeuralNetworks: true,
+                useWASMNeuralOps: true
+            });
+            
+            results.push({
+                problem_id: problem.id,
+                baseline_quality: baselineSolution.codeQualityScore,
+                neural_quality: neuralSolution.codeQualityScore,
+                baseline_time: baselineSolution.executionTime,
+                neural_time: neuralSolution.executionTime
+            });
+        }
+        
+        const qualityRegression = results.filter(r => 
+            r.neural_quality < r.baseline_quality - 0.5
+        ).length;
+        
+        // No more than 10% quality regression allowed
+        expect(qualityRegression / results.length).toBeLessThan(0.1);
+    });
+});
+```
+
+#### Neural Network Regression Tests
+```javascript
+// tests/swe-bench/regression/neural-regression.js
+
+describe('Neural Network Regression Tests', () => {
+    test('cognitive diversity maintains problem-solving effectiveness', async () => {
+        const diversityConfigs = [
+            { enableCognitiveDiversity: false },
+            { enableCognitiveDiversity: true, diversityTarget: 0.6 },
+            { enableCognitiveDiversity: true, diversityTarget: 0.8 }
+        ];
+        
+        const problems = await loadSWEBenchProblems({
+            category: 'complex-reasoning',
+            limit: 15
+        });
+        
+        const results = [];
+        
+        for (const config of diversityConfigs) {
+            const configResults = [];
+            
+            for (const problem of problems) {
+                const solution = await solveProblemWithSwarm(problem, config);
+                configResults.push(solution);
+            }
+            
+            results.push({
+                config,
+                successRate: configResults.filter(s => s.testsPasssed).length / configResults.length,
+                averageQuality: configResults.reduce((sum, s) => sum + s.codeQualityScore, 0) / configResults.length,
+                averageTime: configResults.reduce((sum, s) => sum + s.executionTime, 0) / configResults.length
+            });
+        }
+        
+        // Cognitive diversity should improve or maintain performance
+        const noDiversityResult = results.find(r => !r.config.enableCognitiveDiversity);
+        const diversityResults = results.filter(r => r.config.enableCognitiveDiversity);
+        
+        for (const diversityResult of diversityResults) {
+            // Success rate should improve or stay within 5%
+            expect(diversityResult.successRate).toBeGreaterThanOrEqual(noDiversityResult.successRate - 0.05);
+            
+            // Quality should improve for complex problems
+            expect(diversityResult.averageQuality).toBeGreaterThanOrEqual(noDiversityResult.averageQuality);
+        }
+    });
+});
+```
+
+This comprehensive SWE-bench integration ensures that ruv-swarm maintains high performance on real-world software engineering challenges while benefiting from WASM optimizations and neural network enhancements.
+
 ## 🔬 WASM Module Testing
 
 ### Neural Network Module Tests

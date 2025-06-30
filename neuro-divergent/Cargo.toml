@@ -107,6 +107,10 @@ registry = ["dep:neuro-divergent-registry"]
 python-compat = []  # Enable Python-specific compatibility features
 # plotting = ["plotly"]  # Enable plotting support for examples (dev-dependency only)
 
+# WASM support
+wasm = ["dep:ruv-fann/wasm"]
+no_std = []
+
 
 [[test]]
 name = "memory_tests"

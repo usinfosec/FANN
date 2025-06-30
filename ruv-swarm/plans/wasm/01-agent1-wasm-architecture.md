@@ -400,3 +400,353 @@ pub fn has_simd_support() -> bool {
 - TypeScript definition templates
 
 This architectural foundation enables all other agents to build upon a solid, performant WASM infrastructure that efficiently exposes the full capabilities of the Rust ecosystem.
+
+## 🎯 Claude Code Integration Commands
+
+### WASM Build Pipeline Automation
+```bash
+# Initialize WASM build environment
+./claude-flow sparc run architect "Set up unified WASM build pipeline for ruv-swarm ecosystem"
+
+# Automate build pipeline with Claude Code orchestration
+./claude-flow swarm "Create automated WASM build pipeline with optimization and validation" \
+  --strategy development --mode centralized --max-agents 3 --monitor
+
+# Store build configuration in memory for consistency
+./claude-flow memory store "wasm_build_config" "Multi-crate WASM compilation: wasm-pack + wasm-opt + SIMD optimization"
+./claude-flow memory store "optimization_targets" "Size <2MB, Load <100ms, SIMD acceleration 4x speedup"
+```
+
+### Build System Commands
+```bash
+# Launch build system development workflow
+./claude-flow sparc run orchestrator "Develop comprehensive WASM build system with all optimization features"
+
+# Create build pipeline with error handling
+./claude-flow task create development "Implement wasm-pack integration with multi-crate support"
+./claude-flow task create development "Add wasm-opt optimization pipeline with SIMD support"
+./claude-flow task create development "Create TypeScript definition generation system"
+
+# Monitor build performance
+./claude-flow monitor --duration 1800 --interval 30 | \
+  jq -r '.metrics.build_time_ms + "ms build time, " + .metrics.optimization_ratio + "% size reduction"'
+```
+
+### Development Environment Setup
+```bash
+# Validate and setup build environment
+./claude-flow sparc run architect "Validate WASM build environment and install missing dependencies"
+
+# Configure optimal build settings
+./claude-flow config set build.wasm.target "wasm32-unknown-unknown"
+./claude-flow config set build.wasm.optimization "size"
+./claude-flow config set build.wasm.simd "enabled"
+./claude-flow config set build.wasm.parallel "true"
+```
+
+## 🔧 Batch Tool Coordination
+
+### TodoWrite for Build Pipeline Coordination
+```javascript
+// Build pipeline task coordination
+TodoWrite([
+  {
+    id: "build_environment_setup",
+    content: "Set up and validate WASM build environment with all required tools",
+    status: "pending",
+    priority: "high",
+    dependencies: [],
+    estimatedTime: "30min",
+    assignedAgent: "build_architect",
+    deliverables: ["rust_toolchain", "wasm_pack", "wasm_opt", "binaryen"]
+  },
+  {
+    id: "multi_crate_build_system",
+    content: "Implement multi-crate WASM build system with dependency management",
+    status: "pending",
+    priority: "high",
+    dependencies: ["build_environment_setup"],
+    estimatedTime: "4 hours",
+    assignedAgent: "build_architect",
+    deliverables: ["build_orchestrator", "wasm_compilation", "dependency_resolution"]
+  },
+  {
+    id: "optimization_pipeline",
+    content: "Create WASM optimization pipeline with SIMD and size optimization",
+    status: "pending",
+    priority: "high",
+    dependencies: ["multi_crate_build_system"],
+    estimatedTime: "2 hours",
+    assignedAgent: "build_architect",
+    deliverables: ["wasm_opt_integration", "simd_optimization", "size_analysis"]
+  },
+  {
+    id: "memory_management_system",
+    content: "Implement efficient memory management for WASM modules",
+    status: "pending",
+    priority: "medium",
+    dependencies: ["multi_crate_build_system"],
+    estimatedTime: "3 hours",
+    assignedAgent: "build_architect",
+    deliverables: ["memory_pools", "allocation_strategy", "usage_monitoring"]
+  },
+  {
+    id: "typescript_bindings",
+    content: "Generate comprehensive TypeScript bindings for all WASM modules",
+    status: "pending",
+    priority: "medium",
+    dependencies: ["optimization_pipeline"],
+    estimatedTime: "2 hours",
+    assignedAgent: "build_architect",
+    deliverables: ["type_definitions", "binding_generator", "api_documentation"]
+  },
+  {
+    id: "ci_cd_integration",
+    content: "Set up CI/CD pipeline for automated WASM builds and testing",
+    status: "pending",
+    priority: "low",
+    dependencies: ["optimization_pipeline", "typescript_bindings"],
+    estimatedTime: "1 hour",
+    assignedAgent: "build_architect",
+    deliverables: ["github_actions", "build_validation", "artifact_publishing"]
+  }
+]);
+```
+
+### Task Tool for Parallel Build Operations
+```javascript
+// Parallel build task execution
+Task("Build Environment", "Validate and set up WASM build environment using Memory('wasm_build_config')");
+Task("Core Module Build", "Compile ruv-swarm-core to WASM with optimization flags from Memory('optimization_targets')");
+Task("Memory Management", "Implement WASM memory management system with pooling and monitoring");
+Task("SIMD Optimization", "Add SIMD acceleration to WASM modules with fallback support");
+Task("Build Validation", "Test and validate all WASM modules meet Memory('optimization_targets') requirements");
+```
+
+## 📊 Stream JSON Processing
+
+### Build Pipeline Monitoring
+```bash
+# Monitor build progress with JSON output
+./claude-flow monitor --duration 1800 --output json | \
+  jq -r '.agents[] | select(.type == "build_architect") | 
+    "Build Status: " + .status + 
+    " | Progress: " + (.progress.percentage | tostring) + "%" +
+    " | Current: " + .current_task.description'
+
+# Track build performance metrics
+./claude-flow memory stats --output json | \
+  jq '.build_metrics | {
+    total_build_time_ms: .total_time,
+    wasm_size_mb: (.total_size / (1024 * 1024)),
+    optimization_ratio: .size_reduction_percentage,
+    memory_usage_mb: (.memory_usage / (1024 * 1024))
+  }'
+
+# Analyze build optimization results
+./claude-flow sparc run analyzer "Analyze WASM build performance" --output json | \
+  jq '.analysis.optimization | {
+    size_reduction: .size_reduction_percentage,
+    simd_acceleration: .simd_speedup_factor,
+    load_time_improvement: .load_time_reduction_ms,
+    recommendations: .optimization_recommendations
+  }'
+```
+
+### Performance Metrics Collection
+```javascript
+// Process build pipeline metrics
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execAsync = promisify(exec);
+
+async function collectBuildMetrics() {
+  const { stdout } = await execAsync('./claude-flow memory get "build_metrics" --output json');
+  const metrics = JSON.parse(stdout);
+  
+  return {
+    build_time_ms: metrics.total_build_time,
+    wasm_modules: metrics.modules.map(m => ({
+      name: m.name,
+      size_mb: (m.size / (1024 * 1024)).toFixed(2),
+      optimization_ratio: m.size_reduction_percentage,
+      simd_enabled: m.simd_support,
+      load_time_ms: m.load_time
+    })),
+    total_size_mb: (metrics.total_size / (1024 * 1024)).toFixed(2),
+    memory_efficiency: metrics.memory_usage_efficiency,
+    performance_score: metrics.performance_score
+  };
+}
+
+async function analyzeBuildOptimization() {
+  const { stdout } = await execAsync('./claude-flow sparc run analyzer "Analyze current WASM build optimization" --output json');
+  const analysis = JSON.parse(stdout);
+  
+  return {
+    current_optimization_level: analysis.optimization.current_level,
+    potential_improvements: analysis.optimization.recommendations,
+    size_analysis: {
+      current_size_mb: analysis.size.current_mb,
+      optimal_size_mb: analysis.size.optimal_mb,
+      reduction_potential: analysis.size.reduction_potential_percentage
+    },
+    performance_analysis: {
+      current_load_time_ms: analysis.performance.load_time_ms,
+      simd_acceleration_factor: analysis.performance.simd_factor,
+      memory_efficiency_score: analysis.performance.memory_score
+    }
+  };
+}
+```
+
+## 🚀 Development Workflow
+
+### Step-by-Step Claude Code Usage for WASM Build Pipeline
+
+#### 1. Build Environment Initialization
+```bash
+# Initialize build environment with validation
+./claude-flow sparc run architect "Initialize and validate WASM build environment"
+
+# Store build configuration
+./claude-flow memory store "build_tools" "rust-1.70+, wasm-pack-0.12+, wasm-opt-112+, binaryen-112+"
+./claude-flow memory store "build_targets" "wasm32-unknown-unknown with SIMD support"
+
+# Validate environment
+./claude-flow sparc run architect "Validate build environment meets Memory('build_tools') requirements"
+```
+
+#### 2. Multi-Crate Build System Development
+```bash
+# Design build system architecture
+./claude-flow sparc run architect "Design multi-crate WASM build system with parallel compilation"
+
+# Implement build orchestrator
+./claude-flow task create development "Implement WasmBuildPipeline class with multi-crate support"
+./claude-flow task create development "Add build configuration management with TOML files"
+./claude-flow task create development "Create build validation and error handling system"
+
+# Test build system
+./claude-flow sparc tdd "Test multi-crate build system with all ruv-swarm components"
+```
+
+#### 3. Optimization Pipeline Implementation
+```bash
+# Implement WASM optimization
+./claude-flow sparc run optimizer "Implement comprehensive WASM optimization pipeline"
+
+# Add SIMD optimization
+./claude-flow task create development "Add SIMD feature detection and optimization"
+./claude-flow memory store "simd_config" "Runtime detection with fallback support"
+
+# Create size optimization
+./claude-flow task create development "Implement size optimization with wasm-opt integration"
+```
+
+#### 4. Memory Management System
+```bash
+# Design memory management strategy
+./claude-flow sparc run architect "Design efficient WASM memory management system"
+
+# Implement memory pooling
+./claude-flow task create development "Implement memory pools for different WASM module types"
+./claude-flow task create development "Add memory usage monitoring and reporting"
+
+# Optimize memory allocation
+./claude-flow sparc run optimizer "Optimize WASM memory allocation patterns"
+```
+
+#### 5. TypeScript Integration
+```bash
+# Generate TypeScript bindings
+./claude-flow sparc run coder "Generate comprehensive TypeScript bindings for all WASM modules"
+
+# Create binding generator
+./claude-flow task create development "Implement TypeScript binding generator with enhanced types"
+./claude-flow task create development "Add API documentation generation from WASM modules"
+
+# Validate TypeScript integration
+./claude-flow sparc tdd "Test TypeScript bindings with comprehensive type checking"
+```
+
+#### 6. Build Pipeline Automation
+```bash
+# Create automated build scripts
+./claude-flow sparc run architect "Create automated build scripts with error handling"
+
+# Implement CI/CD integration
+./claude-flow task create development "Create GitHub Actions workflow for automated WASM builds"
+./claude-flow task create development "Add build artifact publishing and validation"
+
+# Set up monitoring
+./claude-flow monitor --duration 3600 --interval 60 | \
+  jq -r '.build_pipeline | "Build: " + .status + " | Time: " + (.elapsed_time_ms | tostring) + "ms"'
+```
+
+### Build Workflow Automation
+
+#### wasm-build-pipeline.yaml
+```yaml
+# .claude/workflows/wasm-build-pipeline.yaml
+name: "WASM Build Pipeline"
+description: "Automated WASM compilation and optimization"
+
+steps:
+  - name: "Environment Validation"
+    agent: "build_architect"
+    task: "Validate WASM build environment and dependencies"
+    memory_load: ["build_tools", "build_targets"]
+    
+  - name: "Multi-Crate Compilation"
+    type: "parallel"
+    tasks:
+      - task: "Compile ruv-swarm-core to WASM"
+        config: "wasm-config/core.toml"
+      - task: "Compile ruv-fann to WASM with SIMD"
+        config: "wasm-config/neural.toml"
+      - task: "Compile neuro-divergent to WASM"
+        config: "wasm-config/forecasting.toml"
+    
+  - name: "WASM Optimization"
+    agent: "build_architect"
+    task: "Optimize WASM modules with wasm-opt and SIMD acceleration"
+    depends_on: ["Multi-Crate Compilation"]
+    memory_store: "optimization_results"
+    
+  - name: "Memory Management Setup"
+    agent: "build_architect"
+    task: "Configure memory pools and allocation strategies"
+    depends_on: ["WASM Optimization"]
+    
+  - name: "TypeScript Generation"
+    agent: "build_architect"
+    task: "Generate TypeScript bindings and API documentation"
+    depends_on: ["WASM Optimization"]
+    
+  - name: "Build Validation"
+    agent: "tester"
+    task: "Validate WASM modules meet performance targets"
+    depends_on: ["Memory Management Setup", "TypeScript Generation"]
+    memory_load: ["optimization_targets"]
+```
+
+### Continuous Integration Pattern
+```bash
+# Set up continuous build monitoring
+./claude-flow config set build.continuous_integration "enabled"
+./claude-flow config set build.auto_optimization "true"
+./claude-flow config set build.performance_monitoring "enabled"
+
+# Monitor build pipeline health
+./claude-flow monitor --duration 0 --continuous | \
+  jq -r 'select(.event_type == "build_complete") | 
+    "Build " + .build_id + ": " + .status + 
+    " | Size: " + (.metrics.total_size_mb | tostring) + "MB" +
+    " | Time: " + (.metrics.build_time_ms | tostring) + "ms"'
+
+# Automated optimization triggers
+./claude-flow sparc run optimizer "Optimize WASM build when size > 3MB or build time > 60s"
+```
+
+This comprehensive Claude Code integration provides automated, monitored, and optimized WASM build pipeline development with full visibility and control over the build process.

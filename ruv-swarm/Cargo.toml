@@ -8,6 +8,7 @@ members = [
     "crates/ruv-swarm-persistence", # Fixed dependency conflicts
     "crates/ruv-swarm-transport",   # Fixed dependency conflicts
     "crates/ruv-swarm-wasm",
+    # "crates/ruv-swarm-wasm-unified", # Temporarily disabled due to path resolution issues
 ]
 
 resolver = "2"
@@ -21,8 +22,8 @@ repository = "https://github.com/ruvnet/ruv-FANN"
 rust-version = "1.75"
 
 [workspace.dependencies]
-# Async runtime
-tokio = { version = "1.40", features = ["rt-multi-thread", "sync", "macros", "time"] }
+# Async runtime (WASM-compatible subset)
+tokio = { version = "1.40", features = ["sync", "macros", "time"], default-features = false }
 async-trait = "0.1"
 
 # Error handling
@@ -42,7 +43,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 
 # Collections and utilities
 dashmap = "6.0"
-futures = "0.3"
+futures = { version = "0.3", default-features = false, features = ["executor"] }
 pin-project = "1.1"
 parking_lot = "0.12"
 

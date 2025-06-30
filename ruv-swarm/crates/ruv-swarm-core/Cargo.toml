@@ -11,7 +11,7 @@ description = "Core orchestration and agent traits for RUV Swarm"
 [features]
 default = ["std"]
 std = ["thiserror", "tokio", "tracing", "dashmap", "serde/std", "futures/std"]
-no_std = ["no-std-compat", "heapless", "serde/alloc"]
+no_std = ["no-std-compat", "heapless", "serde/alloc", "futures/alloc"]
 wasm = ["getrandom", "getrandom/js"]
 minimal = []  # Minimal feature set for size optimization
 
@@ -23,7 +23,7 @@ anyhow = { workspace = true }
 
 # Async runtime - only with std
 tokio = { workspace = true, optional = true }
-futures = { workspace = true }
+futures = { workspace = true, default-features = false }
 pin-project = { workspace = true }
 
 # Collections

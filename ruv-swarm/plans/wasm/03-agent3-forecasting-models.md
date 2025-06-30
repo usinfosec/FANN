@@ -11,6 +11,402 @@ Integrate the complete neuro-divergent neural forecasting library into WASM, exp
 
 ## 📋 Responsibilities
 
+### 1. Complete neuro-divergent WASM Integration with Agent-Specific Forecasting
+
+#### Agent-Specific Forecasting Model Architecture
+```rust
+// agent_forecasting_wasm.rs - Per-agent forecasting model management
+
+use wasm_bindgen::prelude::*;
+use neuro_divergent::{NeuralForecast, NeuralForecastBuilder, BaseModel};
+use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
+#[wasm_bindgen]
+pub struct AgentForecastingManager {
+    agent_models: Arc<Mutex<HashMap<String, AgentForecastContext>>>,
+    model_registry: ModelRegistry,
+    performance_tracker: PerformanceTracker,
+    resource_manager: ForecastResourceManager,
+}
+
+#[derive(Clone)]
+pub struct AgentForecastContext {
+    pub agent_id: String,
+    pub agent_type: String,
+    pub primary_model: Box<dyn BaseModel>,
+    pub ensemble_models: Vec<Box<dyn BaseModel>>,
+    pub model_specialization: ModelSpecialization,
+    pub adaptive_config: AdaptiveModelConfig,
+    pub performance_history: ModelPerformanceHistory,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct ModelSpecialization {
+    pub forecast_domain: ForecastDomain,
+    pub temporal_patterns: Vec<TemporalPattern>,
+    pub feature_importance: HashMap<String, f32>,
+    pub optimization_objectives: Vec<OptimizationObjective>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub enum ForecastDomain {
+    ResourceUtilization,      // CPU, memory, network usage
+    TaskCompletion,          // Task duration, success rates
+    AgentPerformance,        // Agent efficiency metrics
+    SwarmDynamics,          // Inter-agent patterns
+    AnomalyDetection,       // Unusual patterns
+    CapacityPlanning,       // Future resource needs
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct TemporalPattern {
+    pub pattern_type: String, // seasonal, trend, cyclic
+    pub frequency: f32,       // in time units
+    pub strength: f32,        // 0.0 to 1.0
+    pub confidence: f32,      // 0.0 to 1.0
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct AdaptiveModelConfig {
+    pub online_learning_enabled: bool,
+    pub adaptation_rate: f32,
+    pub model_switching_threshold: f32,
+    pub ensemble_weighting_strategy: EnsembleStrategy,
+    pub retraining_frequency: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub enum EnsembleStrategy {
+    Static,               // Fixed weights
+    DynamicPerformance,   // Based on recent performance
+    Bayesian,            // Bayesian model averaging
+    StackedGeneralization, // Meta-learning approach
+}
+
+#[wasm_bindgen]
+impl AgentForecastingManager {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> AgentForecastingManager {
+        AgentForecastingManager {
+            agent_models: Arc::new(Mutex::new(HashMap::new())),
+            model_registry: ModelRegistry::new(),
+            performance_tracker: PerformanceTracker::new(),
+            resource_manager: ForecastResourceManager::new(50 * 1024 * 1024), // 50MB
+        }
+    }
+    
+    #[wasm_bindgen]
+    pub fn assign_forecasting_model(&mut self, config: JsValue) -> Result<String, JsValue> {
+        let assignment: AgentModelAssignment = serde_wasm_bindgen::from_value(config)
+            .map_err(|e| JsValue::from_str(&format!("Invalid assignment config: {}", e)))?;
+        
+        // Select optimal model based on agent type and requirements
+        let model_selection = self.select_optimal_model(&assignment)?;
+        
+        // Create specialized model instance
+        let primary_model = self.create_specialized_model(&model_selection, &assignment)?;
+        
+        // Create ensemble if requested
+        let ensemble_models = if assignment.use_ensemble {
+            self.create_ensemble_models(&assignment)?
+        } else {
+            Vec::new()
+        };
+        
+        // Configure adaptive learning
+        let adaptive_config = self.create_adaptive_config(&assignment);
+        
+        // Create forecasting context
+        let context = AgentForecastContext {
+            agent_id: assignment.agent_id.clone(),
+            agent_type: assignment.agent_type.clone(),
+            primary_model,
+            ensemble_models,
+            model_specialization: self.create_specialization(&assignment),
+            adaptive_config,
+            performance_history: ModelPerformanceHistory::new(),
+        };
+        
+        // Store context
+        self.agent_models.lock().unwrap()
+            .insert(assignment.agent_id.clone(), context);
+        
+        Ok(assignment.agent_id)
+    }
+    
+    #[wasm_bindgen]
+    pub fn agent_forecast(&mut self, agent_id: &str, input_data: JsValue) -> Result<JsValue, JsValue> {
+        let data: ForecastInput = serde_wasm_bindgen::from_value(input_data)
+            .map_err(|e| JsValue::from_str(&format!("Invalid forecast input: {}", e)))?;
+        
+        let mut models = self.agent_models.lock().unwrap();
+        let context = models.get_mut(agent_id)
+            .ok_or_else(|| JsValue::from_str(&format!("Agent model not found: {}", agent_id)))?;
+        
+        // Prepare data based on model specialization
+        let prepared_data = self.prepare_agent_specific_data(&data, &context.model_specialization)?;
+        
+        let start_time = js_sys::Date::now();
+        
+        // Generate forecast
+        let forecast_result = if context.ensemble_models.is_empty() {
+            // Single model forecast
+            self.single_model_forecast(&mut context.primary_model, &prepared_data)?
+        } else {
+            // Ensemble forecast
+            self.ensemble_forecast(context, &prepared_data)?
+        };
+        
+        let forecast_time = js_sys::Date::now() - start_time;
+        
+        // Update performance metrics
+        context.performance_history.record_forecast(
+            forecast_time,
+            forecast_result.confidence,
+            data.series_length
+        );
+        
+        // Adaptive learning if enabled
+        if context.adaptive_config.online_learning_enabled {
+            self.adapt_model_online(context, &data, &forecast_result)?;
+        }
+        
+        Ok(serde_wasm_bindgen::to_value(&forecast_result).unwrap())
+    }
+    
+    #[wasm_bindgen]
+    pub fn train_agent_model(&mut self, agent_id: &str, training_data: JsValue) -> Result<JsValue, JsValue> {
+        let data: AgentTrainingData = serde_wasm_bindgen::from_value(training_data)
+            .map_err(|e| JsValue::from_str(&format!("Invalid training data: {}", e)))?;
+        
+        let mut models = self.agent_models.lock().unwrap();
+        let context = models.get_mut(agent_id)
+            .ok_or_else(|| JsValue::from_str(&format!("Agent model not found: {}", agent_id)))?;
+        
+        // Specialized training based on forecast domain
+        let training_result = match &context.model_specialization.forecast_domain {
+            ForecastDomain::ResourceUtilization => {
+                self.train_resource_model(&mut context.primary_model, &data)?
+            },
+            ForecastDomain::TaskCompletion => {
+                self.train_task_model(&mut context.primary_model, &data)?
+            },
+            ForecastDomain::AgentPerformance => {
+                self.train_performance_model(&mut context.primary_model, &data)?
+            },
+            ForecastDomain::SwarmDynamics => {
+                self.train_swarm_model(&mut context.primary_model, &data)?
+            },
+            ForecastDomain::AnomalyDetection => {
+                self.train_anomaly_model(&mut context.primary_model, &data)?
+            },
+            ForecastDomain::CapacityPlanning => {
+                self.train_capacity_model(&mut context.primary_model, &data)?
+            },
+        };
+        
+        // Update model performance history
+        context.performance_history.record_training(
+            training_result.epochs,
+            training_result.final_loss,
+            training_result.validation_metrics
+        );
+        
+        Ok(serde_wasm_bindgen::to_value(&training_result).unwrap())
+    }
+    
+    #[wasm_bindgen]
+    pub fn optimize_agent_ensemble(&mut self, agent_id: &str, validation_data: JsValue) -> Result<JsValue, JsValue> {
+        let data: ValidationData = serde_wasm_bindgen::from_value(validation_data)
+            .map_err(|e| JsValue::from_str(&format!("Invalid validation data: {}", e)))?;
+        
+        let mut models = self.agent_models.lock().unwrap();
+        let context = models.get_mut(agent_id)
+            .ok_or_else(|| JsValue::from_str(&format!("Agent model not found: {}", agent_id)))?;
+        
+        // Evaluate each model in ensemble
+        let model_performances = self.evaluate_ensemble_models(context, &data)?;
+        
+        // Optimize ensemble weights
+        let optimization_result = match &context.adaptive_config.ensemble_weighting_strategy {
+            EnsembleStrategy::Static => {
+                OptimizationResult::static_weights(context.ensemble_models.len())
+            },
+            EnsembleStrategy::DynamicPerformance => {
+                self.optimize_dynamic_weights(&model_performances)
+            },
+            EnsembleStrategy::Bayesian => {
+                self.bayesian_model_averaging(&model_performances, &data)
+            },
+            EnsembleStrategy::StackedGeneralization => {
+                self.train_meta_learner(context, &model_performances, &data)
+            },
+        };
+        
+        // Update ensemble configuration
+        context.adaptive_config.ensemble_weights = optimization_result.weights.clone();
+        
+        Ok(serde_wasm_bindgen::to_value(&optimization_result).unwrap())
+    }
+    
+    #[wasm_bindgen]
+    pub fn get_agent_forecast_state(&self, agent_id: &str) -> Result<JsValue, JsValue> {
+        let models = self.agent_models.lock().unwrap();
+        let context = models.get(agent_id)
+            .ok_or_else(|| JsValue::from_str(&format!("Agent model not found: {}", agent_id)))?;
+        
+        let state = serde_json::json!({
+            "agent_id": agent_id,
+            "agent_type": context.agent_type,
+            "model_info": {
+                "primary_model_type": context.primary_model.model_type(),
+                "ensemble_size": context.ensemble_models.len(),
+                "specialization": context.model_specialization,
+            },
+            "adaptive_config": context.adaptive_config,
+            "performance_summary": {
+                "total_forecasts": context.performance_history.total_forecasts,
+                "average_confidence": context.performance_history.average_confidence,
+                "average_latency_ms": context.performance_history.average_latency,
+                "recent_accuracy": context.performance_history.get_recent_accuracy(10),
+            },
+            "resource_usage": {
+                "memory_mb": self.resource_manager.get_agent_memory_usage(agent_id),
+                "model_complexity": context.primary_model.complexity_score(),
+            }
+        });
+        
+        Ok(serde_wasm_bindgen::to_value(&state).unwrap())
+    }
+    
+    #[wasm_bindgen]
+    pub fn switch_agent_model(&mut self, agent_id: &str, new_model_type: &str) -> Result<(), JsValue> {
+        let mut models = self.agent_models.lock().unwrap();
+        let context = models.get_mut(agent_id)
+            .ok_or_else(|| JsValue::from_str(&format!("Agent model not found: {}", agent_id)))?;
+        
+        // Check if model switch is warranted
+        let current_performance = context.performance_history.get_recent_accuracy(5);
+        if current_performance > context.adaptive_config.model_switching_threshold {
+            return Ok(()); // Current model is performing well
+        }
+        
+        // Create new model
+        let new_model = self.model_registry.create_model(new_model_type)?;
+        
+        // Transfer learning from old model if possible
+        if let Ok(transferred) = self.transfer_learning(&context.primary_model, &new_model) {
+            context.primary_model = transferred;
+        } else {
+            context.primary_model = new_model;
+        }
+        
+        // Reset performance history for new model
+        context.performance_history.mark_model_switch();
+        
+        Ok(())
+    }
+    
+    // Helper methods for model selection and specialization
+    fn select_optimal_model(&self, assignment: &AgentModelAssignment) -> Result<ModelSelection, JsValue> {
+        let selection = match assignment.agent_type.as_str() {
+            "researcher" => ModelSelection {
+                primary_model: "NHITS".to_string(), // Good for exploratory analysis
+                complexity: ModelComplexity::Medium,
+                interpretability: true,
+            },
+            "coder" => ModelSelection {
+                primary_model: "LSTM".to_string(), // Sequential task patterns
+                complexity: ModelComplexity::Low,
+                interpretability: false,
+            },
+            "analyst" => ModelSelection {
+                primary_model: "TFT".to_string(), // Interpretable attention mechanism
+                complexity: ModelComplexity::High,
+                interpretability: true,
+            },
+            "optimizer" => ModelSelection {
+                primary_model: "NBEATS".to_string(), // Pure neural architecture
+                complexity: ModelComplexity::High,
+                interpretability: false,
+            },
+            "coordinator" => ModelSelection {
+                primary_model: "DeepAR".to_string(), // Probabilistic forecasts
+                complexity: ModelComplexity::Medium,
+                interpretability: true,
+            },
+            _ => ModelSelection {
+                primary_model: "MLP".to_string(), // Generic baseline
+                complexity: ModelComplexity::Low,
+                interpretability: true,
+            },
+        };
+        
+        Ok(selection)
+    }
+}
+
+// Supporting structures
+#[derive(Serialize, Deserialize)]
+pub struct AgentModelAssignment {
+    pub agent_id: String,
+    pub agent_type: String,
+    pub forecast_requirements: ForecastRequirements,
+    pub use_ensemble: bool,
+    pub resource_constraints: ResourceConstraints,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ForecastRequirements {
+    pub horizon: usize,
+    pub frequency: String,
+    pub accuracy_target: f32,
+    pub latency_requirement_ms: f32,
+    pub interpretability_needed: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ResourceConstraints {
+    pub max_memory_mb: f32,
+    pub max_inference_time_ms: f32,
+    pub max_training_time_minutes: f32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ModelSelection {
+    pub primary_model: String,
+    pub complexity: ModelComplexity,
+    pub interpretability: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum ModelComplexity {
+    Low,    // < 100K parameters
+    Medium, // 100K - 1M parameters
+    High,   // > 1M parameters
+}
+
+// Performance tracking
+pub struct ModelPerformanceHistory {
+    pub total_forecasts: u64,
+    pub forecast_latencies: VecDeque<f32>,
+    pub forecast_confidences: VecDeque<f32>,
+    pub training_losses: VecDeque<f32>,
+    pub validation_accuracies: VecDeque<f32>,
+    pub model_switches: Vec<ModelSwitchEvent>,
+}
+
+#[derive(Clone)]
+pub struct ModelSwitchEvent {
+    pub timestamp: f64,
+    pub from_model: String,
+    pub to_model: String,
+    pub reason: String,
+}
+```
+
 ### 1. Complete neuro-divergent WASM Integration
 
 #### Core Forecasting Interface
@@ -783,13 +1179,241 @@ impl EnsembleForecaster {
 }
 ```
 
+### 5. Agent-Specific Model Optimization
+
+#### Dynamic Model Selection and Adaptation
+```rust
+// agent_model_optimizer.rs - Runtime optimization for agent forecasting
+
+use wasm_bindgen::prelude::*;
+use std::collections::HashMap;
+
+#[wasm_bindgen]
+pub struct AgentModelOptimizer {
+    optimization_strategies: HashMap<String, Box<dyn OptimizationStrategy>>,
+    performance_analyzer: PerformanceAnalyzer,
+    resource_monitor: ResourceMonitor,
+}
+
+#[wasm_bindgen]
+impl AgentModelOptimizer {
+    #[wasm_bindgen]
+    pub fn analyze_agent_workload(&self, agent_id: &str, workload_data: JsValue) -> Result<JsValue, JsValue> {
+        let workload: AgentWorkload = serde_wasm_bindgen::from_value(workload_data)
+            .map_err(|e| JsValue::from_str(&format!("Invalid workload data: {}", e)))?;
+        
+        // Analyze temporal patterns in agent's workload
+        let pattern_analysis = PatternAnalysis {
+            seasonality: self.detect_seasonality(&workload.historical_tasks),
+            trend: self.detect_trend(&workload.historical_tasks),
+            volatility: self.calculate_volatility(&workload.historical_tasks),
+            periodicity: self.find_periodicity(&workload.historical_tasks),
+        };
+        
+        // Recommend optimal model based on patterns
+        let model_recommendation = self.recommend_model(&pattern_analysis, &workload.constraints);
+        
+        // Calculate expected performance
+        let performance_projection = self.project_performance(&model_recommendation, &workload);
+        
+        let result = serde_json::json!({
+            "agent_id": agent_id,
+            "pattern_analysis": pattern_analysis,
+            "recommended_model": model_recommendation,
+            "expected_performance": performance_projection,
+            "optimization_suggestions": self.generate_suggestions(&pattern_analysis)
+        });
+        
+        Ok(serde_wasm_bindgen::to_value(&result).unwrap())
+    }
+    
+    #[wasm_bindgen]
+    pub fn auto_tune_hyperparameters(&mut self, agent_id: &str, model_type: &str, validation_data: JsValue) -> Result<JsValue, JsValue> {
+        let data: ValidationData = serde_wasm_bindgen::from_value(validation_data)
+            .map_err(|e| JsValue::from_str(&format!("Invalid validation data: {}", e)))?;
+        
+        // Hyperparameter search space based on model type
+        let search_space = self.define_search_space(model_type);
+        
+        // Bayesian optimization for hyperparameter tuning
+        let optimization_result = self.bayesian_optimize(
+            &search_space,
+            &data,
+            agent_id,
+            model_type
+        )?;
+        
+        Ok(serde_wasm_bindgen::to_value(&optimization_result).unwrap())
+    }
+    
+    #[wasm_bindgen]
+    pub fn create_hybrid_model(&mut self, agent_id: &str, config: JsValue) -> Result<JsValue, JsValue> {
+        let hybrid_config: HybridModelConfig = serde_wasm_bindgen::from_value(config)
+            .map_err(|e| JsValue::from_str(&format!("Invalid hybrid config: {}", e)))?;
+        
+        // Combine neural and statistical approaches
+        let hybrid_architecture = HybridArchitecture {
+            neural_component: self.create_neural_component(&hybrid_config),
+            statistical_component: self.create_statistical_component(&hybrid_config),
+            fusion_method: hybrid_config.fusion_method,
+            adaptive_weights: true,
+        };
+        
+        let result = serde_json::json!({
+            "agent_id": agent_id,
+            "hybrid_architecture": hybrid_architecture,
+            "expected_benefits": {
+                "accuracy_improvement": "15-25%",
+                "robustness": "High",
+                "interpretability": "Medium"
+            }
+        });
+        
+        Ok(serde_wasm_bindgen::to_value(&result).unwrap())
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct AgentWorkload {
+    pub historical_tasks: Vec<TaskMetrics>,
+    pub current_load: f32,
+    pub future_projections: Vec<f32>,
+    pub constraints: WorkloadConstraints,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct TaskMetrics {
+    pub timestamp: f64,
+    pub task_count: u32,
+    pub completion_time: f32,
+    pub resource_usage: f32,
+    pub complexity_score: f32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct PatternAnalysis {
+    pub seasonality: Vec<SeasonalComponent>,
+    pub trend: TrendComponent,
+    pub volatility: f32,
+    pub periodicity: Vec<u32>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct HybridModelConfig {
+    pub neural_model_type: String,
+    pub statistical_model_type: String,
+    pub fusion_method: FusionMethod,
+    pub optimization_target: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum FusionMethod {
+    WeightedAverage,
+    StackedGeneralization,
+    ResidualLearning,
+    AttentionBased,
+}
+```
+
+### 6. Multi-Agent Forecasting Coordination
+
+#### Swarm-Level Forecasting Integration
+```rust
+// swarm_forecasting_coordinator.rs - Coordinate forecasting across agent swarm
+
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+pub struct SwarmForecastingCoordinator {
+    agent_forecasts: HashMap<String, AgentForecast>,
+    swarm_model: Option<SwarmLevelModel>,
+    coordination_strategy: CoordinationStrategy,
+}
+
+#[wasm_bindgen]
+impl SwarmForecastingCoordinator {
+    #[wasm_bindgen]
+    pub fn coordinate_swarm_forecast(&mut self, swarm_data: JsValue) -> Result<JsValue, JsValue> {
+        let data: SwarmForecastRequest = serde_wasm_bindgen::from_value(swarm_data)
+            .map_err(|e| JsValue::from_str(&format!("Invalid swarm data: {}", e)))?;
+        
+        // Collect individual agent forecasts
+        let mut agent_forecasts = HashMap::new();
+        for agent_id in &data.agent_ids {
+            let forecast = self.get_agent_forecast(agent_id, &data.forecast_config)?;
+            agent_forecasts.insert(agent_id.clone(), forecast);
+        }
+        
+        // Aggregate forecasts based on coordination strategy
+        let swarm_forecast = match self.coordination_strategy {
+            CoordinationStrategy::Hierarchical => {
+                self.hierarchical_aggregation(&agent_forecasts, &data.hierarchy)
+            },
+            CoordinationStrategy::ConsensusBase => {
+                self.consensus_aggregation(&agent_forecasts, &data.consensus_rules)
+            },
+            CoordinationStrategy::Specialized => {
+                self.specialized_aggregation(&agent_forecasts, &data.specializations)
+            },
+            CoordinationStrategy::Adaptive => {
+                self.adaptive_aggregation(&agent_forecasts, &data.performance_history)
+            },
+        };
+        
+        // Apply swarm-level corrections
+        let corrected_forecast = self.apply_swarm_corrections(&swarm_forecast, &data.swarm_context)?;
+        
+        Ok(serde_wasm_bindgen::to_value(&corrected_forecast).unwrap())
+    }
+    
+    #[wasm_bindgen]
+    pub fn train_swarm_meta_model(&mut self, training_data: JsValue) -> Result<JsValue, JsValue> {
+        let data: SwarmTrainingData = serde_wasm_bindgen::from_value(training_data)
+            .map_err(|e| JsValue::from_str(&format!("Invalid training data: {}", e)))?;
+        
+        // Train meta-model that learns from agent forecast errors
+        let meta_model = SwarmLevelModel {
+            model_type: "MetaLearner".to_string(),
+            input_features: self.extract_meta_features(&data),
+            correction_layers: self.build_correction_network(&data),
+            agent_weight_network: self.build_weight_prediction_network(&data),
+        };
+        
+        let training_result = self.train_meta_model(&meta_model, &data)?;
+        
+        self.swarm_model = Some(meta_model);
+        
+        Ok(serde_wasm_bindgen::to_value(&training_result).unwrap())
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SwarmForecastRequest {
+    pub agent_ids: Vec<String>,
+    pub forecast_config: ForecastConfig,
+    pub hierarchy: Option<SwarmHierarchy>,
+    pub consensus_rules: Option<ConsensusRules>,
+    pub specializations: Option<HashMap<String, Specialization>>,
+    pub performance_history: Option<PerformanceHistory>,
+    pub swarm_context: SwarmContext,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum CoordinationStrategy {
+    Hierarchical,    // Top-down aggregation
+    ConsensusBase,   // Voting-based consensus
+    Specialized,     // Domain-specific experts
+    Adaptive,        // Performance-based weighting
+}
+```
+
 ## 🔧 Implementation Tasks
 
-### Week 1: Foundation
-- [ ] **Day 1-2**: Implement core WasmNeuralForecast interface
-- [ ] **Day 3**: Create time series data processing utilities
-- [ ] **Day 4-5**: Add basic model factory and model creation
-- [ ] **Day 6-7**: Implement data transformation pipeline
+### Week 1: Foundation with Agent-Specific Support
+- [ ] **Day 1-2**: Implement core WasmNeuralForecast with agent context
+- [ ] **Day 3**: Create agent-specific data processing utilities
+- [ ] **Day 4-5**: Add model factory with agent specialization
+- [ ] **Day 6-7**: Implement adaptive transformation pipeline
 
 ### Week 2: Model Library
 - [ ] **Day 1**: Implement basic models (MLP, DLinear, NLinear)
@@ -811,11 +1435,20 @@ impl EnsembleForecaster {
 - [ ] **Day 4**: Create comprehensive examples and tutorials
 - [ ] **Day 5-7**: Documentation and API reference
 
+### Week 5: Agent-Specific Forecasting Optimization
+- [ ] **Day 1-2**: Implement per-agent model selection algorithms
+- [ ] **Day 3-4**: Add online adaptation capabilities
+- [ ] **Day 5**: Create swarm-level forecasting coordination
+- [ ] **Day 6-7**: Optimize resource usage for multiple models
+
 ## 📊 Success Metrics
 
 ### Performance Targets
 - **Training Speed**: 5x faster than Python NeuralForecast
 - **Memory Usage**: 30% less memory than Python implementations
+- **Per-Agent Models**: Support 50+ simultaneous agent models
+- **Model Switching**: < 200ms for dynamic model switching
+- **Adaptive Learning**: < 50ms for online model updates
 - **Model Support**: All 27+ models available through WASM
 - **WASM Bundle Size**: < 1MB for forecasting module
 

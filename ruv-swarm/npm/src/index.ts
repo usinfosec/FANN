@@ -35,6 +35,7 @@ import {
 export * from './types';
 export * from './utils';
 export * from './agent';
+export * from './neural-network';
 
 /**
  * Main RuvSwarm class for orchestrating swarm operations

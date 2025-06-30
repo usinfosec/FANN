@@ -1,7 +1,12 @@
 /**
  * @ruv/swarm - High-performance neural network swarm orchestration in WebAssembly
+ * Enhanced version with progressive WASM loading and full feature set
  */
 
+// Re-export the enhanced implementation
+module.exports = require('./index-enhanced');
+
+/* Legacy exports for backward compatibility */
 const path = require('path');
 const fs = require('fs').promises;
 
@@ -370,8 +375,8 @@ const {
   AGENT_COGNITIVE_PROFILES
 } = require('./neural-agent');
 
-// Export main class and utilities
-module.exports = {
+// Legacy exports - these are now provided by index-enhanced.js
+const legacyExports = {
   RuvSwarm,
   consoleLog,
   consoleError,
@@ -384,3 +389,8 @@ module.exports = {
   COGNITIVE_PATTERNS,
   AGENT_COGNITIVE_PROFILES
 };
+
+// Override module.exports if it hasn't been set by index-enhanced
+if (!module.exports.RuvSwarm) {
+  module.exports = legacyExports;
+}
