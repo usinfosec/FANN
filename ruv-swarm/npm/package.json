@@ -6,7 +6,7 @@
   "module": "src/index.js",
   "types": "src/index.d.ts",
   "bin": {
-    "ruv-swarm": "./bin/ruv-swarm-enhanced.js"
+    "ruv-swarm": "./bin/ruv-swarm-clean.js"
   },
   "files": [
     "bin/",
@@ -81,8 +81,7 @@
     "jest": "^29.7.0",
     "@types/node": "^20.0.0",
     "@types/ws": "^8.5.0",
-    "@types/uuid": "^9.0.0",
-    "cargo-watch": "^8.4.0"
+    "@types/uuid": "^9.0.0"
   },
   "optionalDependencies": {
     "worker_threads": "*"
