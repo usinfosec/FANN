@@ -90,7 +90,19 @@ class WasmModuleLoader {
 
         // Check if module is marked as non-existent and optional
         if (!moduleInfo.exists && moduleInfo.optional) {
-            console.warn(`⚠️ Optional module ${moduleName} is not available, functionality will be provided by core module`);
+            // Silently use core module for neural and forecasting features
+            // These are integrated into the core module, not separate files
+            if (moduleName === 'neural' || moduleName === 'forecasting') {
+                if (this.modules.has('core')) {
+                    const coreModule = this.modules.get('core');
+                    this.modules.set(moduleName, coreModule); // Alias to core module
+                    return coreModule;
+                }
+            } else {
+                // Only warn for other optional modules
+                console.warn(`⚠️ Optional module ${moduleName} is not available, functionality will be provided by core module`);
+            }
+            
             // Return a reference to the core module instead of a placeholder
             if (moduleName !== 'core' && this.modules.has('core')) {
                 const coreModule = this.modules.get('core');
