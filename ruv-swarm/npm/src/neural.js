@@ -235,6 +235,40 @@ class NeuralCLI {
         }
     }
 
+    // Helper method to calculate convergence rate
+    calculateConvergenceRate(trainingResults) {
+        if (trainingResults.length < 3) return 'insufficient_data';
+        
+        const recentResults = trainingResults.slice(-5); // Last 5 iterations
+        const lossVariance = this.calculateVariance(recentResults.map(r => r.loss));
+        const accuracyTrend = this.calculateTrend(recentResults.map(r => r.accuracy));
+        
+        if (lossVariance < 0.001 && accuracyTrend > 0) {
+            return 'converged';
+        } else if (lossVariance < 0.01 && accuracyTrend >= 0) {
+            return 'converging';
+        } else if (accuracyTrend > 0) {
+            return 'improving';
+        } else {
+            return 'needs_adjustment';
+        }
+    }
+    
+    // Helper method to calculate variance
+    calculateVariance(values) {
+        if (values.length === 0) return 0;
+        const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+        return values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+    }
+    
+    // Helper method to calculate trend (positive = improving)
+    calculateTrend(values) {
+        if (values.length < 2) return 0;
+        const first = values[0];
+        const last = values[values.length - 1];
+        return last - first;
+    }
+
     getArg(args, flag) {
         const index = args.indexOf(flag);
         return index !== -1 && index + 1 < args.length ? args[index + 1] : null;

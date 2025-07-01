@@ -8,6 +8,124 @@ const { setupClaudeIntegration, invokeClaudeWithSwarm } = require('../src/claude
 const { RuvSwarm } = require('../src/index-enhanced');
 const { EnhancedMCPTools } = require('../src/mcp-tools-enhanced');
 
+// Input validation constants and functions
+const VALID_TOPOLOGIES = ['mesh', 'hierarchical', 'ring', 'star'];
+const VALID_AGENT_TYPES = ['researcher', 'coder', 'analyst', 'optimizer', 'coordinator', 'architect', 'tester'];
+const MAX_AGENTS_LIMIT = 100;
+const MIN_AGENTS_LIMIT = 1;
+
+class ValidationError extends Error {
+    constructor(message, parameter = null) {
+        super(message);
+        this.name = 'ValidationError';
+        this.parameter = parameter;
+    }
+}
+
+function validateTopology(topology) {
+    if (!topology || typeof topology !== 'string') {
+        throw new ValidationError('Topology must be a non-empty string', 'topology');
+    }
+    
+    if (!VALID_TOPOLOGIES.includes(topology.toLowerCase())) {
+        throw new ValidationError(
+            `Invalid topology '${topology}'. Valid topologies are: ${VALID_TOPOLOGIES.join(', ')}`,
+            'topology'
+        );
+    }
+    
+    return topology.toLowerCase();
+}
+
+function validateMaxAgents(maxAgents) {
+    // Handle string input
+    if (typeof maxAgents === 'string') {
+        const parsed = parseInt(maxAgents, 10);
+        if (isNaN(parsed)) {
+            throw new ValidationError(
+                `Invalid maxAgents '${maxAgents}'. Must be a number between ${MIN_AGENTS_LIMIT} and ${MAX_AGENTS_LIMIT}`,
+                'maxAgents'
+            );
+        }
+        maxAgents = parsed;
+    }
+    
+    if (!Number.isInteger(maxAgents) || maxAgents < MIN_AGENTS_LIMIT || maxAgents > MAX_AGENTS_LIMIT) {
+        throw new ValidationError(
+            `Invalid maxAgents '${maxAgents}'. Must be an integer between ${MIN_AGENTS_LIMIT} and ${MAX_AGENTS_LIMIT}`,
+            'maxAgents'
+        );
+    }
+    
+    return maxAgents;
+}
+
+function validateAgentType(type) {
+    if (!type || typeof type !== 'string') {
+        throw new ValidationError('Agent type must be a non-empty string', 'type');
+    }
+    
+    if (!VALID_AGENT_TYPES.includes(type.toLowerCase())) {
+        throw new ValidationError(
+            `Invalid agent type '${type}'. Valid types are: ${VALID_AGENT_TYPES.join(', ')}`,
+            'type'
+        );
+    }
+    
+    return type.toLowerCase();
+}
+
+function validateAgentName(name) {
+    if (name !== null && name !== undefined) {
+        if (typeof name !== 'string') {
+            throw new ValidationError('Agent name must be a string', 'name');
+        }
+        
+        if (name.length === 0) {
+            throw new ValidationError('Agent name cannot be empty', 'name');
+        }
+        
+        if (name.length > 100) {
+            throw new ValidationError('Agent name cannot exceed 100 characters', 'name');
+        }
+        
+        // Check for invalid characters
+        if (!/^[a-zA-Z0-9\s\-_\.]+$/.test(name)) {
+            throw new ValidationError(
+                'Agent name can only contain letters, numbers, spaces, hyphens, underscores, and periods',
+                'name'
+            );
+        }
+    }
+    
+    return name;
+}
+
+function validateTaskDescription(task) {
+    if (!task || typeof task !== 'string') {
+        throw new ValidationError('Task description must be a non-empty string', 'task');
+    }
+    
+    if (task.trim().length === 0) {
+        throw new ValidationError('Task description cannot be empty or only whitespace', 'task');
+    }
+    
+    if (task.length > 1000) {
+        throw new ValidationError('Task description cannot exceed 1000 characters', 'task');
+    }
+    
+    return task.trim();
+}
+
+function logValidationError(error, command) {
+    console.log(`❌ Validation Error in '${command}' command:`);
+    console.log(`   ${error.message}`);
+    if (error.parameter) {
+        console.log(`   Parameter: ${error.parameter}`);
+    }
+    console.log(`\n💡 For help with valid parameters, run: ruv-swarm help`);
+}
+
 let globalRuvSwarm = null;
 let globalMCPTools = null;
 
@@ -34,104 +152,139 @@ async function initializeSystem() {
 }
 
 async function handleInit(args) {
-    const { mcpTools } = await initializeSystem();
-    
-    // Filter out flags to get positional arguments
-    const positionalArgs = args.filter(arg => !arg.startsWith('--'));
-    const topology = positionalArgs[0] || 'mesh';
-    const maxAgents = parseInt(positionalArgs[1]) || 5;
-    const setupClaude = args.includes('--claude') || args.includes('--setup-claude');
-    const forceSetup = args.includes('--force');
-    
-    console.log('🚀 Initializing ruv-swarm...');
-    
-    const result = await mcpTools.swarm_init({
-        topology,
-        maxAgents,
-        strategy: 'balanced',
-        enableCognitiveDiversity: true,
-        enableNeuralAgents: true,
-        enableForecasting: args.includes('--forecasting')
-    });
-    
-    console.log('🐝 Swarm initialized:');
-    console.log('   ID: ' + result.id);
-    console.log('   Topology: ' + result.topology);
-    console.log('   Max Agents: ' + result.maxAgents);
-    console.log('   Features: ' + Object.entries(result.features).filter(([k,v]) => v).map(([k,v]) => k).join(', '));
-    console.log('   Performance: ' + result.performance.initialization_time_ms.toFixed(1) + 'ms');
-    
-    // Setup Claude integration using modular approach
-    if (setupClaude || forceSetup) {
-        console.log('\n📚 Setting up modular Claude Code integration...');
-        try {
-            await setupClaudeIntegration({
-                autoSetup: setupClaude,
-                forceSetup: forceSetup,
-                workingDir: process.cwd(),
-                packageName: 'ruv-swarm'
-            });
-        } catch (error) {
-            console.log('⚠️  Claude integration setup had issues:', error.message);
-            console.log('💡 Manual setup: claude mcp add ruv-swarm npx ruv-swarm mcp start');
+    try {
+        const { mcpTools } = await initializeSystem();
+        
+        // Filter out flags to get positional arguments
+        const positionalArgs = args.filter(arg => !arg.startsWith('--'));
+        const rawTopology = positionalArgs[0] || 'mesh';
+        const rawMaxAgents = positionalArgs[1] || '5';
+        const setupClaude = args.includes('--claude') || args.includes('--setup-claude');
+        const forceSetup = args.includes('--force');
+        
+        // Validate inputs
+        const topology = validateTopology(rawTopology);
+        const maxAgents = validateMaxAgents(rawMaxAgents);
+        
+        console.log('🚀 Initializing ruv-swarm...');
+        
+        const result = await mcpTools.swarm_init({
+            topology,
+            maxAgents,
+            strategy: 'balanced',
+            enableCognitiveDiversity: true,
+            enableNeuralAgents: true,
+            enableForecasting: args.includes('--forecasting')
+        });
+        
+        console.log('🐝 Swarm initialized:');
+        console.log('   ID: ' + result.id);
+        console.log('   Topology: ' + result.topology);
+        console.log('   Max Agents: ' + result.maxAgents);
+        console.log('   Features: ' + Object.entries(result.features).filter(([k,v]) => v).map(([k,v]) => k).join(', '));
+        console.log('   Performance: ' + result.performance.initialization_time_ms.toFixed(1) + 'ms');
+        
+        // Setup Claude integration using modular approach
+        if (setupClaude || forceSetup) {
+            console.log('\n📚 Setting up modular Claude Code integration...');
+            try {
+                await setupClaudeIntegration({
+                    autoSetup: setupClaude,
+                    forceSetup: forceSetup,
+                    workingDir: process.cwd(),
+                    packageName: 'ruv-swarm'
+                });
+            } catch (error) {
+                console.log('⚠️  Claude integration setup had issues:', error.message);
+                console.log('💡 Manual setup: claude mcp add ruv-swarm npx ruv-swarm mcp start');
+            }
         }
-    }
-    
-    console.log('\n✅ Initialization complete!');
-    console.log('\n🔗 Next steps:');
-    console.log('   1. Test with MCP tools: mcp__ruv-swarm__agent_spawn');
-    console.log('   2. Use wrapper scripts for remote execution');
-    console.log('   3. Check .claude/commands/ for detailed guides');
-    
-    if (forceSetup) {
-        console.log('\n🔄 Files regenerated with --force flag');
+        
+        console.log('\n✅ Initialization complete!');
+        console.log('\n🔗 Next steps:');
+        console.log('   1. Test with MCP tools: mcp__ruv-swarm__agent_spawn');
+        console.log('   2. Use wrapper scripts for remote execution');
+        console.log('   3. Check .claude/commands/ for detailed guides');
+        
+        if (forceSetup) {
+            console.log('\n🔄 Files regenerated with --force flag');
+        }
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            logValidationError(error, 'init');
+            return;
+        }
+        throw error;
     }
 }
 
 async function handleSpawn(args) {
-    const { mcpTools } = await initializeSystem();
+    try {
+        const { mcpTools } = await initializeSystem();
+        
+        const rawType = args[0] || 'researcher';
+        const rawName = args[1] || null;
+        
+        // Validate inputs
+        const type = validateAgentType(rawType);
+        const name = validateAgentName(rawName);
     
-    const type = args[0] || 'researcher';
-    const name = args[1] || null;
-    
-    const result = await mcpTools.agent_spawn({
-        type,
-        name,
-        enableNeuralNetwork: !args.includes('--no-neural')
-    });
-    
-    console.log('🤖 Agent spawned:');
-    console.log('   ID: ' + result.agent.id);
-    console.log('   Name: ' + result.agent.name);
-    console.log('   Type: ' + result.agent.type);
-    console.log('   Cognitive Pattern: ' + result.agent.cognitive_pattern);
-    if (result.agent.neural_network_id) {
-        console.log('   Neural Network: ' + result.agent.neural_network_id);
+        const result = await mcpTools.agent_spawn({
+            type,
+            name,
+            enableNeuralNetwork: !args.includes('--no-neural')
+        });
+        
+        console.log('🤖 Agent spawned:');
+        console.log('   ID: ' + result.agent.id);
+        console.log('   Name: ' + result.agent.name);
+        console.log('   Type: ' + result.agent.type);
+        console.log('   Cognitive Pattern: ' + result.agent.cognitive_pattern);
+        if (result.agent.neural_network_id) {
+            console.log('   Neural Network: ' + result.agent.neural_network_id);
+        }
+        console.log('   Swarm Capacity: ' + result.swarm_info.capacity);
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            logValidationError(error, 'spawn');
+            return;
+        }
+        throw error;
     }
-    console.log('   Swarm Capacity: ' + result.swarm_info.capacity);
 }
 
 async function handleOrchestrate(args) {
-    const { mcpTools } = await initializeSystem();
+    try {
+        const { mcpTools } = await initializeSystem();
+        
+        const rawTask = args.join(' ');
+        if (!rawTask) {
+            console.log('❌ No task provided');
+            console.log('Usage: ruv-swarm orchestrate "task description"');
+            return;
+        }
+        
+        // Validate task description
+        const task = validateTaskDescription(rawTask);
     
-    const task = args.join(' ');
-    if (!task) {
-        console.log('❌ No task provided');
-        console.log('Usage: ruv-swarm orchestrate "task description"');
-        return;
+        const result = await mcpTools.task_orchestrate({
+            task: task,
+            strategy: 'adaptive'
+        });
+        
+        console.log('📋 Task orchestrated:');
+        console.log('   ID: ' + result.taskId);
+        console.log('   Description: ' + result.description);
+        console.log('   Assigned Agents: ' + result.assigned_agents.length);
+        console.log('   Status: ' + result.status);
+        console.log('   Estimated Completion: ' + result.performance.estimated_completion_ms + 'ms');
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            logValidationError(error, 'orchestrate');
+            return;
+        }
+        throw error;
     }
-    
-    const result = await mcpTools.task_orchestrate({
-        task: task,
-        strategy: 'adaptive'
-    });
-    
-    console.log('📋 Task orchestrated:');
-    console.log('   ID: ' + result.taskId);
-    console.log('   Description: ' + result.description);
-    console.log('   Assigned Agents: ' + result.assigned_agents.length);
-    console.log('   Status: ' + result.status);
-    console.log('   Estimated Completion: ' + result.performance.estimated_completion_ms + 'ms');
 }
 
 async function handleClaudeInvoke(args) {
@@ -725,6 +878,13 @@ Examples:
   ruv-swarm neural status
   ruv-swarm benchmark run --iterations 10
   ruv-swarm performance analyze --task-id recent
+
+Validation Rules:
+  Topologies: mesh, hierarchical, ring, star
+  Max Agents: 1-100 (integers only)
+  Agent Types: researcher, coder, analyst, optimizer, coordinator, architect, tester
+  Agent Names: 1-100 characters, alphanumeric + spaces/hyphens/underscores/periods
+  Task Descriptions: 1-1000 characters, non-empty
 
 Modular Features:
   📚 Automatic documentation generation
