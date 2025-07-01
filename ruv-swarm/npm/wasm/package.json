@@ -1,17 +1,16 @@
 {
   "name": "ruv-swarm-wasm",
-  "type": "module",
   "collaborators": [
     "rUv Contributors"
   ],
   "description": "WebAssembly bindings for ruv-swarm neural network orchestration",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT OR Apache-2.0",
   "files": [
     "ruv_swarm_wasm_bg.wasm",
     "ruv_swarm_wasm.js"
   ],
-  "main": "ruv_swarm_wasm.js",
+  "module": "ruv_swarm_wasm.js",
   "sideEffects": [
     "./snippets/*"
   ]
