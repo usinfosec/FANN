@@ -156,10 +156,13 @@ Once configured, ruv-swarm MCP tools enhance Claude Code's coordination:
 
 **What Actually Happens:**
 1. The swarm sets up a coordination framework
-2. Agents represent different analytical approaches
+2. Each agent MUST use ruv-swarm hooks for coordination:
+   - `npx ruv-swarm hook pre-task` before starting
+   - `npx ruv-swarm hook post-edit` after each file operation
+   - `npx ruv-swarm hook notification` to share decisions
 3. Claude Code uses its native Read, WebSearch, and Task tools
-4. The swarm coordinates how Claude Code approaches the research
-5. Results are synthesized by Claude Code, not the agents
+4. The swarm coordinates through shared memory and hooks
+5. Results are synthesized by Claude Code with full coordination history
 
 ### Development Coordination Example
 **Context:** Claude Code needs to build a complex system with multiple components
@@ -181,10 +184,13 @@ Once configured, ruv-swarm MCP tools enhance Claude Code's coordination:
 
 **What Actually Happens:**
 1. The swarm creates a development coordination plan
-2. Agents guide Claude Code's approach to the problem
+2. Each agent coordinates using mandatory hooks:
+   - Pre-task hooks for context loading
+   - Post-edit hooks for progress tracking
+   - Memory storage for cross-agent coordination
 3. Claude Code uses Write, Edit, Bash tools for implementation
-4. The swarm ensures systematic coverage of all aspects
-5. All code is written by Claude Code, not the agents
+4. Agents share progress through ruv-swarm memory
+5. All code is written by Claude Code with full coordination
 
 ## Best Practices for Coordination
 
@@ -271,6 +277,8 @@ See `.claude/commands/` for detailed documentation on all features.
 6. **Enable Hooks**: Use the pre-configured hooks for automation
 
 ## 🧠 SWARM ORCHESTRATION PATTERN
+
+### You are the SWARM ORCHESTRATOR. **IMMEDIATELY SPAWN AGENTS IN PARALLEL** to execute tasks
 
 ### 🚨 CRITICAL INSTRUCTION: You are the SWARM ORCHESTRATOR
 
@@ -414,65 +422,38 @@ Priority indicators: 🔴 HIGH/CRITICAL, 🟡 MEDIUM, 🟢 LOW
 Dependencies: ↳ X deps | Actionable: ▶
 ```
 
-### 🎯 REAL EXAMPLE: Full-Stack App Development with Agent Coordination
+### 🎯 REAL EXAMPLE: Full-Stack App Development
 
 **Task**: "Build a complete REST API with authentication, database, and tests"
 
-**🚨 MANDATORY APPROACH - Parallel Spawn with Coordination Instructions:**
+**🚨 MANDATORY APPROACH - Everything in Parallel:**
 
 ```javascript
-// ✅ CORRECT: SINGLE MESSAGE with ALL operations + coordination
+// ✅ CORRECT: SINGLE MESSAGE with ALL operations
 [BatchTool - Message 1]:
-  // Initialize swarm and set session ID
-  Bash("export SWARM_ID=swarm-$(date +%s)")
-  npx ruv-swarm hook session-restore --session-id "${SWARM_ID}" --load-memory true
-  
-  // Spawn ALL agents with MANDATORY coordination instructions
-  Task("Architect Agent", `
-    You are the System Architect agent in swarm ${SWARM_ID}.
-    
-    MANDATORY COORDINATION:
-    1. START: npx ruv-swarm hook pre-task --description "Design API architecture"
-    2. DURING: After EVERY file, run: npx ruv-swarm hook post-edit --file "[file]" --memory-key "architect/[step]"
-    3. MEMORY: Store decisions: npx ruv-swarm hook notification --message "[decision]"
-    4. END: npx ruv-swarm hook post-task --task-id "architect" --analyze-performance true
-    
-    TASK: Design REST API architecture with auth, database schema, and component structure.
-    Create docs/architecture.md with complete system design.
-  `)
-  
-  Task("Backend Developer Agent", `
-    You are the Backend Developer agent in swarm ${SWARM_ID}.
-    
-    MANDATORY COORDINATION:
-    1. CHECK FIRST: npx ruv-swarm hook pre-search --query "architect decisions" --cache-results true
-    2. DURING: After EVERY file: npx ruv-swarm hook post-edit --file "[file]" --memory-key "backend/[step]"
-    3. SHARE: npx ruv-swarm hook notification --message "[what you built]"
-    4. END: npx ruv-swarm hook post-task --task-id "backend" --analyze-performance true
-    
-    TASK: Implement Express API with JWT auth, SQLite database, rate limiting.
-    WAIT for architect's design in memory before starting!
-  `)
-  
-  Task("Test Engineer Agent", `
-    You are the Test Engineer agent in swarm ${SWARM_ID}.
-    
-    MANDATORY COORDINATION:
-    1. LOAD CONTEXT: npx ruv-swarm hook session-restore --session-id "${SWARM_ID}" --load-memory true
-    2. CHECK: What did backend build? npx ruv-swarm hook pre-search --query "backend API endpoints"
-    3. TEST & STORE: npx ruv-swarm hook post-bash --command "npm test" --memory-key "tests/coverage"
-    4. END: npx ruv-swarm hook post-task --task-id "tester" --analyze-performance true
-    
-    TASK: Write comprehensive tests for all API endpoints and achieve 80%+ coverage.
-  `)
+  // Initialize and spawn ALL agents at once
+  mcp__ruv-swarm__swarm_init { topology: "hierarchical", maxAgents: 8, strategy: "parallel" }
+  mcp__ruv-swarm__agent_spawn { type: "architect", name: "System Designer" }
+  mcp__ruv-swarm__agent_spawn { type: "coder", name: "API Developer" }
+  mcp__ruv-swarm__agent_spawn { type: "coder", name: "Auth Expert" }
+  mcp__ruv-swarm__agent_spawn { type: "analyst", name: "DB Designer" }
+  mcp__ruv-swarm__agent_spawn { type: "tester", name: "Test Engineer" }
+  mcp__ruv-swarm__agent_spawn { type: "coordinator", name: "Lead" }
   
   // Update ALL todos at once
   TodoWrite { todos: [
-    { id: "coord", content: "Initialize swarm coordination", status: "completed", priority: "high" },
-    { id: "design", content: "Architect: Design API architecture", status: "in_progress", priority: "high" },
-    { id: "backend", content: "Backend: Implement API", status: "in_progress", priority: "high" },
-    { id: "tests", content: "Tester: Write tests", status: "in_progress", priority: "high" }
+    { id: "design", content: "Design API architecture", status: "in_progress", priority: "high" },
+    { id: "auth", content: "Implement authentication", status: "pending", priority: "high" },
+    { id: "db", content: "Design database schema", status: "pending", priority: "high" },
+    { id: "api", content: "Build REST endpoints", status: "pending", priority: "high" },
+    { id: "tests", content: "Write comprehensive tests", status: "pending", priority: "medium" }
   ]}
+  
+  // Start orchestration
+  mcp__ruv-swarm__task_orchestrate { task: "Build REST API", strategy: "parallel" }
+  
+  // Store initial memory
+  mcp__ruv-swarm__memory_usage { action: "store", key: "project/init", value: { started: Date.now() } }
 
 [BatchTool - Message 2]:
   // Create ALL directories at once

@@ -578,9 +578,9 @@ Agent Activity:
 Remember: **ruv-swarm coordinates, Claude Code creates!** Start with \`mcp__ruv-swarm__swarm_init\` to enhance your development workflow.
 `;
 
-        const filePath = path.join(this.workingDir, 'claude.md');
+        const filePath = path.join(this.workingDir, 'CLAUDE.md');
         await fs.writeFile(filePath, content);
-        return { file: 'claude.md', success: true };
+        return { file: 'CLAUDE.md', success: true };
     }
 
     /**
@@ -1081,7 +1081,7 @@ ${config.details}
             const totalCommands = results.commands.files.length + results.advancedCommands.files.length;
 
             console.log('✅ Documentation generated successfully');
-            console.log('   - claude.md');
+            console.log('   - CLAUDE.md');
             console.log('   - .claude/settings.json (with enhanced hooks)');
             console.log('   - .claude/commands/ directory with ' + totalCommands + ' files');
             console.log('     • Basic commands: ' + results.commands.files.length);
