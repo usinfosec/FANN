@@ -3,7 +3,7 @@
  * into agent processing for cognitive diversity and learning
  */
 
-const EventEmitter = require('events');
+import { EventEmitter } from 'events';
 
 // Cognitive diversity patterns for different agent types
 const COGNITIVE_PATTERNS = {
@@ -694,7 +694,7 @@ class NeuralAgentFactory {
   }
 }
 
-module.exports = {
+export {
   NeuralAgent,
   NeuralAgentFactory,
   NeuralNetwork,

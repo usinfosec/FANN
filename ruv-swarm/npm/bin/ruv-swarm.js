@@ -3,13 +3,13 @@
  * ruv-swarm CLI - Neural network swarm orchestration
  */
 
-const { RuvSwarm } = require('../src');
-const { NeuralAgentFactory, COGNITIVE_PATTERNS } = require('../src/neural-agent');
-const { SwarmPersistence } = require('../src/persistence');
-const path = require('path');
-const fs = require('fs').promises;
-const fsSync = require('fs');
-const Database = require('better-sqlite3');
+import { RuvSwarm } from '../src/index.js';
+import { NeuralAgentFactory, COGNITIVE_PATTERNS } from '../src/neural-agent.js';
+import { SwarmPersistence } from '../src/persistence.js';
+import path from 'path';
+import { promises as fs } from 'fs';
+import * as fsSync from 'fs';
+import Database from 'better-sqlite3';
 
 // Global instances for MCP
 let globalRuvSwarm = null;
@@ -23,7 +23,7 @@ async function main() {
   let swarm;
   try {
     const ruvSwarm = await RuvSwarm.initialize({
-      wasmPath: path.join(__dirname, '..', 'wasm'),
+      wasmPath: path.join(new URL('.', import.meta.url).pathname, '..', 'wasm'),
       useSIMD: RuvSwarm.detectSIMDSupport(),
       debug: args.includes('--debug')
     });
@@ -752,7 +752,7 @@ async function startMcpServer(args) {
       let ruvSwarm;
       try {
         ruvSwarm = await RuvSwarm.initialize({
-          wasmPath: path.join(__dirname, '..', 'wasm'),
+          wasmPath: path.join(new URL('.', import.meta.url).pathname, '..', 'wasm'),
           useSIMD: RuvSwarm.detectSIMDSupport(),
           debug: false // No debug output in MCP mode
         });
@@ -1322,8 +1322,8 @@ async function executeSwarmTool(toolName, args, ruvSwarm) {
             swarms: swarmDetails,
             system: {
               memory_usage: `${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`,
-              database_size: fsSync.existsSync(path.join(__dirname, '..', 'data', 'ruv-swarm.db')) ? 
-                `${(fsSync.statSync(path.join(__dirname, '..', 'data', 'ruv-swarm.db')).size / 1024).toFixed(2)} KB` : '0 KB'
+              database_size: fsSync.existsSync(path.join(new URL('.', import.meta.url).pathname, '..', 'data', 'ruv-swarm.db')) ? 
+                `${(fsSync.statSync(path.join(new URL('.', import.meta.url).pathname, '..', 'data', 'ruv-swarm.db')).size / 1024).toFixed(2)} KB` : '0 KB'
             }
           };
         }

@@ -3,8 +3,8 @@
  * Provides complete WASM capabilities exposure through MCP interface
  */
 
-const { RuvSwarm } = require('./index-enhanced');
-const { NeuralNetworkManager } = require('./neural-network-manager');
+import { RuvSwarm } from './index-enhanced.js';
+import { NeuralNetworkManager } from './neural-network-manager.js';
 
 class EnhancedMCPTools {
     constructor(ruvSwarmInstance = null) {
@@ -1001,4 +1001,4 @@ class EnhancedMCPTools {
     }
 }
 
-module.exports = { EnhancedMCPTools };
+export { EnhancedMCPTools };

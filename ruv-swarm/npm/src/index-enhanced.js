@@ -4,11 +4,11 @@
  * neural networks, forecasting, and swarm orchestration
  */
 
-const { WasmModuleLoader } = require('./wasm-loader');
-const { SwarmPersistence } = require('./persistence');
-const { NeuralAgentFactory } = require('./neural-agent');
-const path = require('path');
-const fs = require('fs');
+import { WasmModuleLoader } from './wasm-loader.js';
+import { SwarmPersistence } from './persistence.js';
+import { NeuralAgentFactory } from './neural-agent.js';
+import path from 'path';
+import fs from 'fs';
 
 class RuvSwarm {
     constructor() {
@@ -659,4 +659,4 @@ class Task {
     }
 }
 
-module.exports = { RuvSwarm, Swarm, Agent, Task };
+export { RuvSwarm, Swarm, Agent, Task };

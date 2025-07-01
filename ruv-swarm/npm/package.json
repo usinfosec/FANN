@@ -5,6 +5,7 @@
   "main": "src/index.js",
   "module": "src/index.js",
   "types": "src/index.d.ts",
+  "type": "module",
   "bin": {
     "ruv-swarm": "./bin/ruv-swarm-clean.js"
   },

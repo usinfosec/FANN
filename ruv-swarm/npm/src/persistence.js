@@ -2,12 +2,12 @@
  * SQLite Persistence Layer for ruv-swarm MCP
  */
 
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs');
+import Database from 'better-sqlite3';
+import path from 'path';
+import fs from 'fs';
 
 class SwarmPersistence {
-  constructor(dbPath = path.join(__dirname, '..', 'data', 'ruv-swarm.db')) {
+  constructor(dbPath = path.join(new URL('.', import.meta.url).pathname, '..', 'data', 'ruv-swarm.db')) {
     // Ensure data directory exists
     const dataDir = path.dirname(dbPath);
     if (!fs.existsSync(dataDir)) {
@@ -414,4 +414,4 @@ class SwarmPersistence {
   }
 }
 
-module.exports = { SwarmPersistence };
+export { SwarmPersistence };

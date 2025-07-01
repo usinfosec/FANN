@@ -3,8 +3,8 @@
  * Generates claude.md and .claude/commands/ documentation
  */
 
-const fs = require('fs').promises;
-const path = require('path');
+import { promises as fs } from 'fs';
+import path from 'path';
 
 class ClaudeDocsGenerator {
     constructor(options = {}) {
@@ -472,4 +472,4 @@ ${config.details}
     }
 }
 
-module.exports = { ClaudeDocsGenerator };
+export { ClaudeDocsGenerator };
