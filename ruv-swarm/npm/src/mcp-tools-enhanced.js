@@ -5,18 +5,21 @@
 
 const { RuvSwarm } = require('./index-enhanced');
 const { NeuralNetworkManager } = require('./neural-network-manager');
+const { SwarmPersistence } = require('./persistence');
 
 class EnhancedMCPTools {
     constructor(ruvSwarmInstance = null) {
         this.ruvSwarm = ruvSwarmInstance;
         this.activeSwarms = new Map();
         this.toolMetrics = new Map();
+        this.persistence = new SwarmPersistence();
     }
 
     async initialize(ruvSwarmInstance = null) {
         // If instance provided, use it
         if (ruvSwarmInstance) {
             this.ruvSwarm = ruvSwarmInstance;
+            // Persistence loading disabled to prevent duplicates
             return this.ruvSwarm;
         }
         
@@ -33,7 +36,42 @@ class EnhancedMCPTools {
             enableForecasting: true,
             useSIMD: true
         });
+        
+        // Load existing swarms from database (disabled to prevent duplicates)
+        // await this.loadExistingSwarms();
+        
         return this.ruvSwarm;
+    }
+
+    async loadExistingSwarms() {
+        try {
+            const existingSwarms = this.persistence.getActiveSwarms();
+            for (const swarmData of existingSwarms) {
+                // Recreate swarm instances from database
+                const swarm = await this.ruvSwarm.createSwarm({
+                    id: swarmData.id,
+                    name: swarmData.name,
+                    topology: swarmData.topology,
+                    maxAgents: swarmData.max_agents,
+                    strategy: swarmData.strategy
+                });
+                this.activeSwarms.set(swarmData.id, swarm);
+
+                // Load agents for this swarm
+                const agents = this.persistence.getSwarmAgents(swarmData.id);
+                for (const agentData of agents) {
+                    const agent = await swarm.spawn({
+                        id: agentData.id,
+                        type: agentData.type,
+                        name: agentData.name,
+                        capabilities: agentData.capabilities,
+                        enableNeuralNetwork: true
+                    });
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to load existing swarms:', error.message);
+        }
     }
 
     // Enhanced swarm_init with full WASM capabilities
@@ -88,7 +126,24 @@ class EnhancedMCPTools {
                 }
             };
 
+            // Store in both memory and persistent database
             this.activeSwarms.set(swarm.id, swarm);
+            
+            // Only create in DB if it doesn't exist
+            try {
+                this.persistence.createSwarm({
+                    id: swarm.id,
+                    name: swarm.name || `${topology}-swarm-${Date.now()}`,
+                    topology,
+                    maxAgents,
+                    strategy,
+                    metadata: { features: result.features, performance: result.performance }
+                });
+            } catch (error) {
+                if (!error.message.includes('UNIQUE constraint failed')) {
+                    throw error;
+                }
+            }
             this.recordToolMetrics('swarm_init', startTime, 'success');
             
             return result;
@@ -149,6 +204,22 @@ class EnhancedMCPTools {
                     memory_overhead_mb: 5.0 // Estimated per-agent memory
                 }
             };
+
+            // Store agent in database
+            try {
+                this.persistence.createAgent({
+                    id: agent.id,
+                    swarmId: swarm.id,
+                    name: agent.name,
+                    type: agent.type,
+                    capabilities: agent.capabilities || [],
+                    neuralConfig: agent.neuralConfig || {}
+                });
+            } catch (error) {
+                if (!error.message.includes('UNIQUE constraint failed')) {
+                    throw error;
+                }
+            }
 
             this.recordToolMetrics('agent_spawn', startTime, 'success');
             return result;

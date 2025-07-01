@@ -1010,12 +1010,11 @@ ${config.details}
     async generateSettingsJson() {
         const settings = {
             env: {
-                RUV_SWARM_AUTO_INIT: "true",
-                RUV_SWARM_MEMORY_PERSIST: "true",
-                RUV_SWARM_NEURAL_LEARNING: "true",
-                RUV_SWARM_PERFORMANCE_TRACKING: "true",
-                RUV_SWARM_REMOTE_EXECUTION: "true",
-                RUV_SWARM_COORDINATION_MODE: "adaptive"
+                RUV_SWARM_AUTO_COMMIT: "false",
+                RUV_SWARM_AUTO_PUSH: "false",
+                RUV_SWARM_HOOKS_ENABLED: "false",
+                RUV_SWARM_TELEMETRY_ENABLED: "true",
+                RUV_SWARM_REMOTE_EXECUTION: "true"
             },
             permissions: {
                 allow: [
@@ -1042,160 +1041,13 @@ ${config.details}
                     "Bash(eval *)"
                 ]
             },
-            hooks: {
-                PreToolUse: [
-                    {
-                        matcher: "^(Write|Edit|MultiEdit)$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook pre-edit --file '${tool.params.file_path}' --ensure-coordination --track-operation"
-                        }]
-                    },
-                    {
-                        matcher: "^Bash$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook pre-bash --command '${tool.params.command}' --validate-safety --estimate-resources"
-                        }]
-                    },
-                    {
-                        matcher: "^Task$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook pre-task --description '${tool.params.description}' --auto-spawn-agents --optimize-topology"
-                        }]
-                    },
-                    {
-                        matcher: "^(Read|Grep|Glob)$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook pre-search --pattern '${tool.params.pattern || tool.params.file_path}' --prepare-cache"
-                        }]
-                    },
-                    {
-                        matcher: "^mcp__ruv-swarm__.*$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook pre-mcp --tool '${tool.name}' --params '${JSON.stringify(tool.params)}' --validate-state"
-                        }]
-                    }
-                ],
-                PostToolUse: [
-                    {
-                        matcher: "^(Write|Edit|MultiEdit)$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook post-edit --file '${tool.params.file_path}' --auto-format --train-patterns --update-graph"
-                        }]
-                    },
-                    {
-                        matcher: "^Bash$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook post-bash --exit-code '${tool.result.exitCode}' --log-execution --update-metrics --learn-patterns"
-                        }]
-                    },
-                    {
-                        matcher: "^Task$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook post-task --task-id '${tool.result.id}' --analyze-performance --update-coordination"
-                        }]
-                    },
-                    {
-                        matcher: "^Task$",
-                        condition: "${tool.result.success}",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook agent-complete --agent '${tool.params.description}' --prompt '${tool.params.prompt}' --output '${tool.result.output}' --commit-to-git true --generate-report true --push-to-github ${process.env.RUV_SWARM_AUTO_PUSH || false}"
-                        }]
-                    },
-                    {
-                        matcher: "^(Read|Grep|Glob)$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook post-search --cache-results --train-search-patterns --update-knowledge-graph"
-                        }]
-                    },
-                    {
-                        matcher: "^mcp__ruv-swarm__swarm_init$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook mcp-swarm-initialized --swarm-id '${tool.result.id}' --topology '${tool.params.topology}' --persist-config --enable-monitoring"
-                        }]
-                    },
-                    {
-                        matcher: "^mcp__ruv-swarm__agent_spawn$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook mcp-agent-spawned --agent-id '${tool.result.agent_id}' --type '${tool.params.type}' --update-roster --train-specialization"
-                        }]
-                    },
-                    {
-                        matcher: "^mcp__ruv-swarm__task_orchestrate$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook mcp-task-orchestrated --task-id '${tool.result.task_id}' --monitor-progress --optimize-distribution"
-                        }]
-                    },
-                    {
-                        matcher: "^mcp__ruv-swarm__neural_train$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook mcp-neural-trained --improvement '${tool.result.improvement}' --save-weights --update-patterns"
-                        }]
-                    },
-                    {
-                        matcher: "^WebSearch$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook post-web-search --query '${tool.params.query}' --analyze-results --update-knowledge"
-                        }]
-                    },
-                    {
-                        matcher: "^WebFetch$",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook post-web-fetch --url '${tool.params.url}' --extract-patterns --cache-content"
-                        }]
-                    }
-                ],
-                Notification: [
-                    {
-                        matcher: ".*",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook notification --message '${notification.message}' --level '${notification.level}' --with-swarm-status --send-telemetry"
-                        }]
-                    }
-                ],
-                Stop: [
-                    {
-                        matcher: ".*",
-                        hooks: [{
-                            type: "command",
-                            command: "npx ruv-swarm hook session-end --generate-summary --save-memory --export-metrics --analyze-patterns --optimize-future"
-                        }]
-                    }
-                ]
-            },
-            env: {
-                // Git integration for agent commits
-                RUV_SWARM_AUTO_COMMIT: "true",
-                RUV_SWARM_AUTO_PUSH: "false",  // Set to "true" to auto-push to GitHub
-                RUV_SWARM_COMMIT_PREFIX: "feat",
-                RUV_SWARM_GIT_AUTHOR: "ruv-swarm-agent",
-                
-                // Agent reports
-                RUV_SWARM_GENERATE_REPORTS: "true",
-                RUV_SWARM_REPORT_DIR: ".ruv-swarm/agent-reports"
-            },
+            hooks: {},
             mcpServers: {
                 "ruv-swarm": {
                     command: "npx",
                     args: ["ruv-swarm", "mcp", "start"],
                     env: {
-                        RUV_SWARM_HOOKS_ENABLED: "true",
+                        RUV_SWARM_HOOKS_ENABLED: "false",
                         RUV_SWARM_TELEMETRY_ENABLED: "true",
                         RUV_SWARM_REMOTE_READY: "true"
                     }

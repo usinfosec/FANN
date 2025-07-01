@@ -36,8 +36,10 @@ async function initializeSystem() {
 async function handleInit(args) {
     const { mcpTools } = await initializeSystem();
     
-    const topology = args[0] || 'mesh';
-    const maxAgents = parseInt(args[1]) || 5;
+    // Filter out flags to get positional arguments
+    const positionalArgs = args.filter(arg => !arg.startsWith('--'));
+    const topology = positionalArgs[0] || 'mesh';
+    const maxAgents = parseInt(positionalArgs[1]) || 5;
     const setupClaude = args.includes('--claude') || args.includes('--setup-claude');
     const forceSetup = args.includes('--force');
     
@@ -598,6 +600,100 @@ async function handleHook(args) {
     return hooksCLI.main();
 }
 
+async function handleNeural(args) {
+    const { neuralCLI } = require('../src/neural');
+    const subcommand = args[0] || 'help';
+    
+    try {
+        switch (subcommand) {
+            case 'status':
+                return await neuralCLI.status(args.slice(1));
+            case 'train':
+                return await neuralCLI.train(args.slice(1));
+            case 'patterns':
+                return await neuralCLI.patterns(args.slice(1));
+            case 'export':
+                return await neuralCLI.export(args.slice(1));
+            case 'help':
+            default:
+                console.log(`Neural Network Commands:
+  neural status                    Show neural network status
+  neural train [options]           Train neural models
+  neural patterns [model]          View learned patterns
+  neural export [options]          Export neural weights
+
+Examples:
+  ruv-swarm neural status
+  ruv-swarm neural train --model attention --iterations 100
+  ruv-swarm neural patterns --model attention
+  ruv-swarm neural export --model all --output ./weights.json`);
+                break;
+        }
+    } catch (error) {
+        console.error('❌ Neural command error:', error.message);
+        process.exit(1);
+    }
+}
+
+async function handleBenchmark(args) {
+    const { benchmarkCLI } = require('../src/benchmark');
+    const subcommand = args[0] || 'help';
+    
+    try {
+        switch (subcommand) {
+            case 'run':
+                return await benchmarkCLI.run(args.slice(1));
+            case 'compare':
+                return await benchmarkCLI.compare(args.slice(1));
+            case 'help':
+            default:
+                console.log(`Benchmark Commands:
+  benchmark run [options]          Run performance benchmarks
+  benchmark compare [files]        Compare benchmark results
+
+Examples:
+  ruv-swarm benchmark run --iterations 10
+  ruv-swarm benchmark run --test swarm-coordination
+  ruv-swarm benchmark compare results-1.json results-2.json`);
+                break;
+        }
+    } catch (error) {
+        console.error('❌ Benchmark command error:', error.message);
+        process.exit(1);
+    }
+}
+
+async function handlePerformance(args) {
+    const { performanceCLI } = require('../src/performance');
+    const subcommand = args[0] || 'help';
+    
+    try {
+        switch (subcommand) {
+            case 'analyze':
+                return await performanceCLI.analyze(args.slice(1));
+            case 'optimize':
+                return await performanceCLI.optimize(args.slice(1));
+            case 'suggest':
+                return await performanceCLI.suggest(args.slice(1));
+            case 'help':
+            default:
+                console.log(`Performance Commands:
+  performance analyze [options]    Analyze performance bottlenecks
+  performance optimize [target]    Optimize swarm configuration
+  performance suggest             Get optimization suggestions
+
+Examples:
+  ruv-swarm performance analyze --task-id recent
+  ruv-swarm performance optimize --target speed
+  ruv-swarm performance suggest`);
+                break;
+        }
+    } catch (error) {
+        console.error('❌ Performance command error:', error.message);
+        process.exit(1);
+    }
+}
+
 function showHelp() {
     console.log(`
 🐝 ruv-swarm - Enhanced WASM-powered neural swarm orchestration
@@ -613,6 +709,9 @@ Commands:
   mcp <subcommand>                MCP server management
   hook <type> [options]           Claude Code hooks integration
   claude-invoke <prompt>          Invoke Claude with swarm integration
+  neural <subcommand>             Neural network training and analysis
+  benchmark <subcommand>          Performance benchmarking tools
+  performance <subcommand>        Performance analysis and optimization
   version                         Show version information
   help                            Show this help message
 
@@ -623,6 +722,9 @@ Examples:
   ruv-swarm mcp start
   ruv-swarm hook pre-edit --file app.js --ensure-coordination
   ruv-swarm claude-invoke "Create a development swarm for my project"
+  ruv-swarm neural status
+  ruv-swarm benchmark run --iterations 10
+  ruv-swarm performance analyze --task-id recent
 
 Modular Features:
   📚 Automatic documentation generation
@@ -666,6 +768,15 @@ async function main() {
             case 'claude-invoke':
             case 'claude':
                 await handleClaudeInvoke(args.slice(1));
+                break;
+            case 'neural':
+                await handleNeural(args.slice(1));
+                break;
+            case 'benchmark':
+                await handleBenchmark(args.slice(1));
+                break;
+            case 'performance':
+                await handlePerformance(args.slice(1));
                 break;
             case 'version':
                 console.log('ruv-swarm v' + (RuvSwarm.getVersion ? RuvSwarm.getVersion() : '0.2.0'));
