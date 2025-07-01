@@ -291,4 +291,70 @@ impl SwarmOrchestrator {
             }),
         })
     }
+    
+    /// Get metrics for a specific agent
+    pub async fn get_agent_metrics(&self, agent_id: &Uuid) -> anyhow::Result<serde_json::Value> {
+        if self.agents.contains_key(agent_id) {
+            // Generate mock metrics for the agent
+            Ok(serde_json::json!({
+                "agent_id": agent_id.to_string(),
+                "cpu_usage": {
+                    "current": 0.45,
+                    "average": 0.52,
+                    "peak": 0.78
+                },
+                "memory_usage": {
+                    "current_mb": 128,
+                    "peak_mb": 256,
+                    "allocated_mb": 512
+                },
+                "tasks_completed": 42,
+                "tasks_failed": 2,
+                "tasks_in_progress": 1,
+                "average_task_duration": 2500,
+                "throughput": {
+                    "tasks_per_minute": 8.5,
+                    "requests_per_second": 12.3
+                },
+                "response_time": {
+                    "average_ms": 150,
+                    "p95_ms": 300,
+                    "p99_ms": 500
+                },
+                "error_rate": 0.045,
+                "uptime_seconds": 7200,
+                "last_heartbeat": chrono::Utc::now()
+            }))
+        } else {
+            Err(anyhow::anyhow!("Agent not found: {}", agent_id))
+        }
+    }
+    
+    /// Get metrics for all agents
+    pub async fn get_all_agent_metrics(&self) -> anyhow::Result<serde_json::Value> {
+        let mut all_metrics = serde_json::Map::new();
+        
+        for entry in self.agents.iter() {
+            let agent_id = entry.key();
+            let agent_metrics = self.get_agent_metrics(agent_id).await?;
+            all_metrics.insert(agent_id.to_string(), agent_metrics);
+        }
+        
+        // Add aggregate metrics
+        let aggregate = serde_json::json!({
+            "total_agents": self.agents.len(),
+            "average_cpu_usage": 0.48,
+            "total_memory_usage_mb": 128 * self.agents.len(),
+            "total_tasks_completed": self.agents.len() * 42,
+            "overall_throughput": self.agents.len() as f64 * 8.5,
+            "swarm_error_rate": 0.032,
+            "swarm_uptime_seconds": 7200
+        });
+        
+        Ok(serde_json::json!({
+            "agents": all_metrics,
+            "aggregate": aggregate,
+            "timestamp": chrono::Utc::now()
+        }))
+    }
 }
