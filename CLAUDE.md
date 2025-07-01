@@ -1,5 +1,5 @@
 # Claude Code Configuration for ruv-swarm
-#ruv 
+
 ## 🎯 IMPORTANT: Separation of Responsibilities
 
 ### Claude Code Handles:
@@ -18,6 +18,68 @@
 
 ### ⚠️ Key Principle:
 **MCP tools DO NOT create content or write code.** They coordinate and enhance Claude Code's native capabilities. Think of them as an orchestration layer that helps Claude Code work more efficiently.
+
+## 🚀 CRITICAL: Parallel Execution & Batch Operations
+
+### 🚨 MANDATORY RULE #1: BATCH EVERYTHING
+
+**When using swarms, you MUST use BatchTool for ALL operations:**
+
+1. **NEVER** send multiple messages for related operations
+2. **ALWAYS** combine multiple tool calls in ONE message
+3. **PARALLEL** execution is MANDATORY, not optional
+
+### ⚡ THE GOLDEN RULE OF SWARMS
+
+```
+If you need to do X operations, they should be in 1 message, not X messages
+```
+
+### 📦 BATCH TOOL EXAMPLES
+
+**✅ CORRECT - Everything in ONE Message:**
+```javascript
+[Single Message with BatchTool]:
+  mcp__ruv-swarm__swarm_init { topology: "mesh", maxAgents: 6 }
+  mcp__ruv-swarm__agent_spawn { type: "researcher" }
+  mcp__ruv-swarm__agent_spawn { type: "coder" }
+  mcp__ruv-swarm__agent_spawn { type: "analyst" }
+  mcp__ruv-swarm__agent_spawn { type: "tester" }
+  mcp__ruv-swarm__agent_spawn { type: "coordinator" }
+  TodoWrite { todos: [todo1, todo2, todo3, todo4, todo5] }
+  Bash "mkdir -p app/{src,tests,docs}"
+  Write "app/package.json" 
+  Write "app/README.md"
+  Write "app/src/index.js"
+```
+
+**❌ WRONG - Multiple Messages (NEVER DO THIS):**
+```javascript
+Message 1: mcp__ruv-swarm__swarm_init
+Message 2: mcp__ruv-swarm__agent_spawn 
+Message 3: mcp__ruv-swarm__agent_spawn
+Message 4: TodoWrite (one todo)
+Message 5: Bash "mkdir src"
+Message 6: Write "package.json"
+// This is 6x slower and breaks parallel coordination!
+```
+
+### 🎯 BATCH OPERATIONS BY TYPE
+
+**File Operations (Single Message):**
+- Read 10 files? → One message with 10 Read calls
+- Write 5 files? → One message with 5 Write calls
+- Edit 1 file many times? → One MultiEdit call
+
+**Swarm Operations (Single Message):**
+- Need 8 agents? → One message with swarm_init + 8 agent_spawn calls
+- Multiple memories? → One message with all memory_usage calls
+- Task + monitoring? → One message with task_orchestrate + swarm_monitor
+
+**Command Operations (Single Message):**
+- Multiple directories? → One message with all mkdir commands
+- Install + test + lint? → One message with all npm commands
+- Git operations? → One message with all git commands
 
 ## 🚀 Quick Setup (Stdio MCP - Recommended)
 
@@ -155,6 +217,50 @@ When using ruv-swarm coordination with Claude Code:
 - **2.8-4.4x speed improvement** - Parallel coordination strategies
 - **27+ neural models** - Diverse cognitive approaches
 
+## Claude Code Hooks Integration
+
+ruv-swarm includes powerful hooks that automate coordination:
+
+### Pre-Operation Hooks
+- **Auto-assign agents** before file edits based on file type
+- **Validate commands** before execution for safety
+- **Prepare resources** automatically for complex operations
+- **Optimize topology** based on task complexity analysis
+- **Cache searches** for improved performance
+
+### Post-Operation Hooks  
+- **Auto-format code** using language-specific formatters
+- **Train neural patterns** from successful operations
+- **Update memory** with operation context
+- **Analyze performance** and identify bottlenecks
+- **Track token usage** for efficiency metrics
+
+### Session Management
+- **Generate summaries** at session end
+- **Persist state** across Claude Code sessions
+- **Track metrics** for continuous improvement
+- **Restore previous** session context automatically
+
+### Advanced Features (New!)
+- **🚀 Automatic Topology Selection** - Optimal swarm structure for each task
+- **⚡ Parallel Execution** - 2.8-4.4x speed improvements  
+- **🧠 Neural Training** - Continuous learning from operations
+- **📊 Bottleneck Analysis** - Real-time performance optimization
+- **🤖 Smart Auto-Spawning** - Zero manual agent management
+- **🛡️ Self-Healing Workflows** - Automatic error recovery
+- **💾 Cross-Session Memory** - Persistent learning & context
+
+### Configuration
+Hooks are pre-configured in `.claude/settings.json`. Key features:
+- Automatic agent assignment for different file types
+- Code formatting on save
+- Neural pattern learning from edits
+- Session state persistence
+- Performance tracking and optimization
+- Intelligent caching and token reduction
+
+See `.claude/commands/` for detailed documentation on all features.
+
 ## Integration Tips
 
 1. **Start Simple**: Begin with basic swarm init and single agent
@@ -162,6 +268,304 @@ When using ruv-swarm coordination with Claude Code:
 3. **Use Memory**: Store important decisions and context
 4. **Monitor Progress**: Regular status checks ensure effective coordination
 5. **Train Patterns**: Let neural agents learn from successful coordinations
+6. **Enable Hooks**: Use the pre-configured hooks for automation
+
+## 🧠 SWARM ORCHESTRATION PATTERN
+
+### 🚨 CRITICAL INSTRUCTION: You are the SWARM ORCHESTRATOR
+
+**MANDATORY**: When using swarms, you MUST:
+1. **SPAWN ALL AGENTS IN ONE BATCH** - Use multiple tool calls in a SINGLE message
+2. **EXECUTE TASKS IN PARALLEL** - Never wait for one task before starting another
+3. **USE BATCHTOOL FOR EVERYTHING** - Multiple operations = Single message with multiple tools
+4. **ALL AGENTS MUST USE COORDINATION TOOLS** - Every spawned agent MUST use ruv-swarm hooks and memory
+
+## 📋 MANDATORY AGENT COORDINATION PROTOCOL
+
+### 🔴 CRITICAL: Every Agent MUST Follow This Protocol
+
+When you spawn an agent using the Task tool, that agent MUST:
+
+**1️⃣ BEFORE Starting Work:**
+```bash
+# Check previous work and load context
+npx ruv-swarm hook pre-task --description "[agent task]" --auto-spawn-agents false
+npx ruv-swarm hook session-restore --session-id "swarm-[id]" --load-memory true
+```
+
+**2️⃣ DURING Work (After EVERY Major Step):**
+```bash
+# Store progress in memory after each file operation
+npx ruv-swarm hook post-edit --file "[filepath]" --memory-key "swarm/[agent]/[step]"
+
+# Store decisions and findings
+npx ruv-swarm hook notification --message "[what was done]" --telemetry true
+
+# Check coordination with other agents
+npx ruv-swarm hook pre-search --query "[what to check]" --cache-results true
+```
+
+**3️⃣ AFTER Completing Work:**
+```bash
+# Save all results and learnings
+npx ruv-swarm hook post-task --task-id "[task]" --analyze-performance true
+npx ruv-swarm hook session-end --export-metrics true --generate-summary true
+```
+
+### 🎯 AGENT PROMPT TEMPLATE
+
+When spawning agents, ALWAYS include these coordination instructions:
+
+```
+You are the [Agent Type] agent in a coordinated swarm.
+
+MANDATORY COORDINATION:
+1. START: Run `npx ruv-swarm hook pre-task --description "[your task]"`
+2. DURING: After EVERY file operation, run `npx ruv-swarm hook post-edit --file "[file]" --memory-key "agent/[step]"`
+3. MEMORY: Store ALL decisions using `npx ruv-swarm hook notification --message "[decision]"`
+4. END: Run `npx ruv-swarm hook post-task --task-id "[task]" --analyze-performance true`
+
+Your specific task: [detailed task description]
+
+REMEMBER: Coordinate with other agents by checking memory BEFORE making decisions!
+```
+
+### ⚡ PARALLEL EXECUTION IS MANDATORY
+
+**THIS IS WRONG ❌ (Sequential - NEVER DO THIS):**
+```
+Message 1: Initialize swarm
+Message 2: Spawn agent 1
+Message 3: Spawn agent 2
+Message 4: Create file 1
+Message 5: Create file 2
+```
+
+**THIS IS CORRECT ✅ (Parallel - ALWAYS DO THIS):**
+```
+Message 1: [BatchTool]
+  - mcp__ruv-swarm__swarm_init
+  - mcp__ruv-swarm__agent_spawn (researcher)
+  - mcp__ruv-swarm__agent_spawn (coder)
+  - mcp__ruv-swarm__agent_spawn (analyst)
+  - mcp__ruv-swarm__agent_spawn (tester)
+  - mcp__ruv-swarm__agent_spawn (coordinator)
+
+Message 2: [BatchTool]  
+  - Write file1.js
+  - Write file2.js
+  - Write file3.js
+  - Bash mkdir commands
+  - TodoWrite updates
+```
+
+### 🎯 MANDATORY SWARM PATTERN
+
+When given ANY complex task with swarms:
+
+```
+STEP 1: IMMEDIATE PARALLEL SPAWN (Single Message!)
+[BatchTool]:
+  - mcp__ruv-swarm__swarm_init { topology: "hierarchical", maxAgents: 8, strategy: "parallel" }
+  - mcp__ruv-swarm__agent_spawn { type: "architect", name: "System Designer" }
+  - mcp__ruv-swarm__agent_spawn { type: "coder", name: "API Developer" }
+  - mcp__ruv-swarm__agent_spawn { type: "coder", name: "Frontend Dev" }
+  - mcp__ruv-swarm__agent_spawn { type: "analyst", name: "DB Designer" }
+  - mcp__ruv-swarm__agent_spawn { type: "tester", name: "QA Engineer" }
+  - mcp__ruv-swarm__agent_spawn { type: "researcher", name: "Tech Lead" }
+  - mcp__ruv-swarm__agent_spawn { type: "coordinator", name: "PM" }
+  - TodoWrite { todos: [multiple todos at once] }
+
+STEP 2: PARALLEL TASK EXECUTION (Single Message!)
+[BatchTool]:
+  - mcp__ruv-swarm__task_orchestrate { task: "main task", strategy: "parallel" }
+  - mcp__ruv-swarm__memory_usage { action: "store", key: "init", value: {...} }
+  - Multiple Read operations
+  - Multiple Write operations
+  - Multiple Bash commands
+
+STEP 3: CONTINUE PARALLEL WORK (Never Sequential!)
+```
+
+### 📊 VISUAL TASK TRACKING FORMAT
+
+Use this format when displaying task progress:
+
+```
+📊 Progress Overview
+   ├── Total Tasks: X
+   ├── ✅ Completed: X (X%)
+   ├── 🔄 In Progress: X (X%)
+   ├── ⭕ Todo: X (X%)
+   └── ❌ Blocked: X (X%)
+
+📋 Todo (X)
+   └── 🔴 001: [Task description] [PRIORITY] ▶
+
+🔄 In progress (X)
+   ├── 🟡 002: [Task description] ↳ X deps ▶
+   └── 🔴 003: [Task description] [PRIORITY] ▶
+
+✅ Completed (X)
+   ├── ✅ 004: [Task description]
+   └── ... (more completed tasks)
+
+Priority indicators: 🔴 HIGH/CRITICAL, 🟡 MEDIUM, 🟢 LOW
+Dependencies: ↳ X deps | Actionable: ▶
+```
+
+### 🎯 REAL EXAMPLE: Full-Stack App Development with Agent Coordination
+
+**Task**: "Build a complete REST API with authentication, database, and tests"
+
+**🚨 MANDATORY APPROACH - Parallel Spawn with Coordination Instructions:**
+
+```javascript
+// ✅ CORRECT: SINGLE MESSAGE with ALL operations + coordination
+[BatchTool - Message 1]:
+  // Initialize swarm and set session ID
+  Bash("export SWARM_ID=swarm-$(date +%s)")
+  npx ruv-swarm hook session-restore --session-id "${SWARM_ID}" --load-memory true
+  
+  // Spawn ALL agents with MANDATORY coordination instructions
+  Task("Architect Agent", `
+    You are the System Architect agent in swarm ${SWARM_ID}.
+    
+    MANDATORY COORDINATION:
+    1. START: npx ruv-swarm hook pre-task --description "Design API architecture"
+    2. DURING: After EVERY file, run: npx ruv-swarm hook post-edit --file "[file]" --memory-key "architect/[step]"
+    3. MEMORY: Store decisions: npx ruv-swarm hook notification --message "[decision]"
+    4. END: npx ruv-swarm hook post-task --task-id "architect" --analyze-performance true
+    
+    TASK: Design REST API architecture with auth, database schema, and component structure.
+    Create docs/architecture.md with complete system design.
+  `)
+  
+  Task("Backend Developer Agent", `
+    You are the Backend Developer agent in swarm ${SWARM_ID}.
+    
+    MANDATORY COORDINATION:
+    1. CHECK FIRST: npx ruv-swarm hook pre-search --query "architect decisions" --cache-results true
+    2. DURING: After EVERY file: npx ruv-swarm hook post-edit --file "[file]" --memory-key "backend/[step]"
+    3. SHARE: npx ruv-swarm hook notification --message "[what you built]"
+    4. END: npx ruv-swarm hook post-task --task-id "backend" --analyze-performance true
+    
+    TASK: Implement Express API with JWT auth, SQLite database, rate limiting.
+    WAIT for architect's design in memory before starting!
+  `)
+  
+  Task("Test Engineer Agent", `
+    You are the Test Engineer agent in swarm ${SWARM_ID}.
+    
+    MANDATORY COORDINATION:
+    1. LOAD CONTEXT: npx ruv-swarm hook session-restore --session-id "${SWARM_ID}" --load-memory true
+    2. CHECK: What did backend build? npx ruv-swarm hook pre-search --query "backend API endpoints"
+    3. TEST & STORE: npx ruv-swarm hook post-bash --command "npm test" --memory-key "tests/coverage"
+    4. END: npx ruv-swarm hook post-task --task-id "tester" --analyze-performance true
+    
+    TASK: Write comprehensive tests for all API endpoints and achieve 80%+ coverage.
+  `)
+  
+  // Update ALL todos at once
+  TodoWrite { todos: [
+    { id: "coord", content: "Initialize swarm coordination", status: "completed", priority: "high" },
+    { id: "design", content: "Architect: Design API architecture", status: "in_progress", priority: "high" },
+    { id: "backend", content: "Backend: Implement API", status: "in_progress", priority: "high" },
+    { id: "tests", content: "Tester: Write tests", status: "in_progress", priority: "high" }
+  ]}
+
+[BatchTool - Message 2]:
+  // Create ALL directories at once
+  Bash("mkdir -p test-app/{src,tests,docs,config}")
+  Bash("mkdir -p test-app/src/{models,routes,middleware,services}")
+  Bash("mkdir -p test-app/tests/{unit,integration}")
+  
+  // Write ALL base files at once
+  Write("test-app/package.json", packageJsonContent)
+  Write("test-app/.env.example", envContent)
+  Write("test-app/README.md", readmeContent)
+  Write("test-app/src/server.js", serverContent)
+  Write("test-app/src/config/database.js", dbConfigContent)
+
+[BatchTool - Message 3]:
+  // Read multiple files for context
+  Read("test-app/package.json")
+  Read("test-app/src/server.js")
+  Read("test-app/.env.example")
+  
+  // Run multiple commands
+  Bash("cd test-app && npm install")
+  Bash("cd test-app && npm run lint")
+  Bash("cd test-app && npm test")
+```
+
+### 🚫 NEVER DO THIS (Sequential = WRONG):
+```javascript
+// ❌ WRONG: Multiple messages, one operation each
+Message 1: mcp__ruv-swarm__swarm_init
+Message 2: mcp__ruv-swarm__agent_spawn (just one agent)
+Message 3: mcp__ruv-swarm__agent_spawn (another agent)
+Message 4: TodoWrite (single todo)
+Message 5: Write (single file)
+// This is 5x slower and wastes swarm coordination!
+```
+
+### 🔄 MEMORY COORDINATION PATTERN
+
+Every agent coordination step MUST use memory:
+
+```
+// After each major decision or implementation
+mcp__ruv-swarm__memory_usage
+  action: "store"
+  key: "swarm-{id}/agent-{name}/{step}"
+  value: {
+    timestamp: Date.now(),
+    decision: "what was decided",
+    implementation: "what was built",
+    nextSteps: ["step1", "step2"],
+    dependencies: ["dep1", "dep2"]
+  }
+
+// To retrieve coordination data
+mcp__ruv-swarm__memory_usage
+  action: "retrieve"
+  key: "swarm-{id}/agent-{name}/{step}"
+
+// To check all swarm progress
+mcp__ruv-swarm__memory_usage
+  action: "list"
+  pattern: "swarm-{id}/*"
+```
+
+### ⚡ PERFORMANCE TIPS
+
+1. **Batch Everything**: Never operate on single files when multiple are needed
+2. **Parallel First**: Always think "what can run simultaneously?"
+3. **Memory is Key**: Use memory for ALL cross-agent coordination
+4. **Monitor Progress**: Use mcp__ruv-swarm__swarm_monitor for real-time tracking
+5. **Auto-Optimize**: Let hooks handle topology and agent selection
+
+### 🎨 VISUAL SWARM STATUS
+
+When showing swarm status, use this format:
+
+```
+🐝 Swarm Status: ACTIVE
+├── 🏗️ Topology: hierarchical
+├── 👥 Agents: 6/8 active
+├── ⚡ Mode: parallel execution
+├── 📊 Tasks: 12 total (4 complete, 6 in-progress, 2 pending)
+└── 🧠 Memory: 15 coordination points stored
+
+Agent Activity:
+├── 🟢 architect: Designing database schema...
+├── 🟢 coder-1: Implementing auth endpoints...
+├── 🟢 coder-2: Building user CRUD operations...
+├── 🟢 analyst: Optimizing query performance...
+├── 🟡 tester: Waiting for auth completion...
+└── 🟢 coordinator: Monitoring progress...
+```
 
 ## Support
 

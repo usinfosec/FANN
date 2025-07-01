@@ -588,6 +588,16 @@ async function handleMcpRequest(request, mcpTools) {
     return response;
 }
 
+async function handleHook(args) {
+    // Hook handler for Claude Code integration
+    const hooksCLI = require('../src/hooks/cli');
+    
+    // Pass through to hooks CLI with 'hook' already consumed
+    process.argv = ['node', 'ruv-swarm', 'hook', ...args];
+    
+    return hooksCLI.main();
+}
+
 function showHelp() {
     console.log(`
 🐝 ruv-swarm - Enhanced WASM-powered neural swarm orchestration
@@ -601,6 +611,7 @@ Commands:
   status [--verbose]              Show swarm status
   monitor [duration]              Monitor swarm activity
   mcp <subcommand>                MCP server management
+  hook <type> [options]           Claude Code hooks integration
   claude-invoke <prompt>          Invoke Claude with swarm integration
   version                         Show version information
   help                            Show this help message
@@ -610,13 +621,16 @@ Examples:
   ruv-swarm spawn researcher "AI Research Specialist"
   ruv-swarm orchestrate "Build a REST API with authentication"
   ruv-swarm mcp start
+  ruv-swarm hook pre-edit --file app.js --ensure-coordination
   ruv-swarm claude-invoke "Create a development swarm for my project"
 
 Modular Features:
   📚 Automatic documentation generation
   🌐 Cross-platform remote execution support
   🤖 Seamless Claude Code MCP integration
-  🔧 Modular architecture for maintainability
+  🔧 Advanced hooks for automation
+  🧠 Neural pattern learning
+  💾 Cross-session memory persistence
 
 For detailed documentation, check .claude/commands/ after running init --claude
 `);
@@ -645,6 +659,9 @@ async function main() {
                 break;
             case 'monitor':
                 await handleMonitor(args.slice(1));
+                break;
+            case 'hook':
+                await handleHook(args.slice(1));
                 break;
             case 'claude-invoke':
             case 'claude':
