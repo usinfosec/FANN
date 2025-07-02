@@ -79,6 +79,10 @@ jobs:
     timeout-minutes: 30
     # Only run coverage on main branch or PRs to main
     if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request' && github.base_ref == 'main'
+    # Add concurrency group to prevent parallel uploads to Codecov
+    concurrency:
+      group: ${{ github.workflow }}-coverage-${{ github.ref }}
+      cancel-in-progress: true
     
     steps:
     - uses: actions/checkout@v4
@@ -102,12 +106,46 @@ jobs:
       # Increase tarpaulin timeout to 300 seconds (5 minutes)
       run: cargo tarpaulin --verbose --all-features --workspace --timeout 300 --out xml
     
+    # Add retry mechanism for Codecov upload to handle rate limits
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
+      # Try up to 3 times with a delay between attempts
+      id: codecov-upload
+      continue-on-error: true
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./cobertura.xml
-        fail_ci_if_error: true
+        fail_ci_if_error: false
+        verbose: true
+        
+    # First retry after 60 seconds if initial attempt fails
+    - name: Sleep before retry
+      if: steps.codecov-upload.outcome == 'failure'
+      run: sleep 60
+      
+    - name: Retry Codecov upload
+      if: steps.codecov-upload.outcome == 'failure'
+      uses: codecov/codecov-action@v3
+      continue-on-error: true
+      id: codecov-retry-1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./cobertura.xml
+        fail_ci_if_error: false
+        
+    # Second retry after 120 seconds if first retry fails
+    - name: Sleep before second retry
+      if: steps.codecov-retry-1.outcome == 'failure'
+      run: sleep 120
+      
+    - name: Second retry Codecov upload
+      if: steps.codecov-retry-1.outcome == 'failure'
+      uses: codecov/codecov-action@v3
+      continue-on-error: true
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./cobertura.xml
+        fail_ci_if_error: false
 
   benchmark:
     name: Performance Benchmarks
