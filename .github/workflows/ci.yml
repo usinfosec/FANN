@@ -168,9 +168,7 @@ jobs:
           target
         key: ${{ runner.os }}-benchmark-${{ hashFiles('**/Cargo.lock') }}
     
-    - name: Install criterion
-      run: cargo install criterion
-    
+    # Criterion is a library dependency, not a binary to install
     - name: Run benchmarks
       run: cargo bench --all-features
     
