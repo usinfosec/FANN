@@ -41,9 +41,14 @@ pub mod coordination;
 pub mod neural;
 pub mod patterns;
 pub mod memory;
+pub mod types;
+pub mod traits;
+pub mod resources;
+pub mod adaptation;
+pub mod telemetry;
 
 #[cfg(feature = "wasm")]
-pub mod wasm;
+pub mod wasm_simple;
 
 pub use agent::*;
 pub use learning::*;

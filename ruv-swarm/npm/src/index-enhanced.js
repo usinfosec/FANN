@@ -680,4 +680,7 @@ class Task {
   }
 }
 
-export { RuvSwarm, Swarm, Agent, Task };
+// Import DAA service for comprehensive agent management
+import { DAAService, daaService } from './daa-service.js';
+
+export { RuvSwarm, Swarm, Agent, Task, DAAService, daaService };

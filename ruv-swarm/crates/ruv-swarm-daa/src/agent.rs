@@ -252,7 +252,7 @@ impl DAAAgent for StandardDAAAgent {
             learning_engine.adaptation_history.push(adaptation_event);
             
             tracing::info!("Agent {} adapted strategy from {:?} to {:?}", 
-                self.id, old_pattern, self.cognitive_pattern);
+                self.id, old_pattern.clone(), self.cognitive_pattern);
         }
         
         Ok(())

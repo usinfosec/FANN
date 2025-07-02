@@ -8,9 +8,12 @@ use serde::{Deserialize, Serialize};
 #[cfg(not(feature = "std"))]
 use alloc::{boxed::Box, string::String, vec::Vec};
 
+use std::collections::HashMap;
+
 use crate::{
     types::{AdaptationFeedback, DecisionContext},
-    Result,
+    telemetry::TelemetryCollector,
+    DAAResult, DAAError,
 };
 
 /// Self-adaptation capabilities for autonomous agents
@@ -24,19 +27,19 @@ pub trait SelfAdaptation: Send + Sync {
     
     /// Adapt agent behavior based on feedback
     #[cfg(feature = "async")]
-    async fn adapt(&mut self, feedback: &AdaptationFeedback) -> Result<AdaptationResult>;
+    async fn adapt(&mut self, feedback: &AdaptationFeedback) -> DAAResult<AdaptationResult>;
     
     /// Adapt (sync version)
     #[cfg(not(feature = "async"))]
-    fn adapt(&mut self, feedback: &AdaptationFeedback) -> Result<AdaptationResult>;
+    fn adapt(&mut self, feedback: &AdaptationFeedback) -> DAAResult<AdaptationResult>;
     
     /// Learn from experience
     #[cfg(feature = "async")]
-    async fn learn(&mut self, experience: &Experience) -> Result<LearningResult>;
+    async fn learn(&mut self, experience: &Experience) -> DAAResult<LearningResult>;
     
     /// Learn (sync version)
     #[cfg(not(feature = "async"))]
-    fn learn(&mut self, experience: &Experience) -> Result<LearningResult>;
+    fn learn(&mut self, experience: &Experience) -> DAAResult<LearningResult>;
     
     /// Evaluate current adaptation state
     fn evaluate_adaptation(&self) -> AdaptationEvaluation;
@@ -49,7 +52,7 @@ pub trait SelfAdaptation: Send + Sync {
     
     /// Check if adaptation is needed
     fn needs_adaptation(&self, feedback: &AdaptationFeedback) -> bool {
-        feedback.performance_score < 0.7 || feedback.efficiency_rating < 0.7
+        feedback.performance_score < 0.7 || feedback.efficiency_score < 0.7
     }
     
     /// Get current learning model
@@ -285,7 +288,7 @@ impl Experience {
     /// Create positive experience
     pub fn positive(state: String, action: String, outcome: String, reward: f64) -> Self {
         Experience {
-            id: format!("exp_{}", rand::random::<u32>()),
+            id: format!("exp_{}", uuid::Uuid::new_v4()),
             state,
             action,
             outcome,
@@ -299,7 +302,7 @@ impl Experience {
     /// Create negative experience
     pub fn negative(state: String, action: String, outcome: String, penalty: f64) -> Self {
         Experience {
-            id: format!("exp_{}", rand::random::<u32>()),
+            id: format!("exp_{}", uuid::Uuid::new_v4()),
             state,
             action,
             outcome,

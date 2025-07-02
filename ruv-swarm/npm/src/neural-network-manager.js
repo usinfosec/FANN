@@ -12,6 +12,11 @@ import {
   getRecommendedPreset,
   validatePresetConfig 
 } from './neural-models/presets/index.js';
+import { 
+  COMPLETE_NEURAL_PRESETS,
+  CognitivePatternSelector,
+  NeuralAdaptationEngine
+} from './neural-models/neural-presets-complete.js';
 import { CognitivePatternEvolution } from './cognitive-pattern-evolution.js';
 import { MetaLearningFramework } from './meta-learning-framework.js';
 import { NeuralCoordinationProtocol } from './neural-coordination-protocol.js';
@@ -27,6 +32,10 @@ class NeuralNetworkManager {
     this.metaLearning = new MetaLearningFramework();
     this.coordinationProtocol = new NeuralCoordinationProtocol();
     this.daaCognition = new DAACognition();
+    
+    // Complete neural presets integration
+    this.cognitivePatternSelector = new CognitivePatternSelector();
+    this.neuralAdaptationEngine = new NeuralAdaptationEngine();
     
     // Cross-agent memory and knowledge sharing
     this.sharedKnowledge = new Map();
@@ -374,6 +383,22 @@ class NeuralNetworkManager {
       ...customConfig
     };
     
+    // Select cognitive patterns based on model type and task
+    const taskContext = {
+      requiresCreativity: customConfig.requiresCreativity || false,
+      requiresPrecision: customConfig.requiresPrecision || false,
+      requiresAdaptation: customConfig.requiresAdaptation || false,
+      complexity: customConfig.complexity || 'medium'
+    };
+    
+    const cognitivePatterns = this.cognitivePatternSelector.selectPatternsForPreset(
+      config.modelType,
+      template,
+      taskContext
+    );
+    
+    config.cognitivePatterns = cognitivePatterns;
+    
     // Use preset if specified
     if (config.preset && MODEL_PRESETS[config.modelType]) {
       const presetConfig = MODEL_PRESETS[config.modelType][config.preset];
@@ -394,11 +419,14 @@ class NeuralNetworkManager {
       // Register with coordination protocol
       await this.coordinationProtocol.registerAgent(agentId, wrappedModel);
       
+      // Initialize neural adaptation engine
+      await this.neuralAdaptationEngine.initializeAdaptation(agentId, config.modelType, template);
+      
       // Initialize performance tracking
       this.performanceMetrics.set(agentId, {
         creationTime: Date.now(),
         modelType: config.modelType,
-        cognitivePatterns: [],
+        cognitivePatterns: cognitivePatterns || [],
         adaptationHistory: [],
         collaborationScore: 0
       });
@@ -444,11 +472,20 @@ class NeuralNetworkManager {
     // Update performance metrics
     const metrics = this.performanceMetrics.get(agentId);
     if (metrics) {
-      metrics.adaptationHistory.push({
+      const adaptationResult = {
         timestamp: Date.now(),
         trainingResult: result,
-        cognitiveGrowth: await this.cognitiveEvolution.assessGrowth(agentId)
-      });
+        cognitiveGrowth: await this.cognitiveEvolution.assessGrowth(agentId),
+        accuracy: result.accuracy || 0,
+        cognitivePatterns: metrics.cognitivePatterns,
+        performance: result,
+        insights: []
+      };
+      
+      metrics.adaptationHistory.push(adaptationResult);
+      
+      // Record adaptation in neural adaptation engine
+      await this.neuralAdaptationEngine.recordAdaptation(agentId, adaptationResult);
     }
     
     return result;
@@ -633,6 +670,11 @@ class NeuralNetworkManager {
    * @param {object} customConfig - Optional custom configuration overrides
    */
   async createAgentFromPreset(agentId, category, presetName, customConfig = {}) {
+    // First check complete neural presets
+    const completePreset = COMPLETE_NEURAL_PRESETS[category]?.[presetName];
+    if (completePreset) {
+      return this.createAgentFromCompletePreset(agentId, category, presetName, customConfig);
+    }
     try {
       const preset = getPreset(category, presetName);
       validatePresetConfig(preset);
@@ -660,6 +702,93 @@ class NeuralNetworkManager {
       console.error(`Failed to create agent from preset: ${error.message}`);
       throw error;
     }
+  }
+
+  /**
+   * Create a neural network from complete preset (27+ models)
+   * @param {string} agentId - Agent identifier
+   * @param {string} modelType - Model type (transformer, cnn, lstm, etc.)
+   * @param {string} presetName - Name of the preset
+   * @param {object} customConfig - Optional custom configuration overrides
+   */
+  async createAgentFromCompletePreset(agentId, modelType, presetName, customConfig = {}) {
+    const preset = COMPLETE_NEURAL_PRESETS[modelType]?.[presetName];
+    if (!preset) {
+      throw new Error(`Complete preset not found: ${modelType}/${presetName}`);
+    }
+
+    console.log(`Creating ${agentId} from complete preset: ${preset.name}`);
+    console.log(`Expected performance: ${preset.performance.expectedAccuracy} accuracy in ${preset.performance.inferenceTime}`);
+    console.log(`Cognitive patterns: ${preset.cognitivePatterns.join(', ')}`);
+
+    // Get optimized cognitive patterns
+    const taskContext = {
+      requiresCreativity: customConfig.requiresCreativity || false,
+      requiresPrecision: customConfig.requiresPrecision || false,
+      requiresAdaptation: customConfig.requiresAdaptation || false,
+      complexity: customConfig.complexity || 'medium',
+      cognitivePreference: customConfig.cognitivePreference
+    };
+    
+    const cognitivePatterns = this.cognitivePatternSelector.selectPatternsForPreset(
+      preset.model,
+      presetName,
+      taskContext
+    );
+
+    // Merge preset config with custom overrides
+    const config = {
+      ...preset.config,
+      ...customConfig,
+      modelType: preset.model,
+      cognitivePatterns,
+      presetInfo: {
+        modelType,
+        presetName,
+        name: preset.name,
+        description: preset.description,
+        useCase: preset.useCase,
+        performance: preset.performance,
+        cognitivePatterns: preset.cognitivePatterns
+      }
+    };
+
+    // Select appropriate template based on model type
+    const templateMap = {
+      transformer: 'transformer_nlp',
+      cnn: 'cnn_vision',
+      lstm: 'lstm_sequence',
+      gru: 'gru_sequence',
+      autoencoder: 'autoencoder_compress',
+      vae: 'vae_generator',
+      gnn: 'gnn_social',
+      gat: 'graph_attention',
+      resnet: 'resnet_classifier',
+      attention: 'attention_mechanism',
+      diffusion: 'diffusion_model',
+      neural_ode: 'neural_ode',
+      capsnet: 'capsule_network',
+      snn: 'spiking_neural',
+      ntm: 'neural_turing',
+      memnn: 'memory_network',
+      nca: 'neural_cellular',
+      hypernet: 'hypernetwork',
+      maml: 'meta_learning',
+      nas: 'neural_architecture_search',
+      moe: 'mixture_of_experts',
+      nerf: 'neural_radiance_field',
+      wavenet: 'wavenet_audio',
+      pointnet: 'pointnet_3d',
+      world_model: 'world_model',
+      normalizing_flow: 'flow_based',
+      ebm: 'energy_based',
+      neural_process: 'neural_processes',
+      set_transformer: 'set_transformer'
+    };
+
+    const template = templateMap[preset.model] || 'preset_model';
+    
+    return this.createAdvancedNeuralModel(agentId, template, config);
   }
 
   /**
@@ -1331,6 +1460,55 @@ class NeuralNetworkManager {
     if (interactions.length > 100) {
       interactions.splice(0, interactions.length - 100);
     }
+  }
+
+  /**
+   * Get all complete neural presets (27+ models)
+   */
+  getCompleteNeuralPresets() {
+    return COMPLETE_NEURAL_PRESETS;
+  }
+
+  /**
+   * Get preset recommendations based on requirements
+   * @param {string} useCase - Use case description
+   * @param {Object} requirements - Performance and other requirements
+   */
+  getPresetRecommendations(useCase, requirements = {}) {
+    return this.cognitivePatternSelector.getPresetRecommendations(useCase, requirements);
+  }
+
+  /**
+   * Get adaptation recommendations for an agent
+   * @param {string} agentId - Agent identifier
+   */
+  async getAdaptationRecommendations(agentId) {
+    return this.neuralAdaptationEngine.getAdaptationRecommendations(agentId);
+  }
+
+  /**
+   * Export adaptation insights across all agents
+   */
+  getAdaptationInsights() {
+    return this.neuralAdaptationEngine.exportAdaptationInsights();
+  }
+
+  /**
+   * List all available neural model types with counts
+   */
+  getAllNeuralModelTypes() {
+    const modelTypes = {};
+    
+    // Count presets from complete neural presets
+    Object.entries(COMPLETE_NEURAL_PRESETS).forEach(([modelType, presets]) => {
+      modelTypes[modelType] = {
+        count: Object.keys(presets).length,
+        presets: Object.keys(presets),
+        description: Object.values(presets)[0]?.description || 'Neural model type'
+      };
+    });
+    
+    return modelTypes;
   }
 
   /**

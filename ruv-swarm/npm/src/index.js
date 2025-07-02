@@ -377,6 +377,9 @@ import {
   AGENT_COGNITIVE_PROFILES,
 } from './neural-agent.js';
 
+// Import DAA service for comprehensive agent management
+import { DAAService, daaService } from './daa-service.js';
+
 // Legacy exports - these are now provided by index-enhanced.js
 // Export all the legacy functions and classes directly
 export {
@@ -391,4 +394,7 @@ export {
   NeuralNetwork,
   COGNITIVE_PATTERNS,
   AGENT_COGNITIVE_PROFILES,
+  // DAA service exports
+  DAAService,
+  daaService,
 };

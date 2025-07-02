@@ -46,6 +46,8 @@
     "examples:cicd": "node examples/mcp-workflows.js cicd",
     "examples:data": "node examples/mcp-workflows.js data",
     "examples:swarm": "node examples/mcp-workflows.js swarm",
+    "examples:daa": "node ../examples/daa-service-demo.js",
+    "test:daa": "node test/daa-service.test.js",
     "build": "node scripts/build.js",
     "build:wasm": "cd ../crates/ruv-swarm-wasm && wasm-pack build --target web --out-dir ../../npm/wasm -- --no-default-features",
     "build:wasm-simd": "cd ../crates/ruv-swarm-wasm && RUSTFLAGS=\"-C target-feature=+simd128\" wasm-pack build --target web --out-dir ../../npm/wasm-simd -- --no-default-features",
@@ -78,7 +80,11 @@
     "ai",
     "orchestration",
     "multi-agent",
-    "distributed-computing"
+    "distributed-computing",
+    "daa",
+    "autonomous-agents",
+    "workflow-coordination",
+    "state-persistence"
   ],
   "author": "rUv Contributors",
   "license": "MIT OR Apache-2.0",

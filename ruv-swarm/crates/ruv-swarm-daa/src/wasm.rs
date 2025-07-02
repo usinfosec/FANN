@@ -11,16 +11,18 @@ use js_sys::{Array, Object, Promise, Function};
 
 use serde::{Deserialize, Serialize};
 
-#[cfg(not(feature = "std"))]
-use alloc::{boxed::Box, string::String, vec::Vec};
+// Import standard library types
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 use crate::{
-    traits::{DistributedAutonomousAgent, SelfHealingAgent, ResourceOptimizer},
+    CognitivePattern, DAAError, DAAResult,
+    Feedback, Task, TaskResult, CoordinationResult,
+    Knowledge, AgentMetrics, Priority,
     types::{AutonomousCapability, DecisionContext, AdaptationFeedback},
-    coordination::AutonomousCoordinator,
-    resources::DynamicResourceManager,
-    Result,
 };
+
+use std::collections::HashMap;
 
 /// WASM-compatible autonomous agent implementation
 #[cfg(feature = "wasm")]
@@ -188,7 +190,7 @@ impl WasmAutonomousAgent {
             // Parse context from JSON
             let context: DecisionContext = match serde_json::from_str(context_json) {
                 Ok(ctx) => ctx,
-                Err(_) => return JsValue::from_str("Error: Invalid context JSON"),
+                Err(_) => return Err(JsValue::from_str("Error: Invalid context JSON")),
             };
             
             // Simulate autonomous decision making
@@ -199,7 +201,7 @@ impl WasmAutonomousAgent {
                 learning_rate
             );
             
-            JsValue::from_str(&decision)
+            Ok(JsValue::from_str(&decision))
         };
         
         wasm_bindgen_futures::future_to_promise(future)
@@ -214,7 +216,7 @@ impl WasmAutonomousAgent {
             // Parse feedback from JSON
             let feedback: AdaptationFeedback = match serde_json::from_str(feedback_json) {
                 Ok(fb) => fb,
-                Err(_) => return JsValue::from_str("Error: Invalid feedback JSON"),
+                Err(_) => return Err(JsValue::from_str("Error: Invalid feedback JSON")),
             };
             
             // Adapt learning rate based on feedback
@@ -232,7 +234,7 @@ impl WasmAutonomousAgent {
                 feedback.performance_score
             );
             
-            JsValue::from_str(&result)
+            Ok(JsValue::from_str(&result))
         };
         
         wasm_bindgen_futures::future_to_promise(future)
@@ -270,7 +272,7 @@ impl WasmAutonomousAgent {
                 agent_id
             );
             
-            JsValue::from_str(&optimization_result)
+            Ok(JsValue::from_str(&optimization_result))
         };
         
         wasm_bindgen_futures::future_to_promise(future)
@@ -366,7 +368,7 @@ impl WasmCoordinator {
             );
             
             console::log_1(&result.clone().into());
-            JsValue::from_str(&result)
+            Ok(JsValue::from_str(&result))
         };
         
         wasm_bindgen_futures::future_to_promise(future)
@@ -500,7 +502,7 @@ impl WasmResourceManager {
         
         let future = async move {
             if !optimization_enabled {
-                return JsValue::from_str("Optimization disabled");
+                return Ok(JsValue::from_str("Optimization disabled"));
             }
             
             // Simulate optimization
@@ -519,7 +521,7 @@ impl WasmResourceManager {
             );
             
             console::log_1(&result.clone().into());
-            JsValue::from_str(&result)
+            Ok(JsValue::from_str(&result))
         };
         
         wasm_bindgen_futures::future_to_promise(future)
