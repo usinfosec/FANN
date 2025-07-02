@@ -254,7 +254,8 @@ jobs:
         key: ${{ runner.os }}-proptest-${{ hashFiles('**/Cargo.lock') }}
     
     - name: Run property-based tests
-      run: cargo test --test property_tests --all-features
+      # Run all tests with proptest features enabled instead of looking for a specific test file
+      run: cargo test --all-features
       env:
         # Reduce the number of test cases to speed up execution
         PROPTEST_CASES: 1000
