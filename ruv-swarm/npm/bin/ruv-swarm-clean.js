@@ -8,6 +8,7 @@ import { setupClaudeIntegration, invokeClaudeWithSwarm } from '../src/claude-int
 import { RuvSwarm } from '../src/index-enhanced.js';
 import { EnhancedMCPTools } from '../src/mcp-tools-enhanced.js';
 import { daaMcpTools } from '../src/mcp-daa-tools.js';
+import mcpToolsEnhanced from '../src/mcp-tools-enhanced.js';
 
 // Input validation constants and functions
 const VALID_TOPOLOGIES = ['mesh', 'hierarchical', 'ring', 'star'];
@@ -150,6 +151,20 @@ async function initializeSystem() {
         
         // Initialize DAA MCP tools with the same instance
         daaMcpTools.mcpTools = globalMCPTools;
+        await daaMcpTools.ensureInitialized();
+        
+        // Add DAA tool methods to the MCP tools object
+        const daaToolNames = [
+            'daa_init', 'daa_agent_create', 'daa_agent_adapt', 'daa_workflow_create',
+            'daa_workflow_execute', 'daa_knowledge_share', 'daa_learning_status',
+            'daa_cognitive_pattern', 'daa_meta_learning', 'daa_performance_metrics'
+        ];
+        
+        for (const toolName of daaToolNames) {
+            if (typeof daaMcpTools[toolName] === 'function') {
+                globalMCPTools[toolName] = daaMcpTools[toolName].bind(daaMcpTools);
+            }
+        }
     }
     
     return { ruvSwarm: globalRuvSwarm, mcpTools: globalMCPTools };
@@ -1202,27 +1217,46 @@ async function handleMcpRequest(request, mcpTools) {
                 const toolName = request.params.name;
                 const toolArgs = request.params.arguments || {};
                 
-                // Call the appropriate mcpTools method
-                if (mcpTools[toolName]) {
-                    const result = await mcpTools[toolName](toolArgs);
+                let result = null;
+                let toolFound = false;
+                
+                // Try regular MCP tools first (use mcpToolsEnhanced instance)
+                if (typeof mcpToolsEnhanced[toolName] === 'function') {
+                    try {
+                        result = await mcpToolsEnhanced[toolName](toolArgs);
+                        toolFound = true;
+                    } catch (error) {
+                        response.error = {
+                            code: -32603,
+                            message: `MCP tool error: ${error.message}`,
+                            data: { tool: toolName, error: error.message }
+                        };
+                        break;
+                    }
+                }
+                // Try DAA tools if not found in regular tools
+                else if (typeof daaMcpTools[toolName] === 'function') {
+                    try {
+                        result = await daaMcpTools[toolName](toolArgs);
+                        toolFound = true;
+                    } catch (error) {
+                        response.error = {
+                            code: -32603,
+                            message: `DAA tool error: ${error.message}`,
+                            data: { tool: toolName, error: error.message }
+                        };
+                        break;
+                    }
+                }
+                
+                if (toolFound) {
                     // Format response with content array as required by Claude Code
-                    // Each content item must have a type (text, image, audio, resource)
                     response.result = {
                         content: [{
                             type: 'text',
                             text: typeof result === 'string' ? result : JSON.stringify(result, null, 2)
                         }]
                     };
-                } else if (daaMcpTools[toolName]) {
-                    // Handle DAA-specific tools
-                    const result = await daaMcpTools[toolName](toolArgs);
-                    response.result = {
-                        content: [{
-                            type: 'text',
-                            text: typeof result === 'string' ? result : JSON.stringify(result, null, 2)
-                        }]
-                    };
-                } else {
                     response.error = {
                         code: -32601,
                         message: 'Method not found',

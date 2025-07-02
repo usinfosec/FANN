@@ -1,10 +1,14 @@
+#!/usr/bin/env node
+
 /**
- * Test Runner for Coverage Tests
- * Properly handles ES modules and async tests
+ * Comprehensive Test Runner for ruv-swarm
+ * Handles ES modules, CommonJS compatibility, and different test frameworks
  */
 
+import { spawn } from 'child_process';
+import { readdir, stat } from 'fs/promises';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, resolve } from 'path';
 import assert from 'assert';
 
 const __filename = fileURLToPath(import.meta.url);

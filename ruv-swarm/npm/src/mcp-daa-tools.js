@@ -46,10 +46,14 @@ export class DAA_MCPTools {
         timestamp: new Date().toISOString()
       };
 
-      this.mcpTools.recordToolMetrics('daa_init', startTime, 'success');
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_init', startTime, 'success');
+      }
       return result;
     } catch (error) {
-      this.mcpTools.recordToolMetrics('daa_init', startTime, 'error', error.message);
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_init', startTime, 'error', error.message);
+      }
       throw error;
     }
   }
@@ -88,29 +92,38 @@ export class DAA_MCPTools {
 
       // Find or create a swarm for the agent
       let swarmId = null;
-      for (const [id, swarm] of this.mcpTools.activeSwarms) {
-        if (swarm.agents.size < swarm.maxAgents) {
-          swarmId = id;
-          swarm.agents.set(agent.id, agent);
-          break;
+      if (this.mcpTools?.activeSwarms) {
+        for (const [id, swarm] of this.mcpTools.activeSwarms) {
+          if (swarm.agents.size < swarm.maxAgents) {
+            swarmId = id;
+            swarm.agents.set(agent.id, agent);
+            break;
+          }
         }
+      } else {
+        // Create a virtual swarm if none exists
+        swarmId = 'daa-default-swarm';
       }
 
       const result = {
         agent_id: agent.id,
         swarm_id: swarmId,
-        cognitive_pattern: agent.cognitivePattern,
-        capabilities: agent.capabilities,
-        learning_enabled: agent.config.learningRate > 0,
-        memory_enabled: agent.config.enableMemory,
+        cognitive_pattern: agent.cognitivePattern || cognitivePattern,
+        capabilities: Array.from(agent.capabilities || capabilities),
+        learning_enabled: learningRate > 0,
+        memory_enabled: enableMemory,
         status: 'active',
         created_at: new Date().toISOString()
       };
 
-      this.mcpTools.recordToolMetrics('daa_agent_create', startTime, 'success');
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_agent_create', startTime, 'success');
+      }
       return result;
     } catch (error) {
-      this.mcpTools.recordToolMetrics('daa_agent_create', startTime, 'error', error.message);
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_agent_create', startTime, 'error', error.message);
+      }
       throw error;
     }
   }
@@ -152,10 +165,14 @@ export class DAA_MCPTools {
         timestamp: new Date().toISOString()
       };
 
-      this.mcpTools.recordToolMetrics('daa_agent_adapt', startTime, 'success');
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_agent_adapt', startTime, 'success');
+      }
       return result;
     } catch (error) {
-      this.mcpTools.recordToolMetrics('daa_agent_adapt', startTime, 'error', error.message);
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_agent_adapt', startTime, 'error', error.message);
+      }
       throw error;
     }
   }
@@ -193,10 +210,14 @@ export class DAA_MCPTools {
         created_at: new Date().toISOString()
       };
 
-      this.mcpTools.recordToolMetrics('daa_workflow_create', startTime, 'success');
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_workflow_create', startTime, 'success');
+      }
       return result;
     } catch (error) {
-      this.mcpTools.recordToolMetrics('daa_workflow_create', startTime, 'error', error.message);
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_workflow_create', startTime, 'error', error.message);
+      }
       throw error;
     }
   }
@@ -236,10 +257,14 @@ export class DAA_MCPTools {
         timestamp: new Date().toISOString()
       };
 
-      this.mcpTools.recordToolMetrics('daa_workflow_execute', startTime, 'success');
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_workflow_execute', startTime, 'success');
+      }
       return result;
     } catch (error) {
-      this.mcpTools.recordToolMetrics('daa_workflow_execute', startTime, 'error', error.message);
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_workflow_execute', startTime, 'error', error.message);
+      }
       throw error;
     }
   }
@@ -284,10 +309,14 @@ export class DAA_MCPTools {
         timestamp: new Date().toISOString()
       };
 
-      this.mcpTools.recordToolMetrics('daa_knowledge_share', startTime, 'success');
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_knowledge_share', startTime, 'success');
+      }
       return result;
     } catch (error) {
-      this.mcpTools.recordToolMetrics('daa_knowledge_share', startTime, 'error', error.message);
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_knowledge_share', startTime, 'error', error.message);
+      }
       throw error;
     }
   }
@@ -328,10 +357,14 @@ export class DAA_MCPTools {
         result.detailed_metrics = learningStatus.detailedMetrics;
       }
 
-      this.mcpTools.recordToolMetrics('daa_learning_status', startTime, 'success');
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_learning_status', startTime, 'success');
+      }
       return result;
     } catch (error) {
-      this.mcpTools.recordToolMetrics('daa_learning_status', startTime, 'error', error.message);
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_learning_status', startTime, 'error', error.message);
+      }
       throw error;
     }
   }
@@ -365,7 +398,9 @@ export class DAA_MCPTools {
           timestamp: new Date().toISOString()
         };
 
-        this.mcpTools.recordToolMetrics('daa_cognitive_pattern', startTime, 'success');
+        if (this.mcpTools?.recordToolMetrics) {
+          this.mcpTools.recordToolMetrics('daa_cognitive_pattern', startTime, 'success');
+        }
         return result;
       } else {
         // Change cognitive pattern
@@ -384,11 +419,15 @@ export class DAA_MCPTools {
           timestamp: new Date().toISOString()
         };
 
-        this.mcpTools.recordToolMetrics('daa_cognitive_pattern', startTime, 'success');
+        if (this.mcpTools?.recordToolMetrics) {
+          this.mcpTools.recordToolMetrics('daa_cognitive_pattern', startTime, 'success');
+        }
         return result;
       }
     } catch (error) {
-      this.mcpTools.recordToolMetrics('daa_cognitive_pattern', startTime, 'error', error.message);
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_cognitive_pattern', startTime, 'error', error.message);
+      }
       throw error;
     }
   }
@@ -428,10 +467,14 @@ export class DAA_MCPTools {
         timestamp: new Date().toISOString()
       };
 
-      this.mcpTools.recordToolMetrics('daa_meta_learning', startTime, 'success');
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_meta_learning', startTime, 'success');
+      }
       return result;
     } catch (error) {
-      this.mcpTools.recordToolMetrics('daa_meta_learning', startTime, 'error', error.message);
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_meta_learning', startTime, 'error', error.message);
+      }
       throw error;
     }
   }
@@ -481,10 +524,14 @@ export class DAA_MCPTools {
         timestamp: new Date().toISOString()
       };
 
-      this.mcpTools.recordToolMetrics('daa_performance_metrics', startTime, 'success');
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_performance_metrics', startTime, 'success');
+      }
       return result;
     } catch (error) {
-      this.mcpTools.recordToolMetrics('daa_performance_metrics', startTime, 'error', error.message);
+      if (this.mcpTools?.recordToolMetrics) {
+        this.mcpTools.recordToolMetrics('daa_performance_metrics', startTime, 'error', error.message);
+      }
       throw error;
     }
   }

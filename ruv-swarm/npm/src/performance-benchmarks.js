@@ -630,7 +630,7 @@ class PerformanceBenchmarks {
         sharedArrayBuffer: typeof SharedArrayBuffer !== 'undefined',
         performanceObserver: typeof PerformanceObserver !== 'undefined',
         workers: typeof Worker !== 'undefined',
-        modules: typeof import !== 'undefined'
+        modules: typeof globalThis.import !== 'undefined'
       };
       
       // Test performance APIs

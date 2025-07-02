@@ -1,44 +1,28 @@
 /**
- * Enhanced MCP Tools Implementation
+ * Enhanced MCP Tools Implementation with Robust Error Handling
  * Provides complete WASM capabilities exposure through MCP interface
  */
 
 import { RuvSwarm } from './index-enhanced.js';
-// import { NeuralNetworkManager } from './neural-network-manager.js';
 import { SwarmPersistence } from './persistence.js';
+import { 
+  RuvSwarmError,
+  ValidationError,
+  SwarmError,
+  AgentError,
+  TaskError,
+  NeuralError,
+  WasmError,
+  PersistenceError,
+  ResourceError,
+  ErrorFactory,
+  ErrorContext
+} from './errors.js';
+import { ValidationUtils } from './schemas.js';
 
-// Custom error class for MCP validation errors
-class MCPValidationError extends Error {
-  constructor(message, field = null) {
-    super(message);
-    this.name = 'MCPValidationError';
-    this.field = field;
-    this.code = 'VALIDATION_ERROR';
-  }
-}
-
-// Validation helper functions
-function validateMCPIterations(iterations) {
-  if (typeof iterations !== 'number' || iterations < 1 || iterations > 1000) {
-    throw new MCPValidationError('Iterations must be a number between 1 and 1000', 'iterations');
-  }
-  return Math.floor(iterations);
-}
-
-function validateMCPLearningRate(learningRate) {
-  if (typeof learningRate !== 'number' || learningRate <= 0 || learningRate > 1) {
-    throw new MCPValidationError('Learning rate must be a number between 0 and 1', 'learningRate');
-  }
-  return learningRate;
-}
-
-function validateMCPModelType(modelType) {
-  const validTypes = ['feedforward', 'lstm', 'transformer', 'attention', 'cnn'];
-  if (!validTypes.includes(modelType)) {
-    throw new MCPValidationError(`Model type must be one of: ${validTypes.join(', ')}`, 'modelType');
-  }
-  return modelType;
-}
+/**
+ * Enhanced MCP Tools with comprehensive error handling and logging
+ */
 
 class EnhancedMCPTools {
   constructor(ruvSwarmInstance = null) {
@@ -46,6 +30,162 @@ class EnhancedMCPTools {
     this.activeSwarms = new Map();
     this.toolMetrics = new Map();
     this.persistence = new SwarmPersistence();
+    this.errorContext = new ErrorContext();
+    this.errorLog = [];
+    this.maxErrorLogSize = 1000;
+  }
+
+  /**
+   * Enhanced error handler with context and logging
+   */
+  handleError(error, toolName, operation, params = null) {
+    // Create detailed error context
+    this.errorContext.set('tool', toolName);
+    this.errorContext.set('operation', operation);
+    this.errorContext.set('timestamp', new Date().toISOString());
+    this.errorContext.set('params', params);
+    this.errorContext.set('activeSwarms', Array.from(this.activeSwarms.keys()));
+    
+    // Enrich error with context
+    const enrichedError = this.errorContext.enrichError(error);
+    
+    // Log error with structured information
+    const errorLog = {
+      timestamp: new Date().toISOString(),
+      tool: toolName,
+      operation,
+      error: {
+        name: error.name,
+        message: error.message,
+        code: error.code || 'UNKNOWN_ERROR',
+        stack: error.stack
+      },
+      context: this.errorContext.toObject(),
+      suggestions: error.getSuggestions ? error.getSuggestions() : [],
+      severity: this.determineSeverity(error),
+      recoverable: this.isRecoverable(error)
+    };
+    
+    // Add to error log (with size limit)
+    this.errorLog.push(errorLog);
+    if (this.errorLog.length > this.maxErrorLogSize) {
+      this.errorLog.shift();
+    }
+    
+    // Log to console with appropriate level
+    if (errorLog.severity === 'critical') {
+      console.error('🚨 CRITICAL MCP Error:', errorLog);
+    } else if (errorLog.severity === 'high') {
+      console.error('❌ MCP Error:', errorLog);
+    } else if (errorLog.severity === 'medium') {
+      console.warn('⚠️ MCP Warning:', errorLog);
+    } else {
+      console.log('ℹ️ MCP Info:', errorLog);
+    }
+    
+    // Clear context for next operation
+    this.errorContext.clear();
+    
+    return enrichedError;
+  }
+
+  /**
+   * Determine error severity based on type and message
+   */
+  determineSeverity(error) {
+    if (error instanceof ValidationError) {
+      return 'medium';
+    } else if (error instanceof WasmError || error instanceof ResourceError) {
+      return 'high';
+    } else if (error instanceof PersistenceError && error.message.includes('corrupt')) {
+      return 'critical';
+    } else if (error instanceof SwarmError && error.message.includes('initialization')) {
+      return 'high';
+    } else if (error instanceof TaskError && error.message.includes('timeout')) {
+      return 'medium';
+    } else if (error instanceof AgentError) {
+      return 'medium';
+    } else if (error instanceof NeuralError) {
+      return 'medium';
+    }
+    return 'low';
+  }
+
+  /**
+   * Determine if error is recoverable
+   */
+  isRecoverable(error) {
+    if (error instanceof ValidationError) {
+      return true; // User can fix parameters
+    } else if (error instanceof ResourceError) {
+      return true; // Can retry with different resources
+    } else if (error instanceof TaskError && error.message.includes('timeout')) {
+      return true; // Can retry task
+    } else if (error instanceof AgentError && error.message.includes('busy')) {
+      return true; // Can wait or use different agent
+    } else if (error instanceof PersistenceError && error.message.includes('locked')) {
+      return true; // Can retry
+    }
+    return false;
+  }
+
+  /**
+   * Validate and sanitize input parameters for a tool
+   */
+  validateToolParams(params, toolName) {
+    try {
+      // Add operation context
+      this.errorContext.set('validating', toolName);
+      this.errorContext.set('rawParams', params);
+      
+      // Validate using schema
+      const validatedParams = ValidationUtils.validateParams(params, toolName);
+      
+      // Sanitize inputs
+      for (const [key, value] of Object.entries(validatedParams)) {
+        if (typeof value === 'string') {
+          validatedParams[key] = ValidationUtils.sanitizeInput(value);
+        }
+      }
+      
+      return validatedParams;
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      throw ErrorFactory.createError('validation', 
+        `Parameter validation failed for ${toolName}: ${error.message}`,
+        { tool: toolName, originalError: error }
+      );
+    }
+  }
+
+  /**
+   * Get recent error logs for debugging
+   */
+  getErrorLogs(limit = 50) {
+    return this.errorLog.slice(-limit);
+  }
+
+  /**
+   * Get error statistics
+   */
+  getErrorStats() {
+    const stats = {
+      total: this.errorLog.length,
+      bySeverity: { critical: 0, high: 0, medium: 0, low: 0 },
+      byTool: {},
+      recoverable: 0,
+      recentErrors: this.errorLog.slice(-10)
+    };
+    
+    for (const log of this.errorLog) {
+      stats.bySeverity[log.severity]++;
+      stats.byTool[log.tool] = (stats.byTool[log.tool] || 0) + 1;
+      if (log.recoverable) stats.recoverable++;
+    }
+    
+    return stats;
   }
 
   async initialize(ruvSwarmInstance = null) {
@@ -126,24 +266,39 @@ class EnhancedMCPTools {
     }
   }
 
-  // Enhanced swarm_init with full WASM capabilities
+  // Enhanced swarm_init with full WASM capabilities and robust error handling
   async swarm_init(params) {
     const startTime = performance.now();
+    const toolName = 'swarm_init';
 
     try {
+      // Validate and sanitize input parameters
+      const validatedParams = this.validateToolParams(params, toolName);
+      
+      // Add operation context
+      this.errorContext.set('operation', 'swarm_initialization');
+      this.errorContext.set('startTime', startTime);
+
       // Ensure we have a RuvSwarm instance (but don't re-initialize)
       if (!this.ruvSwarm) {
-        await this.initialize();
+        try {
+          await this.initialize();
+        } catch (error) {
+          throw ErrorFactory.createError('wasm', 
+            'Failed to initialize RuvSwarm WASM module',
+            { operation: 'initialization', originalError: error }
+          );
+        }
       }
 
       const {
-        topology = 'mesh',
-        maxAgents = 5,
-        strategy = 'balanced',
-        enableCognitiveDiversity = true,
-        enableNeuralAgents = true,
-        enableForecasting = false,
-      } = params;
+        topology,
+        maxAgents,
+        strategy,
+        enableCognitiveDiversity,
+        enableNeuralAgents,
+        enableForecasting,
+      } = validatedParams;
 
       const swarm = await this.ruvSwarm.createSwarm({
         name: `${topology}-swarm-${Date.now()}`,
@@ -201,23 +356,55 @@ class EnhancedMCPTools {
       return result;
     } catch (error) {
       this.recordToolMetrics('swarm_init', startTime, 'error', error.message);
-      throw error;
+      
+      // Enhanced error handling with specific error types
+      let handledError = error;
+      
+      if (error.message.includes('WASM') || error.message.includes('module')) {
+        handledError = ErrorFactory.createError('wasm',
+          `WASM module error during swarm initialization: ${error.message}`,
+          { operation: 'swarm_init', topology: params?.topology, originalError: error }
+        );
+      } else if (error.message.includes('memory') || error.message.includes('allocation')) {
+        handledError = ErrorFactory.createError('resource',
+          `Insufficient resources for swarm initialization: ${error.message}`,
+          { resourceType: 'memory', operation: 'swarm_init', maxAgents: params?.maxAgents }
+        );
+      } else if (error.message.includes('persistence') || error.message.includes('database')) {
+        handledError = ErrorFactory.createError('persistence',
+          `Database error during swarm creation: ${error.message}`,
+          { operation: 'create_swarm', originalError: error }
+        );
+      } else if (!(error instanceof ValidationError || error instanceof RuvSwarmError)) {
+        handledError = ErrorFactory.createError('swarm',
+          `Swarm initialization failed: ${error.message}`,
+          { operation: 'swarm_init', originalError: error }
+        );
+      }
+      
+      throw this.handleError(handledError, toolName, 'swarm_initialization', params);
     }
   }
 
   // Enhanced agent_spawn with cognitive patterns and neural networks
   async agent_spawn(params) {
     const startTime = performance.now();
+    const toolName = 'agent_spawn';
 
     try {
+      // Validate and sanitize input parameters
+      const validatedParams = this.validateToolParams(params, toolName);
+      
+      // Add operation context
+      this.errorContext.set('operation', 'agent_spawning');
+      this.errorContext.set('startTime', startTime);
+
       const {
-        type = 'researcher',
-        name = null,
-        capabilities = null,
-        // cognitivePattern = null,
-        // neuralConfig = null,
-        swarmId = null,
-      } = params;
+        type,
+        name,
+        capabilities,
+        swarmId,
+      } = validatedParams;
 
       // Auto-select swarm if not specified
       const swarm = swarmId ?
@@ -225,7 +412,23 @@ class EnhancedMCPTools {
         this.activeSwarms.values().next().value;
 
       if (!swarm) {
-        throw new Error('No active swarm found. Please initialize a swarm first.');
+        throw ErrorFactory.createError('swarm',
+          'No active swarm found. Please initialize a swarm first using swarm_init.',
+          { operation: 'agent_spawn', requestedSwarmId: swarmId }
+        );
+      }
+
+      // Check swarm capacity
+      if (swarm.agents && swarm.agents.size >= (swarm.maxAgents || 100)) {
+        throw ErrorFactory.createError('swarm',
+          `Swarm has reached maximum capacity of ${swarm.maxAgents || 100} agents`,
+          { 
+            operation: 'agent_spawn', 
+            swarmId: swarm.id, 
+            currentAgents: swarm.agents.size,
+            maxAgents: swarm.maxAgents 
+          }
+        );
       }
 
       const agent = await swarm.spawn({
@@ -277,24 +480,58 @@ class EnhancedMCPTools {
       return result;
     } catch (error) {
       this.recordToolMetrics('agent_spawn', startTime, 'error', error.message);
-      throw error;
+      
+      // Enhanced error handling with specific error types
+      let handledError = error;
+      
+      if (error.message.includes('neural') || error.message.includes('network')) {
+        handledError = ErrorFactory.createError('neural',
+          `Neural network error during agent spawn: ${error.message}`,
+          { operation: 'agent_spawn', agentType: params?.type, originalError: error }
+        );
+      } else if (error.message.includes('capabilities') || error.message.includes('mismatch')) {
+        handledError = ErrorFactory.createError('agent',
+          `Agent capability error: ${error.message}`,
+          { operation: 'agent_spawn', agentType: params?.type, capabilities: params?.capabilities }
+        );
+      } else if (error.message.includes('database') || error.message.includes('persistence')) {
+        handledError = ErrorFactory.createError('persistence',
+          `Database error during agent creation: ${error.message}`,
+          { operation: 'create_agent', agentType: params?.type, originalError: error }
+        );
+      } else if (!(error instanceof ValidationError || error instanceof RuvSwarmError)) {
+        handledError = ErrorFactory.createError('agent',
+          `Agent spawn failed: ${error.message}`,
+          { operation: 'agent_spawn', agentType: params?.type, originalError: error }
+        );
+      }
+      
+      throw this.handleError(handledError, toolName, 'agent_spawning', params);
     }
   }
 
-  // Enhanced task_orchestrate with intelligent agent selection
+  // Enhanced task_orchestrate with intelligent agent selection and error handling
   async task_orchestrate(params) {
     const startTime = performance.now();
+    const toolName = 'task_orchestrate';
 
     try {
+      // Validate and sanitize input parameters
+      const validatedParams = this.validateToolParams(params, toolName);
+      
+      // Add operation context
+      this.errorContext.set('operation', 'task_orchestration');
+      this.errorContext.set('startTime', startTime);
+
       const {
         task,
-        priority = 'medium',
-        strategy = 'adaptive',
-        maxAgents = null,
-        swarmId = null,
-        requiredCapabilities = null,
-        estimatedDuration = null,
-      } = params;
+        priority,
+        strategy,
+        maxAgents,
+        swarmId,
+        requiredCapabilities,
+        estimatedDuration,
+      } = validatedParams;
 
       const swarm = swarmId ?
         this.activeSwarms.get(swarmId) :
@@ -340,7 +577,43 @@ class EnhancedMCPTools {
       return result;
     } catch (error) {
       this.recordToolMetrics('task_orchestrate', startTime, 'error', error.message);
-      throw error;
+      
+      // Enhanced error handling with specific error types
+      let handledError = error;
+      
+      if (error.message.includes('swarm') && error.message.includes('not found')) {
+        handledError = ErrorFactory.createError('swarm',
+          `Swarm not found for task orchestration: ${error.message}`,
+          { operation: 'task_orchestrate', swarmId: params?.swarmId, originalError: error }
+        );
+      } else if (error.message.includes('agent') && error.message.includes('available')) {
+        handledError = ErrorFactory.createError('agent',
+          `No suitable agents available for task: ${error.message}`,
+          { 
+            operation: 'task_orchestrate', 
+            task: params?.task,
+            requiredCapabilities: params?.requiredCapabilities,
+            originalError: error 
+          }
+        );
+      } else if (error.message.includes('timeout') || error.message.includes('duration')) {
+        handledError = ErrorFactory.createError('task',
+          `Task orchestration timeout: ${error.message}`,
+          { 
+            operation: 'task_orchestrate', 
+            task: params?.task,
+            estimatedDuration: params?.estimatedDuration,
+            originalError: error 
+          }
+        );
+      } else if (!(error instanceof ValidationError || error instanceof RuvSwarmError)) {
+        handledError = ErrorFactory.createError('task',
+          `Task orchestration failed: ${error.message}`,
+          { operation: 'task_orchestrate', task: params?.task, originalError: error }
+        );
+      }
+      
+      throw this.handleError(handledError, toolName, 'task_orchestration', params);
     }
   }
 
@@ -2027,3 +2300,4 @@ class EnhancedMCPTools {
 }
 
 export { EnhancedMCPTools };
+export default new EnhancedMCPTools();
