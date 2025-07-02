@@ -1,0 +1,38 @@
+# This is a configuration file for cargo-deny
+# See https://embarkstudios.github.io/cargo-deny/
+
+[licenses]
+# The default license terms that are accepted for crates
+default = "allow"
+
+# Explicitly allow these license identifiers
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "BSD-2-Clause",
+    "CC0-1.0",
+    "ISC",
+    "Zlib",
+    "0BSD",
+    "BSL-1.0",
+    "Unicode-DFS-2016",
+]
+
+# This allows license identifiers that are part of SPDX but aren't standard.
+unlicensed = "allow"
+
+# Allow dual licenses
+allow-osi-fsf-free = "either"
+
+# We want really high confidence when inferring licenses from text
+confidence-threshold = 0.93
+
+[bans]
+# Lint level for when multiple versions of the same crate are detected
+multiple-versions = "warn"
+
+[sources]
+# Allow crates from crates.io and GitHub
+allow-registry = ["crates-io"]
+allow-git = ["https://github.com"]
