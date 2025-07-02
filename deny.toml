@@ -22,15 +22,15 @@ confidence-threshold = 0.93
 # Allow specific crates with license expressions
 [[licenses.clarify]]
 crate = "adler2"
-license-expression = "MIT OR Apache-2.0 OR 0BSD"
+expression = "MIT OR Apache-2.0 OR 0BSD"
 
 [[licenses.clarify]]
 crate = "autocfg"
-license-expression = "MIT OR Apache-2.0"
+expression = "MIT OR Apache-2.0"
 
 [[licenses.clarify]]
 crate = "bincode"
-license-expression = "MIT"
+expression = "MIT"
 
 [bans]
 # Lint level for when multiple versions of the same crate are detected
