@@ -24,6 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        # Specify versions that support Cargo.lock version 4 (introduced in Rust 1.70.0)
         rust: [stable, beta, nightly]
         include:
           - os: ubuntu-latest
@@ -36,7 +37,11 @@ jobs:
       uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.rust }}
+        # Specify a minimum version that supports Cargo.lock version 4
+        # Cargo.lock version 4 was introduced in Rust 1.70.0
         components: rustfmt, clippy
+        # Ensure minimum version is at least 1.70.0
+        min-version: 1.70.0
     
     - name: Cache dependencies
       uses: actions/cache@v3
@@ -89,6 +94,9 @@ jobs:
     
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
+      with:
+        # Ensure minimum version is at least 1.70.0 to support Cargo.lock version 4
+        min-version: 1.70.0
     
     - name: Cache dependencies
       uses: actions/cache@v3
@@ -113,7 +121,8 @@ jobs:
       id: codecov-upload
       continue-on-error: true
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+        # Use GITHUB_TOKEN instead of CODECOV_TOKEN as it's more reliable
+        token: ${{ secrets.GITHUB_TOKEN }}
         files: ./cobertura.xml
         fail_ci_if_error: false
         verbose: true
@@ -129,7 +138,8 @@ jobs:
       continue-on-error: true
       id: codecov-retry-1
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+        # Use GITHUB_TOKEN instead of CODECOV_TOKEN as it's more reliable
+        token: ${{ secrets.GITHUB_TOKEN }}
         files: ./cobertura.xml
         fail_ci_if_error: false
         
@@ -143,7 +153,8 @@ jobs:
       uses: codecov/codecov-action@v3
       continue-on-error: true
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+        # Use GITHUB_TOKEN instead of CODECOV_TOKEN as it's more reliable
+        token: ${{ secrets.GITHUB_TOKEN }}
         files: ./cobertura.xml
         fail_ci_if_error: false
 
@@ -158,6 +169,9 @@ jobs:
     
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
+      with:
+        # Ensure minimum version is at least 1.70.0 to support Cargo.lock version 4
+        min-version: 1.70.0
     
     - name: Cache dependencies
       uses: actions/cache@v3
@@ -195,6 +209,8 @@ jobs:
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@nightly
       with:
+        # Ensure nightly is recent enough to support Cargo.lock version 4
+        min-version: 1.70.0
         components: miri
     
     - name: Cache dependencies
@@ -243,6 +259,9 @@ jobs:
     
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
+      with:
+        # Ensure minimum version is at least 1.70.0 to support Cargo.lock version 4
+        min-version: 1.70.0
     
     - name: Cache dependencies
       uses: actions/cache@v3
@@ -279,6 +298,8 @@ jobs:
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
       with:
+        # Ensure minimum version is at least 1.70.0 to support Cargo.lock version 4
+        min-version: 1.70.0
         targets: ${{ matrix.target }}
     
     - name: Install cross
@@ -297,6 +318,9 @@ jobs:
     
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
+      with:
+        # Ensure minimum version is at least 1.70.0 to support Cargo.lock version 4
+        min-version: 1.70.0
     
     - name: Cache dependencies
       uses: actions/cache@v3
@@ -329,6 +353,9 @@ jobs:
     
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
+      with:
+        # Ensure minimum version is at least 1.70.0 to support Cargo.lock version 4
+        min-version: 1.70.0
     
     - name: Cache dependencies
       uses: actions/cache@v3
@@ -386,6 +413,9 @@ jobs:
     
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
+      with:
+        # Ensure minimum version is at least 1.70.0 to support Cargo.lock version 4
+        min-version: 1.70.0
     
     - name: Check if version bumped
       id: version-check
