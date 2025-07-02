@@ -10,12 +10,10 @@ extern crate alloc;
 #[cfg(not(feature = "std"))]
 use alloc::{boxed::Box, string::String, vec::Vec};
 
-use std::collections::HashMap;
 
 use crate::{
     types::{AdaptationFeedback, DecisionContext},
-    telemetry::TelemetryCollector,
-    DAAResult, DAAError,
+    DAAResult,
 };
 
 /// Self-adaptation capabilities for autonomous agents
@@ -62,11 +60,11 @@ pub trait SelfAdaptation: Send + Sync {
     
     /// Update learning model
     #[cfg(feature = "async")]
-    async fn update_learning_model(&mut self, model: Self::LearningModel) -> Result<()>;
+    async fn update_learning_model(&mut self, model: Self::LearningModel) -> DAAResult<()>;
     
     /// Update learning model (sync version)
     #[cfg(not(feature = "async"))]
-    fn update_learning_model(&mut self, model: Self::LearningModel) -> Result<()>;
+    fn update_learning_model(&mut self, model: Self::LearningModel) -> DAAResult<()>;
 }
 
 /// Learning strategy implementation
@@ -83,27 +81,27 @@ pub trait LearningStrategy: Send + Sync {
     
     /// Train the learning model
     #[cfg(feature = "async")]
-    async fn train(&mut self, data: &Self::TrainingData) -> Result<TrainingResult>;
+    async fn train(&mut self, data: &Self::TrainingData) -> DAAResult<TrainingResult>;
     
     /// Train (sync version)
     #[cfg(not(feature = "async"))]
-    fn train(&mut self, data: &Self::TrainingData) -> Result<TrainingResult>;
+    fn train(&mut self, data: &Self::TrainingData) -> DAAResult<TrainingResult>;
     
     /// Predict using the trained model
     #[cfg(feature = "async")]
-    async fn predict(&self, input: &DecisionContext) -> Result<Prediction>;
+    async fn predict(&self, input: &DecisionContext) -> DAAResult<Prediction>;
     
     /// Predict (sync version)
     #[cfg(not(feature = "async"))]
-    fn predict(&self, input: &DecisionContext) -> Result<Prediction>;
+    fn predict(&self, input: &DecisionContext) -> DAAResult<Prediction>;
     
     /// Update model with new data
     #[cfg(feature = "async")]
-    async fn update_model(&mut self, data: &Self::TrainingData) -> Result<()>;
+    async fn update_model(&mut self, data: &Self::TrainingData) -> DAAResult<()>;
     
     /// Update model (sync version)
     #[cfg(not(feature = "async"))]
-    fn update_model(&mut self, data: &Self::TrainingData) -> Result<()>;
+    fn update_model(&mut self, data: &Self::TrainingData) -> DAAResult<()>;
     
     /// Evaluate model performance
     fn evaluate_model(&self, test_data: &Self::TrainingData) -> ModelEvaluation;
@@ -125,32 +123,32 @@ pub trait EvolutionaryOptimization: Send + Sync {
     type Fitness: Send + Sync + PartialOrd;
     
     /// Initialize population
-    fn initialize_population(&mut self, size: usize) -> Result<Population<Self::Individual>>;
+    fn initialize_population(&mut self, size: usize) -> DAAResult<Population<Self::Individual>>;
     
     /// Evaluate fitness of individuals
     #[cfg(feature = "async")]
-    async fn evaluate_fitness(&self, individuals: &[Self::Individual]) -> Result<Vec<Self::Fitness>>;
+    async fn evaluate_fitness(&self, individuals: &[Self::Individual]) -> DAAResult<Vec<Self::Fitness>>;
     
     /// Evaluate fitness (sync version)
     #[cfg(not(feature = "async"))]
-    fn evaluate_fitness(&self, individuals: &[Self::Individual]) -> Result<Vec<Self::Fitness>>;
+    fn evaluate_fitness(&self, individuals: &[Self::Individual]) -> DAAResult<Vec<Self::Fitness>>;
     
     /// Select parents for reproduction
-    fn select_parents(&self, population: &Population<Self::Individual>, fitness: &[Self::Fitness]) -> Result<Vec<Self::Individual>>;
+    fn select_parents(&self, population: &Population<Self::Individual>, fitness: &[Self::Fitness]) -> DAAResult<Vec<Self::Individual>>;
     
     /// Crossover operation
-    fn crossover(&self, parent1: &Self::Individual, parent2: &Self::Individual) -> Result<Vec<Self::Individual>>;
+    fn crossover(&self, parent1: &Self::Individual, parent2: &Self::Individual) -> DAAResult<Vec<Self::Individual>>;
     
     /// Mutation operation
-    fn mutate(&self, individual: &mut Self::Individual) -> Result<()>;
+    fn mutate(&self, individual: &mut Self::Individual) -> DAAResult<()>;
     
     /// Run evolutionary algorithm
     #[cfg(feature = "async")]
-    async fn evolve(&mut self, generations: usize) -> Result<EvolutionResult<Self::Individual>>;
+    async fn evolve(&mut self, generations: usize) -> DAAResult<EvolutionResult<Self::Individual>>;
     
     /// Evolve (sync version)
     #[cfg(not(feature = "async"))]
-    fn evolve(&mut self, generations: usize) -> Result<EvolutionResult<Self::Individual>>;
+    fn evolve(&mut self, generations: usize) -> DAAResult<EvolutionResult<Self::Individual>>;
     
     /// Get evolution parameters
     fn evolution_parameters(&self) -> &EvolutionParameters;
@@ -170,25 +168,25 @@ pub trait ReinforcementLearning: Send + Sync {
     
     /// Choose action based on current state
     #[cfg(feature = "async")]
-    async fn choose_action(&mut self, state: &Self::State) -> Result<Self::Action>;
+    async fn choose_action(&mut self, state: &Self::State) -> DAAResult<Self::Action>;
     
     /// Choose action (sync version)
     #[cfg(not(feature = "async"))]
-    fn choose_action(&mut self, state: &Self::State) -> Result<Self::Action>;
+    fn choose_action(&mut self, state: &Self::State) -> DAAResult<Self::Action>;
     
     /// Update Q-values or policy based on experience
     #[cfg(feature = "async")]
-    async fn update(&mut self, state: &Self::State, action: &Self::Action, reward: &Self::Reward, next_state: &Self::State) -> Result<()>;
+    async fn update(&mut self, state: &Self::State, action: &Self::Action, reward: &Self::Reward, next_state: &Self::State) -> DAAResult<()>;
     
     /// Update (sync version)
     #[cfg(not(feature = "async"))]
-    fn update(&mut self, state: &Self::State, action: &Self::Action, reward: &Self::Reward, next_state: &Self::State) -> Result<()>;
+    fn update(&mut self, state: &Self::State, action: &Self::Action, reward: &Self::Reward, next_state: &Self::State) -> DAAResult<()>;
     
     /// Get action value estimate
     fn get_action_value(&self, state: &Self::State, action: &Self::Action) -> f64;
     
     /// Get current policy
-    fn get_policy(&self, state: &Self::State) -> Result<ActionProbabilities<Self::Action>>;
+    fn get_policy(&self, state: &Self::State) -> DAAResult<ActionProbabilities<Self::Action>>;
     
     /// Set exploration rate
     fn set_exploration_rate(&mut self, rate: f64);

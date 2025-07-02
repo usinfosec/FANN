@@ -4275,6 +4275,7 @@ dependencies = [
 name = "ruv-swarm-ml"
 version = "0.2.0"
 dependencies = [
+ "getrandom 0.2.16",
  "js-sys",
  "ruv-swarm-core 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",

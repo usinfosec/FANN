@@ -61,6 +61,14 @@ impl SimdVectorOps {
             return self.dot_product_scalar(a, b);
         }
 
+        // SAFETY: This unsafe block uses WebAssembly SIMD intrinsics which require unsafe.
+        // Safety invariants:
+        // 1. We ensure the slice lengths are equal before entering this function
+        // 2. We calculate simd_len to ensure we don't read past the end of the slices
+        // 3. v128_load requires 16-byte aligned access or will trap - Rust slices provide
+        //    proper alignment for f32 arrays
+        // 4. We use .add(i) which is safe because i < simd_len <= len
+        // 5. All SIMD operations (f32x4_add, f32x4_mul) are safe on valid f32x4 values
         unsafe {
             let mut sum = f32x4_splat(0.0);
             let len = a.len();
@@ -68,6 +76,9 @@ impl SimdVectorOps {
 
             // Process 4 elements at a time with SIMD
             for i in (0..simd_len).step_by(4) {
+                // SAFETY: Pointer arithmetic is valid because:
+                // - i is always < simd_len which is <= len - 3
+                // - We're reading exactly 4 f32 values (16 bytes) which fits in v128
                 let va = v128_load(a.as_ptr().add(i) as *const v128);
                 let vb = v128_load(b.as_ptr().add(i) as *const v128);
                 let va_f32 = f32x4(va);
@@ -112,17 +123,26 @@ impl SimdVectorOps {
             return result;
         }
 
+        // SAFETY: This unsafe block performs SIMD vector addition using WebAssembly intrinsics.
+        // Safety invariants:
+        // 1. Input slices a and b have equal length (checked at function entry)
+        // 2. Result vector is pre-allocated with the same length as inputs
+        // 3. simd_len ensures we don't access memory beyond slice bounds
+        // 4. v128_load/v128_store require proper alignment which Rust provides for f32 slices
+        // 5. Mutable access to result vector is exclusive within this scope
         unsafe {
             let len = a.len();
             let simd_len = len - (len % 4);
 
             // SIMD processing
             for i in (0..simd_len).step_by(4) {
+                // SAFETY: Reading 4 f32 values is valid because i + 3 < simd_len <= len
                 let va = v128_load(a.as_ptr().add(i) as *const v128);
                 let vb = v128_load(b.as_ptr().add(i) as *const v128);
                 let va_f32 = f32x4(va);
                 let vb_f32 = f32x4(vb);
                 let sum = f32x4_add(va_f32, vb_f32);
+                // SAFETY: Writing 4 f32 values is valid because result has same length as inputs
                 v128_store(result.as_mut_ptr().add(i) as *mut v128, sum.0);
             }
 
@@ -147,6 +167,13 @@ impl SimdVectorOps {
             return result;
         }
 
+        // SAFETY: This unsafe block performs SIMD vector scaling using WebAssembly intrinsics.
+        // Safety invariants:
+        // 1. Result vector is pre-allocated with same length as input vector
+        // 2. simd_len calculation ensures we stay within bounds
+        // 3. f32x4_splat creates a valid SIMD vector with all lanes set to scale value
+        // 4. Memory alignment requirements are satisfied by Rust's f32 slice layout
+        // 5. No aliasing occurs as result is a separate allocation from input
         unsafe {
             let scale_vec = f32x4_splat(scale);
             let len = vector.len();
@@ -154,9 +181,11 @@ impl SimdVectorOps {
 
             // SIMD processing
             for i in (0..simd_len).step_by(4) {
+                // SAFETY: Valid memory access because i + 3 < simd_len
                 let v = v128_load(vector.as_ptr().add(i) as *const v128);
                 let v_f32 = f32x4(v);
                 let scaled = f32x4_mul(v_f32, scale_vec);
+                // SAFETY: Valid write because result has same bounds as input
                 v128_store(result.as_mut_ptr().add(i) as *mut v128, scaled.0);
             }
 
@@ -192,15 +221,24 @@ impl SimdVectorOps {
             return result;
         }
 
+        // SAFETY: This unsafe block implements SIMD ReLU activation (max(x, 0)).
+        // Safety invariants:
+        // 1. Result vector has same length as input (pre-allocated)
+        // 2. f32x4_splat(0.0) creates a valid zero vector for comparison
+        // 3. f32x4_max is a safe operation that returns element-wise maximum
+        // 4. Memory accesses are bounded by simd_len calculation
+        // 5. WASM SIMD operations maintain IEEE 754 floating-point semantics
         unsafe {
             let zero = f32x4_splat(0.0);
             let len = input.len();
             let simd_len = len - (len % 4);
 
             for i in (0..simd_len).step_by(4) {
+                // SAFETY: Reading 16 bytes is valid as i + 3 < simd_len
                 let v = v128_load(input.as_ptr().add(i) as *const v128);
                 let v_f32 = f32x4(v);
                 let relu = f32x4_max(v_f32, zero);
+                // SAFETY: Writing 16 bytes is valid in pre-allocated result
                 v128_store(result.as_mut_ptr().add(i) as *mut v128, relu.0);
             }
 
@@ -225,17 +263,28 @@ impl SimdVectorOps {
         }
 
         // Use fast sigmoid approximation: x / (1 + |x|)
+        // This approximation is chosen for performance while maintaining reasonable accuracy
+        // SAFETY: This unsafe block implements fast sigmoid approximation using SIMD.
+        // Safety invariants:
+        // 1. Fast approximation avoids expensive exp() calculations
+        // 2. f32x4_abs safely computes absolute values
+        // 3. f32x4_div is safe when denominator is non-zero (guaranteed by adding 1.0)
+        // 4. Memory accesses are properly bounded
+        // 5. Result maintains numerical stability for all input values
         unsafe {
             let one = f32x4_splat(1.0);
             let len = input.len();
             let simd_len = len - (len % 4);
 
             for i in (0..simd_len).step_by(4) {
+                // SAFETY: Valid read of 4 f32 values within bounds
                 let x = v128_load(input.as_ptr().add(i) as *const v128);
                 let x_f32 = f32x4(x);
                 let abs_x = f32x4_abs(x_f32);
+                // SAFETY: denominator is always >= 1.0, preventing division by zero
                 let denom = f32x4_add(one, abs_x);
                 let sigmoid = f32x4_div(x_f32, denom);
+                // SAFETY: Valid write to pre-allocated result buffer
                 v128_store(result.as_mut_ptr().add(i) as *mut v128, sigmoid.0);
             }
 

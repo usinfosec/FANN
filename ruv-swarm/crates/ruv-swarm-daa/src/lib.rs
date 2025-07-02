@@ -33,7 +33,6 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
-use uuid::Uuid;
 
 pub mod agent;
 pub mod learning;
@@ -344,7 +343,7 @@ impl DAACoordinator {
     pub async fn orchestrate_task(&self, task: &Task, agent_ids: &[String]) -> DAAResult<Vec<TaskResult>> {
         let mut results = Vec::new();
         
-        for agent_id in agent_ids {
+        for _agent_id in agent_ids {
             // In a real implementation, this would coordinate with actual agents
             let result = TaskResult {
                 task_id: task.id.clone(),

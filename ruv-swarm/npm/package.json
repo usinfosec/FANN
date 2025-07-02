@@ -1,6 +1,6 @@
 {
   "name": "ruv-swarm",
-  "version": "0.2.1",
+  "version": "0.2.0",
   "description": "High-performance neural network swarm orchestration in WebAssembly",
   "main": "src/index.js",
   "module": "src/index.js",
@@ -8,6 +8,10 @@
   "type": "module",
   "bin": {
     "ruv-swarm": "./bin/ruv-swarm-clean.js"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "files": [
     "bin/",

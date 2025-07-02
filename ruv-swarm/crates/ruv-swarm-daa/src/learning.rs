@@ -161,14 +161,22 @@ impl LearningEngine {
             );
         }
         
-        let model = self.learning_models.get_mut(&model_key).unwrap();
-        
-        // Extract learning patterns from experience
+        // Extract learning patterns from experience before getting mutable reference
         let patterns = self.extract_learning_patterns(experience).await?;
+        
+        // Calculate proficiency updates based on experience
+        let task_type = experience.task.description.clone();
+        let performance = if experience.result.success { 1.0 } else { 0.0 };
+        let learning_rate = 0.1;
+        
+        // Now get mutable reference to model and update it
+        let model = self.learning_models.get_mut(&model_key).unwrap();
         model.learning_patterns.extend(patterns);
         
-        // Update proficiency scores
-        self.update_proficiency_scores(model, experience).await?;
+        // Update proficiency scores inline to avoid borrowing issues
+        let current_score = model.proficiency_scores.get(&task_type).copied().unwrap_or(0.5);
+        let new_score = current_score + learning_rate * (performance - current_score);
+        model.proficiency_scores.insert(task_type, new_score);
         
         // Add to global knowledge base
         let mut global_kb = self.global_knowledge.write().await;
@@ -270,13 +278,16 @@ impl LearningEngine {
             }
         };
         
+        // Clone strategy name before mutable borrow
+        let strategy_name = best_strategy.name.clone();
+        
         // Record adaptation event
         let model_key = format!("{}:{}", agent_id, domain);
         if let Some(model) = self.learning_models.get_mut(&model_key) {
             model.adaptation_history.push(AdaptationRecord {
                 timestamp: chrono::Utc::now(),
                 trigger_event: "Performance-based adaptation".to_string(),
-                strategy_applied: best_strategy.name.clone(),
+                strategy_applied: strategy_name,
                 before_metrics: performance_metrics.clone(),
                 after_metrics: adaptation_result.updated_metrics.clone(),
                 success_score: adaptation_result.improvement_score,
@@ -293,7 +304,7 @@ impl LearningEngine {
         domain: &str,
     ) -> DAAResult<Vec<KnowledgeSharingOpportunity>> {
         let mut opportunities = Vec::new();
-        let global_kb = self.global_knowledge.read().await;
+        let _global_kb = self.global_knowledge.read().await;
         
         // Find agents with high proficiency in the domain
         for (model_key, model) in &self.learning_models {
@@ -316,8 +327,11 @@ impl LearningEngine {
             }
         }
         
-        // Sort by potential benefit
-        opportunities.sort_by(|a, b| b.estimated_benefit.partial_cmp(&a.estimated_benefit).unwrap());
+        // Sort by potential benefit (handle NaN values safely)
+        opportunities.sort_by(|a, b| {
+            b.estimated_benefit.partial_cmp(&a.estimated_benefit)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         
         Ok(opportunities)
     }
@@ -463,7 +477,8 @@ impl LearningEngine {
             .max_by(|a, b| {
                 let a_score = a.effectiveness_scores.get(domain).copied().unwrap_or(0.5);
                 let b_score = b.effectiveness_scores.get(domain).copied().unwrap_or(0.5);
-                a_score.partial_cmp(&b_score).unwrap()
+                // Handle potential NaN values in scores
+                a_score.partial_cmp(&b_score).unwrap_or(std::cmp::Ordering::Equal)
             })
             .ok_or_else(|| DAAError::LearningError {
                 message: "No adaptation strategies available".to_string(),

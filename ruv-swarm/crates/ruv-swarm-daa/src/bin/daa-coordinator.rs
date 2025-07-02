@@ -333,8 +333,10 @@ impl DAACoordinator {
 
     /// Get performance improvement percentage
     async fn get_performance_improvement(&self) -> Result<f64, DAAError> {
-        let engine = self.learning_engine.lock().await;
-        engine.get_performance_improvement().await
+        // TODO: Implement performance improvement calculation
+        // let engine = self.learning_engine.lock().await;
+        // engine.get_performance_improvement().await
+        Ok(0.0) // Return default value for now
     }
 }
 

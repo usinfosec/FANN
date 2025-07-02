@@ -244,7 +244,7 @@ impl DAAAgent for StandardDAAAgent {
             let adaptation_event = AdaptationEvent {
                 timestamp: chrono::Utc::now(),
                 trigger: format!("Performance below threshold: {}", feedback.performance_score),
-                old_pattern,
+                old_pattern: old_pattern.clone(),
                 new_pattern: self.cognitive_pattern.clone(),
                 success_rate: feedback.performance_score,
             };
