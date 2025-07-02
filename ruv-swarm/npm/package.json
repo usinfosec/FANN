@@ -26,6 +26,12 @@
     "test:coverage:integration": "nyc --reporter=text node test/coverage-integration.test.js",
     "test:coverage:execute": "nyc --reporter=text --reporter=lcov node test/execute-coverage.test.js",
     "test:watch": "nodemon --watch test --exec 'npm run test:all'",
+    "test:performance": "node test/comprehensive-performance-validation.test.js",
+    "test:load": "node test/load-testing-suite.test.js",
+    "test:security": "node test/security-audit.test.js",
+    "test:regression": "node test/regression-testing-pipeline.test.js",
+    "test:comprehensive": "node test/run-comprehensive-validation.js",
+    "test:orchestrator": "node test/comprehensive-test-orchestrator.js",
     "lint": "eslint src/ test/ --ext .js,.ts,.mjs,.cjs",
     "lint:fix": "eslint src/ test/ --ext .js,.ts,.mjs,.cjs --fix",
     "lint:check": "eslint src/ test/ --ext .js,.ts,.mjs,.cjs --max-warnings 0",
@@ -45,8 +51,15 @@
     "build:wasm-simd": "cd ../crates/ruv-swarm-wasm && RUSTFLAGS=\"-C target-feature=+simd128\" wasm-pack build --target web --out-dir ../../npm/wasm-simd -- --no-default-features",
     "build:wasm-opt": "cd ../crates/ruv-swarm-wasm && wasm-pack build --target web --out-dir ../../npm/wasm-opt -- --features minimal && wasm-opt -Oz -o ../../npm/wasm-opt/ruv_swarm_wasm_bg.wasm ../../npm/wasm-opt/ruv_swarm_wasm_bg.wasm",
     "build:all": "npm run build:wasm && npm run build:wasm-simd && npm run build",
+    "build:docs": "node scripts/generate-docs.js",
+    "deploy:prepare": "npm run quality:check && npm run build:all && npm run build:docs",
+    "deploy:npm": "npm publish --access public",
+    "deploy:check": "npm pack --dry-run",
+    "version:patch": "npm version patch && git push && git push --tags",
+    "version:minor": "npm version minor && git push && git push --tags",
+    "version:major": "npm version major && git push && git push --tags",
     "pretest-disabled": "npm run lint:check",
-    "prepublishOnly": "npm run quality:check && npm run build:all"
+    "prepublishOnly": "npm run deploy:prepare"
   },
   "engines": {
     "node": ">=14.0.0"
