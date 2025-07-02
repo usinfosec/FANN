@@ -342,21 +342,13 @@ jobs:
     - name: Build examples
       run: |
         cargo build --example xor
-        cargo build --example mnist
-        cargo build --example time_series
-        cargo build --example custom_architecture
+        cargo build --example basic_usage
     
     - name: Run XOR example
       run: timeout 30s cargo run --example xor || [ $? -eq 124 ]
     
-    - name: Run MNIST example
-      run: timeout 60s cargo run --example mnist || [ $? -eq 124 ]
-    
-    - name: Run time series example
-      run: timeout 45s cargo run --example time_series || [ $? -eq 124 ]
-    
-    - name: Run custom architecture example
-      run: timeout 90s cargo run --example custom_architecture || [ $? -eq 124 ]
+    - name: Run basic usage example
+      run: timeout 60s cargo run --example basic_usage || [ $? -eq 124 ]
 
   minimum-versions:
     name: Minimum Supported Rust Version
