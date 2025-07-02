@@ -1,6 +1,5 @@
 {
   "name": "ruv-swarm-wasm",
-  "type": "module",
   "collaborators": [
     "rUv Contributors"
   ],
@@ -12,7 +11,7 @@
     "ruv_swarm_wasm.js",
     "ruv_swarm_wasm.d.ts"
   ],
-  "main": "ruv_swarm_wasm.js",
+  "module": "ruv_swarm_wasm.js",
   "types": "ruv_swarm_wasm.d.ts",
   "sideEffects": [
     "./snippets/*"

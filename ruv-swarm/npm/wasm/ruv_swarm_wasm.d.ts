@@ -43,11 +43,100 @@ export enum ActivationFunction {
   StepSymmetric = 16,
   Step = 17,
 }
+/**
+ * Agent memory pool specifically optimized for neural network agents
+ */
+export class AgentMemoryPool {
+  free(): void;
+  constructor();
+  /**
+   * Allocate memory for an agent based on complexity
+   */
+  allocate_for_agent(complexity: string): Uint8Array | undefined;
+  /**
+   * Return agent memory to the appropriate pool
+   */
+  deallocate_agent_memory(memory: Uint8Array): void;
+  /**
+   * Get total memory usage across all pools
+   */
+  total_memory_usage_mb(): number;
+  /**
+   * Check if memory usage is within target (< 50MB for 10 agents)
+   */
+  is_within_memory_target(): boolean;
+}
+/**
+ * Memory pool for efficient memory management
+ */
+export class MemoryPool {
+  free(): void;
+  /**
+   * Create a new memory pool with specified block size and maximum blocks
+   */
+  constructor(block_size: number, max_blocks: number);
+  /**
+   * Allocate a memory block from the pool
+   */
+  allocate(): Uint8Array | undefined;
+  /**
+   * Return a memory block to the pool for reuse
+   */
+  deallocate(block: Uint8Array): void;
+  /**
+   * Get the number of available blocks in the pool
+   */
+  available_blocks(): number;
+  /**
+   * Get total memory usage in bytes
+   */
+  memory_usage(): number;
+  /**
+   * Get pool efficiency metrics
+   */
+  get_metrics(): PoolMetrics;
+}
+export class OptimizedAgent {
+  private constructor();
+  free(): void;
+}
+export class OptimizedAgentSpawner {
+  free(): void;
+  constructor();
+  spawn_agent(agent_type: string, complexity: string): string;
+  release_agent(agent_id: string): void;
+  get_performance_report(): string;
+  get_active_agent_count(): number;
+  is_within_memory_target(): boolean;
+}
+export class PerformanceMonitor {
+  free(): void;
+  constructor();
+  record_load_time(time: number): void;
+  record_spawn_time(time: number): void;
+  update_memory_usage(bytes: number): void;
+  get_average_spawn_time(): number;
+  get_memory_usage_mb(): number;
+  meets_performance_targets(): boolean;
+  get_report(): string;
+}
 export class PerformanceTimer {
   free(): void;
   constructor(name: string);
   elapsed(): number;
   log(): void;
+}
+/**
+ * Pool metrics for monitoring
+ */
+export class PoolMetrics {
+  private constructor();
+  free(): void;
+  total_blocks: number;
+  free_blocks: number;
+  block_size: number;
+  reuse_count: number;
+  memory_usage_mb: number;
 }
 export class RuntimeFeatures {
   free(): void;
@@ -189,6 +278,30 @@ export interface InitOutput {
   readonly run_simd_verification_suite: (a: number) => void;
   readonly simd_performance_report: (a: number, b: number, c: number) => void;
   readonly validate_simd_implementation: () => number;
+  readonly __wbg_memorypool_free: (a: number, b: number) => void;
+  readonly memorypool_new: (a: number, b: number) => number;
+  readonly memorypool_allocate: (a: number, b: number) => void;
+  readonly memorypool_deallocate: (a: number, b: number, c: number) => void;
+  readonly memorypool_available_blocks: (a: number) => number;
+  readonly memorypool_memory_usage: (a: number) => number;
+  readonly memorypool_get_metrics: (a: number) => number;
+  readonly __wbg_poolmetrics_free: (a: number, b: number) => void;
+  readonly __wbg_get_poolmetrics_total_blocks: (a: number) => number;
+  readonly __wbg_set_poolmetrics_total_blocks: (a: number, b: number) => void;
+  readonly __wbg_get_poolmetrics_free_blocks: (a: number) => number;
+  readonly __wbg_set_poolmetrics_free_blocks: (a: number, b: number) => void;
+  readonly __wbg_get_poolmetrics_block_size: (a: number) => number;
+  readonly __wbg_set_poolmetrics_block_size: (a: number, b: number) => void;
+  readonly __wbg_get_poolmetrics_reuse_count: (a: number) => number;
+  readonly __wbg_set_poolmetrics_reuse_count: (a: number, b: number) => void;
+  readonly __wbg_get_poolmetrics_memory_usage_mb: (a: number) => number;
+  readonly __wbg_set_poolmetrics_memory_usage_mb: (a: number, b: number) => void;
+  readonly __wbg_agentmemorypool_free: (a: number, b: number) => void;
+  readonly agentmemorypool_new: () => number;
+  readonly agentmemorypool_allocate_for_agent: (a: number, b: number, c: number, d: number) => void;
+  readonly agentmemorypool_deallocate_agent_memory: (a: number, b: number, c: number) => void;
+  readonly agentmemorypool_total_memory_usage_mb: (a: number) => number;
+  readonly agentmemorypool_is_within_memory_target: (a: number) => number;
   readonly init: () => void;
   readonly __wbg_wasmneuralnetwork_free: (a: number, b: number) => void;
   readonly wasmneuralnetwork_new: (a: number, b: number, c: number) => number;
@@ -225,17 +338,34 @@ export interface InitOutput {
   readonly create_forecasting_model: (a: number, b: number) => number;
   readonly get_version: (a: number) => void;
   readonly get_features: (a: number) => void;
+  readonly __wbg_performancemonitor_free: (a: number, b: number) => void;
+  readonly performancemonitor_new: () => number;
+  readonly performancemonitor_record_load_time: (a: number, b: number) => void;
+  readonly performancemonitor_record_spawn_time: (a: number, b: number) => void;
+  readonly performancemonitor_update_memory_usage: (a: number, b: number) => void;
+  readonly performancemonitor_get_average_spawn_time: (a: number) => number;
+  readonly performancemonitor_get_memory_usage_mb: (a: number) => number;
+  readonly performancemonitor_meets_performance_targets: (a: number) => number;
+  readonly performancemonitor_get_report: (a: number, b: number) => void;
+  readonly __wbg_optimizedagentspawner_free: (a: number, b: number) => void;
+  readonly __wbg_optimizedagent_free: (a: number, b: number) => void;
+  readonly optimizedagentspawner_new: () => number;
+  readonly optimizedagentspawner_spawn_agent: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
+  readonly optimizedagentspawner_release_agent: (a: number, b: number, c: number, d: number) => void;
+  readonly optimizedagentspawner_get_performance_report: (a: number, b: number) => void;
+  readonly optimizedagentspawner_get_active_agent_count: (a: number) => number;
+  readonly optimizedagentspawner_is_within_memory_target: (a: number) => number;
   readonly simdvectorops_new: () => number;
   readonly simdmatrixops_new: () => number;
   readonly wasmswarmorchestrator_new: (a: number, b: number) => number;
   readonly wasmforecastingmodel_new: (a: number, b: number) => number;
-  readonly __wbg_simdvectorops_free: (a: number, b: number) => void;
   readonly __wbg_simdmatrixops_free: (a: number, b: number) => void;
+  readonly __wbg_simdvectorops_free: (a: number, b: number) => void;
   readonly __wbindgen_export_0: (a: number) => void;
-  readonly __wbindgen_export_1: (a: number, b: number, c: number) => void;
-  readonly __wbindgen_export_2: (a: number, b: number) => number;
-  readonly __wbindgen_export_3: (a: number, b: number, c: number, d: number) => number;
+  readonly __wbindgen_export_1: (a: number, b: number) => number;
+  readonly __wbindgen_export_2: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
+  readonly __wbindgen_export_3: (a: number, b: number, c: number) => void;
   readonly __wbindgen_start: () => void;
 }
 
