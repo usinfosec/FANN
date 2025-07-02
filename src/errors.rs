@@ -417,9 +417,7 @@ impl From<NetworkError> for RuvFannError {
             },
             NetworkError::WeightCountMismatch { expected, actual } => RuvFannError::Network {
                 category: NetworkErrorCategory::Weights,
-                message: format!(
-                    "Weight count mismatch: expected {expected}, got {actual}"
-                ),
+                message: format!("Weight count mismatch: expected {expected}, got {actual}"),
                 context: None,
             },
             NetworkError::InvalidLayerConfiguration => RuvFannError::Network {

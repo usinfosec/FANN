@@ -11,9 +11,7 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use thiserror::Error;
 
-use crate::{
-    CascadeConfig, CascadeTrainer, Network, NetworkBuilder, TrainingData,
-};
+use crate::{CascadeConfig, CascadeTrainer, Network, NetworkBuilder, TrainingData};
 
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
@@ -345,9 +343,7 @@ impl<T: Float + Send + Default> IntegrationTestSuite<T> {
                 }
                 Err(e) => {
                     result.tests_failed += 1;
-                    result
-                        .errors
-                        .push(format!("Basic network test {i}: {e}"));
+                    result.errors.push(format!("Basic network test {i}: {e}"));
                 }
             }
         }
@@ -503,9 +499,7 @@ impl<T: Float + Send + Default> IntegrationTestSuite<T> {
                 }
                 Err(e) => {
                     result.tests_failed += 1;
-                    result
-                        .errors
-                        .push(format!("Cascade integration test: {e}"));
+                    result.errors.push(format!("Cascade integration test: {e}"));
                 }
             }
         }

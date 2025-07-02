@@ -311,10 +311,12 @@ fn bench_cascade_network(c: &mut Criterion) {
     let mut group = c.benchmark_group("cascade_network");
     group.sample_size(10);
 
-    let inputs = [vec![0.0, 0.0],
+    let inputs = [
+        vec![0.0, 0.0],
         vec![0.0, 1.0],
         vec![1.0, 0.0],
-        vec![1.0, 1.0]];
+        vec![1.0, 1.0],
+    ];
 
     let outputs = [vec![0.0], vec![1.0], vec![1.0], vec![0.0]];
 

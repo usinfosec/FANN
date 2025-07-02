@@ -52,9 +52,8 @@ impl TrainingDataReader {
             let input_values: Result<Vec<f32>, _> =
                 line.split_whitespace().map(|s| s.parse()).collect();
 
-            let input_values = input_values.map_err(|e| {
-                IoError::ParseError(format!("Invalid input at sample {i}: {e}"))
-            })?;
+            let input_values = input_values
+                .map_err(|e| IoError::ParseError(format!("Invalid input at sample {i}: {e}")))?;
 
             if input_values.len() != num_input {
                 return Err(IoError::InvalidTrainingData(format!(
@@ -71,9 +70,8 @@ impl TrainingDataReader {
             let output_values: Result<Vec<f32>, _> =
                 line.split_whitespace().map(|s| s.parse()).collect();
 
-            let output_values = output_values.map_err(|e| {
-                IoError::ParseError(format!("Invalid output at sample {i}: {e}"))
-            })?;
+            let output_values = output_values
+                .map_err(|e| IoError::ParseError(format!("Invalid output at sample {i}: {e}")))?;
 
             if output_values.len() != num_output {
                 return Err(IoError::InvalidTrainingData(format!(
@@ -205,9 +203,8 @@ impl TrainingDataStreamReader {
             let input_values: Result<Vec<f32>, _> =
                 line.split_whitespace().map(|s| s.parse()).collect();
 
-            let input_values = input_values.map_err(|e| {
-                IoError::ParseError(format!("Invalid input at sample {i}: {e}"))
-            })?;
+            let input_values = input_values
+                .map_err(|e| IoError::ParseError(format!("Invalid input at sample {i}: {e}")))?;
 
             if input_values.len() != num_input {
                 return Err(IoError::InvalidTrainingData(format!(
@@ -224,9 +221,8 @@ impl TrainingDataStreamReader {
             let output_values: Result<Vec<f32>, _> =
                 line.split_whitespace().map(|s| s.parse()).collect();
 
-            let output_values = output_values.map_err(|e| {
-                IoError::ParseError(format!("Invalid output at sample {i}: {e}"))
-            })?;
+            let output_values = output_values
+                .map_err(|e| IoError::ParseError(format!("Invalid output at sample {i}: {e}")))?;
 
             if output_values.len() != num_output {
                 return Err(IoError::InvalidTrainingData(format!(

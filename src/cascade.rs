@@ -545,9 +545,7 @@ impl<T: Float> CascadeTrainer<T> {
             // Early stopping
             if patience_counter >= self.config.patience {
                 #[cfg(feature = "logging")]
-                debug!(
-                    "Early stopping output training at epoch {epoch} due to patience"
-                );
+                debug!("Early stopping output training at epoch {epoch} due to patience");
                 break;
             }
 

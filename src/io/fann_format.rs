@@ -79,9 +79,7 @@ impl FannReader {
                             .split_whitespace()
                             .map(|s| s.parse())
                             .collect::<Result<Vec<_>, _>>()
-                            .map_err(|e| {
-                                IoError::ParseError(format!("Invalid weights: {e:?}"))
-                            })?;
+                            .map_err(|e| IoError::ParseError(format!("Invalid weights: {e:?}")))?;
                     }
                     _ => {
                         // Skip unknown parameters for now

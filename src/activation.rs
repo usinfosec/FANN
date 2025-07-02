@@ -137,7 +137,6 @@ impl ActivationFunction {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

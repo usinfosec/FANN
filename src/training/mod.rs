@@ -296,7 +296,6 @@ pub use rprop::Rprop;
 /// Helper functions for forward propagation and gradient calculation
 pub(crate) mod helpers {
     use super::*;
-    
 
     /// Simple network representation for training algorithms
     #[derive(Debug, Clone)]

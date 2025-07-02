@@ -37,10 +37,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 0 XOR 1 = 1
     // 1 XOR 0 = 1
     // 1 XOR 1 = 0
-    let test_inputs = [vec![0.0, 0.0],
+    let test_inputs = [
+        vec![0.0, 0.0],
         vec![0.0, 1.0],
         vec![1.0, 0.0],
-        vec![1.0, 1.0]];
+        vec![1.0, 1.0],
+    ];
 
     let expected_outputs = [0.0, 1.0, 1.0, 0.0];
 
