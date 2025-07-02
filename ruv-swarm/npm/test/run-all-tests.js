@@ -5,9 +5,14 @@
  * Executes all test suites and generates a detailed report
  */
 
-const fs = require('fs').promises;
-const path = require('path');
-const { spawn } = require('child_process');
+import fs from 'fs/promises';
+import path from 'path';
+import { spawn  } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Test configuration
 const TEST_SUITES = [
@@ -409,11 +414,9 @@ process.on('unhandledRejection', async(error) => {
 });
 
 // Run tests
-if (require.main === module) {
-  main().catch(error => {
-    console.error('Fatal error:', error);
-    process.exit(1);
-  });
-}
+main().catch(error => {
+  console.error('Fatal error:', error);
+  process.exit(1);
+});
 
-module.exports = { TestReport, runTestSuite };
+export { TestReport, runTestSuite };

@@ -2,10 +2,15 @@
  * Unit tests for SwarmPersistence module
  */
 
-const { SwarmPersistence } = require('../../../src/persistence');
-const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
+import { SwarmPersistence  } from '../../../src/persistence';
+import assert from 'assert';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe('SwarmPersistence Tests', () => {
   let persistence;
@@ -520,7 +525,7 @@ describe('SwarmPersistence Tests', () => {
   });
 });
 
-// Run tests
+// Run tests when this file is executed directly
 if (require.main === module) {
   console.log('Running SwarmPersistence Unit Tests...');
   require('../../../node_modules/.bin/jest');

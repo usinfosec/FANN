@@ -4,8 +4,8 @@
  * Tests MCP tools by calling them directly
  */
 
-const { exec } = require('child_process');
-const util = require('util');
+import { exec  } from 'child_process';
+import util from 'util';
 const execPromise = util.promisify(exec);
 
 // Test each MCP tool

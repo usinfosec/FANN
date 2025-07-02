@@ -4,8 +4,8 @@
  * Creates visual representations of benchmark results
  */
 
-const fs = require('fs').promises;
-const path = require('path');
+import fs from 'fs'.promises;
+import path from 'path';
 
 class BenchmarkVisualizer {
   constructor() {

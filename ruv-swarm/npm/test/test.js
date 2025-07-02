@@ -2,7 +2,7 @@
  * Basic tests for RuvSwarm WASM module
  */
 
-const assert = require('assert');
+import assert from 'assert';
 
 // Mock the RuvSwarm module for testing
 // In a real test, this would import the actual module after building

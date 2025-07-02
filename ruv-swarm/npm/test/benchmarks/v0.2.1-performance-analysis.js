@@ -5,9 +5,14 @@
  * Comprehensive metrics collection for post-fix evaluation
  */
 
-const { spawn } = require('child_process');
-const fs = require('fs').promises;
-const path = require('path');
+import { spawn } from 'child_process';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 class PerformanceAnalyzer {
   constructor() {
@@ -336,9 +341,7 @@ The system is now more robust, with ${(this.results.metrics.inputValidation?.sco
 }
 
 // Run analysis
-if (require.main === module) {
-  const analyzer = new PerformanceAnalyzer();
-  analyzer.run();
-}
+const analyzer = new PerformanceAnalyzer();
+analyzer.run();
 
-module.exports = PerformanceAnalyzer;
+export default PerformanceAnalyzer;

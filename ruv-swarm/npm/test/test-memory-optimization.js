@@ -4,8 +4,8 @@
  * Test script to demonstrate memory optimization
  */
 
-const { NeuralCLI, MemoryOptimizer, PATTERN_MEMORY_CONFIG } = require('../src/neural');
-const { NeuralAgentFactory, COGNITIVE_PATTERNS } = require('../src/neural-agent');
+import { NeuralCLI, MemoryOptimizer, PATTERN_MEMORY_CONFIG  } from '../src/neural';
+import { NeuralAgentFactory, COGNITIVE_PATTERNS  } from '../src/neural-agent';
 
 async function testMemoryOptimization() {
   console.log('🧠 Testing Memory Optimization\n');

@@ -5,8 +5,8 @@
  * Tests: agent_metrics, swarm_monitor, neural_train, task_results
  */
 
-const { EnhancedMCPTools } = require('../src/mcp-tools-enhanced');
-const { RuvSwarm } = require('../src/index-enhanced');
+import { EnhancedMCPTools  } from '../src/mcp-tools-enhanced';
+import { RuvSwarm  } from '../src/index-enhanced';
 
 async function runTests() {
   console.log('🧪 Testing New MCP Tool Methods\n');
@@ -223,11 +223,11 @@ async function runTests() {
 }
 
 // Run tests if this script is executed directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   runTests().catch(error => {
     console.error('💥 Test execution failed:', error.message);
     process.exit(1);
   });
 }
 
-module.exports = { runTests };
+export { runTests };

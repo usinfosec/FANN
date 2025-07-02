@@ -21,7 +21,7 @@ class ClaudeIntegrationCore {
     try {
       execSync('claude --version', { stdio: 'ignore' });
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -40,7 +40,7 @@ class ClaudeIntegrationCore {
       execSync(mcpCommand, { stdio: 'inherit', cwd: this.workingDir });
       return { success: true, message: 'Added ruv-swarm MCP server to Claude Code (stdio)' };
     } catch (error) {
-      throw new Error(`Failed to add MCP server: ${ error.message}`);
+      throw new Error(`Failed to add MCP server: ${error.message}`);
     }
   }
 
@@ -52,7 +52,7 @@ class ClaudeIntegrationCore {
       await fs.access(path.join(this.workingDir, 'claude.md'));
       await fs.access(path.join(this.workingDir, '.claude/commands'));
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

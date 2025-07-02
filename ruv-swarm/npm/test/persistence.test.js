@@ -3,11 +3,16 @@
  * Tests database persistence, state recovery, and data integrity
  */
 
-const assert = require('assert');
+import assert from 'assert';
 const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const fs = require('fs').promises;
-const { v4: uuidv4 } = require('uuid');
+import path from 'path';
+import { promises as fs } from 'fs';
+import { v4 as uuidv4 } from 'uuid';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Test database path
 const TEST_DB_PATH = path.join(__dirname, 'test-swarm.db');
@@ -691,10 +696,10 @@ async function runPersistenceTests() {
 }
 
 // Export for use in other test suites
-module.exports = { SwarmPersistence, runPersistenceTests };
+export { SwarmPersistence, runPersistenceTests };
 
-// Run tests if called directly
-if (require.main === module) {
+// Run tests when this file is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
   runPersistenceTests()
     .then(passed => process.exit(passed ? 0 : 1))
     .catch(error => {

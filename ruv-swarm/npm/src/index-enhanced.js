@@ -6,9 +6,9 @@
 
 import { WasmModuleLoader } from './wasm-loader.js';
 import { SwarmPersistence } from './persistence.js';
-import { NeuralAgentFactory } from './neural-agent.js';
-import path from 'path';
-import fs from 'fs';
+// import { NeuralAgentFactory } from './neural-agent.js';
+// import path from 'path';
+// import fs from 'fs';
 
 class RuvSwarm {
   constructor() {
@@ -40,7 +40,7 @@ class RuvSwarm {
     const instance = new RuvSwarm();
 
     const {
-      wasmPath = './wasm',
+      // wasmPath = './wasm',
       loadingStrategy = 'progressive',
       enablePersistence = true,
       enableNeuralNetworks = true,
@@ -153,7 +153,7 @@ class RuvSwarm {
       strategy = 'balanced',
       maxAgents = 10,
       enableCognitiveDiversity = true,
-      enableNeuralAgents = true,
+      // enableNeuralAgents = true,
     } = config;
 
     // Ensure core module is loaded
@@ -546,7 +546,7 @@ class Agent {
     this.swarm = swarm;
   }
 
-  async execute(task) {
+  async execute(_task) {
     console.log(`🏃 Agent ${this.name} executing task`);
     this.status = 'busy';
 

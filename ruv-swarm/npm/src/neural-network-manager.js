@@ -3,6 +3,8 @@
  * Manages per-agent neural networks with WASM integration
  */
 
+import { createNeuralModel, MODEL_PRESETS } from './neural-models/index.js';
+
 class NeuralNetworkManager {
   constructor(wasmLoader) {
     this.wasmLoader = wasmLoader;
@@ -38,10 +40,73 @@ class NeuralNetworkManager {
         output_activation: 'linear',
         dropout: 0.25,
       },
+      transformer_nlp: {
+        modelType: 'transformer',
+        preset: 'base',
+        dimensions: 512,
+        heads: 8,
+        layers: 6,
+      },
+      cnn_vision: {
+        modelType: 'cnn',
+        preset: 'cifar10',
+        inputShape: [32, 32, 3],
+        outputSize: 10,
+      },
+      gru_sequence: {
+        modelType: 'gru',
+        preset: 'text_classification',
+        hiddenSize: 256,
+        numLayers: 2,
+        bidirectional: true,
+      },
+      autoencoder_compress: {
+        modelType: 'autoencoder',
+        preset: 'mnist_compress',
+        bottleneckSize: 32,
+        variational: false,
+      },
+      gnn_social: {
+        modelType: 'gnn',
+        preset: 'social_network',
+        nodeDimensions: 128,
+        numLayers: 3,
+      },
+      resnet_classifier: {
+        modelType: 'resnet',
+        preset: 'resnet18',
+        inputDimensions: 784,
+        outputDimensions: 10,
+      },
+      vae_generator: {
+        modelType: 'vae',
+        preset: 'mnist_vae',
+        latentDimensions: 20,
+        betaKL: 1.0,
+      },
+      lstm_sequence: {
+        modelType: 'lstm',
+        preset: 'sentiment_analysis',
+        hiddenSize: 256,
+        numLayers: 2,
+        bidirectional: true,
+      },
     };
+    
+    // Store instances of new neural models
+    this.neuralModels = new Map();
   }
 
   async createAgentNeuralNetwork(agentId, config = {}) {
+    // Check if this is a new neural model type
+    const template = config.template || 'deep_analyzer';
+    const templateConfig = this.templates[template];
+    
+    if (templateConfig && templateConfig.modelType) {
+      // Create new neural model
+      return this.createAdvancedNeuralModel(agentId, template, config);
+    }
+    
     // Load neural module if not already loaded
     const neuralModule = await this.wasmLoader.loadModule('neural');
 
@@ -51,7 +116,6 @@ class NeuralNetworkManager {
     }
 
     const {
-      template = 'deep_analyzer',
       layers = null,
       activation = 'relu',
       learningRate = 0.001,
@@ -87,6 +151,44 @@ class NeuralNetworkManager {
     const network = new SimulatedNeuralNetwork(agentId, config);
     this.neuralNetworks.set(agentId, network);
     return network;
+  }
+
+  async createAdvancedNeuralModel(agentId, template, customConfig = {}) {
+    const templateConfig = this.templates[template];
+    
+    if (!templateConfig || !templateConfig.modelType) {
+      throw new Error(`Invalid template: ${template}`);
+    }
+    
+    // Merge template config with custom config
+    const config = {
+      ...templateConfig,
+      ...customConfig
+    };
+    
+    // Use preset if specified
+    if (config.preset && MODEL_PRESETS[config.modelType]) {
+      const presetConfig = MODEL_PRESETS[config.modelType][config.preset];
+      Object.assign(config, presetConfig);
+    }
+    
+    try {
+      // Create the neural model
+      const model = await createNeuralModel(config.modelType, config);
+      
+      // Wrap in a compatible interface
+      const wrappedModel = new AdvancedNeuralNetwork(agentId, model, config);
+      
+      this.neuralNetworks.set(agentId, wrappedModel);
+      this.neuralModels.set(agentId, model);
+      
+      console.log(`Created ${config.modelType} neural network for agent ${agentId}`);
+      
+      return wrappedModel;
+    } catch (error) {
+      console.error(`Failed to create advanced neural model: ${error}`);
+      return this.createSimulatedNetwork(agentId, config);
+    }
   }
 
   async fineTuneNetwork(agentId, trainingData, options = {}) {
@@ -441,5 +543,106 @@ const NeuralNetworkTemplates = {
     return templates[templateName] || templates.deep_analyzer;
   },
 };
+
+// Advanced Neural Network wrapper for new model types
+class AdvancedNeuralNetwork {
+  constructor(agentId, model, config) {
+    this.agentId = agentId;
+    this.model = model;
+    this.config = config;
+    this.modelType = config.modelType;
+    this.isAdvanced = true;
+  }
+
+  async forward(input) {
+    try {
+      // Handle different input formats
+      let formattedInput = input;
+      
+      if (this.modelType === 'transformer' || this.modelType === 'gru') {
+        // Ensure input has shape [batch_size, sequence_length, features]
+        if (!input.shape) {
+          formattedInput = new Float32Array(input);
+          formattedInput.shape = [1, input.length, 1];
+        }
+      } else if (this.modelType === 'cnn') {
+        // Ensure input has shape [batch_size, height, width, channels]
+        if (!input.shape) {
+          const inputShape = this.config.inputShape;
+          formattedInput = new Float32Array(input);
+          formattedInput.shape = [1, ...inputShape];
+        }
+      } else if (this.modelType === 'autoencoder') {
+        // Ensure input has shape [batch_size, input_size]
+        if (!input.shape) {
+          formattedInput = new Float32Array(input);
+          formattedInput.shape = [1, input.length];
+        }
+      }
+      
+      const result = await this.model.forward(formattedInput, false);
+      
+      // Return appropriate output based on model type
+      if (this.modelType === 'autoencoder') {
+        return result.reconstruction;
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`Forward pass failed for ${this.modelType}:`, error);
+      return new Float32Array(this.config.outputSize || 10).fill(0.5);
+    }
+  }
+
+  async train(trainingData, options) {
+    return this.model.train(trainingData, options);
+  }
+
+  getGradients() {
+    // Advanced models handle gradients internally
+    return {};
+  }
+
+  applyGradients(gradients) {
+    // Advanced models handle gradient updates internally
+    console.log(`Gradient update handled internally by ${this.modelType}`);
+  }
+
+  getMetrics() {
+    return this.model.getMetrics();
+  }
+
+  async save(filePath) {
+    return this.model.save(filePath);
+  }
+
+  async load(filePath) {
+    return this.model.load(filePath);
+  }
+
+  // Special methods for specific model types
+  async encode(input) {
+    if (this.modelType === 'autoencoder') {
+      const encoder = await this.model.getEncoder();
+      return encoder.encode(input);
+    }
+    throw new Error(`Encode not supported for ${this.modelType}`);
+  }
+
+  async decode(latent) {
+    if (this.modelType === 'autoencoder') {
+      const decoder = await this.model.getDecoder();
+      return decoder.decode(latent);
+    }
+    throw new Error(`Decode not supported for ${this.modelType}`);
+  }
+
+  async generate(numSamples) {
+    if (this.modelType === 'autoencoder' && this.config.variational) {
+      return this.model.generate(numSamples);
+    }
+    throw new Error(`Generation not supported for ${this.modelType}`);
+  }
+}
 
 export { NeuralNetworkManager, NeuralNetworkTemplates };

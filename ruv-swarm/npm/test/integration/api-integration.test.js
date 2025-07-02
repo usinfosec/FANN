@@ -2,12 +2,17 @@
  * Integration tests for ruv-swarm API
  */
 
-const { RuvSwarm } = require('../../src/index-enhanced');
-const { SwarmPersistence } = require('../../src/persistence');
-const { NeuralAgentFactory } = require('../../src/neural-agent');
-const assert = require('assert');
-const path = require('path');
-const fs = require('fs');
+import { RuvSwarm } from '../../src/index-enhanced.js';
+import { SwarmPersistence } from '../../src/persistence.js';
+import { NeuralAgentFactory } from '../../src/neural-agent.js';
+import assert from 'assert';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe('API Integration Tests', () => {
   let ruvSwarm;

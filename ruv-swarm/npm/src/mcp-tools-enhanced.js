@@ -4,7 +4,7 @@
  */
 
 import { RuvSwarm } from './index-enhanced.js';
-import { NeuralNetworkManager } from './neural-network-manager.js';
+// import { NeuralNetworkManager } from './neural-network-manager.js';
 import { SwarmPersistence } from './persistence.js';
 
 // Custom error class for MCP validation errors
@@ -105,7 +105,7 @@ class EnhancedMCPTools {
 
           for (const agentData of agents) {
             try {
-              const agent = await swarm.spawn({
+              await swarm.spawn({
                 id: agentData.id,
                 type: agentData.type,
                 name: agentData.name,
@@ -214,8 +214,8 @@ class EnhancedMCPTools {
         type = 'researcher',
         name = null,
         capabilities = null,
-        cognitivePattern = null,
-        neuralConfig = null,
+        // cognitivePattern = null,
+        // neuralConfig = null,
         swarmId = null,
       } = params;
 
@@ -396,7 +396,7 @@ class EnhancedMCPTools {
     const startTime = performance.now();
 
     try {
-      const { taskId = null, detailed = false } = params;
+      const { taskId = null } = params;
 
       if (!taskId) {
         // Return status of all tasks
@@ -462,11 +462,11 @@ class EnhancedMCPTools {
 
       // Find task in active swarms
       let targetTask = null;
-      let targetSwarm = null;
+      // let targetSwarm = null;
       for (const swarm of this.activeSwarms.values()) {
         if (swarm.tasks && swarm.tasks.has(taskId)) {
           targetTask = swarm.tasks.get(taskId);
-          targetSwarm = swarm;
+          // targetSwarm = swarm;
           break;
         }
       }
@@ -723,7 +723,7 @@ class EnhancedMCPTools {
       const {
         type = 'all',
         iterations = 10,
-        includeWasmBenchmarks = true,
+        // includeWasmBenchmarks = true,
         includeNeuralBenchmarks = true,
         includeSwarmBenchmarks = true,
       } = params;
@@ -1014,11 +1014,11 @@ class EnhancedMCPTools {
       let neuralNetworks = [];
       try {
         neuralNetworks = this.persistence.getAgentNeuralNetworks(agentId);
-      } catch (error) {
+      } catch (_error) {
         // Ignore error if agent doesn't have neural networks yet
       }
 
-      let neuralNetwork = neuralNetworks[0];
+      let [neuralNetwork] = neuralNetworks;
       if (!neuralNetwork) {
         // Create new neural network
         try {
@@ -1034,7 +1034,7 @@ class EnhancedMCPTools {
             performanceMetrics: {},
           });
           neuralNetwork = { id: networkId };
-        } catch (error) {
+        } catch (_error) {
           // If storage fails, create a temporary ID
           neuralNetwork = { id: `temp_nn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` };
         }
@@ -1047,7 +1047,7 @@ class EnhancedMCPTools {
 
       for (let i = 1; i <= iterations; i++) {
         // Simulate training iteration
-        const progress = i / iterations;
+        // const progress = i / iterations;
         currentLoss = Math.max(0.001, currentLoss * (0.95 + Math.random() * 0.1));
         currentAccuracy = Math.min(0.99, currentAccuracy + (Math.random() * 0.05));
 
@@ -1210,21 +1210,21 @@ class EnhancedMCPTools {
           const nn = coreModule.exports.create_neural_network(layers, 1); // Sigmoid
           nn.randomize_weights(-1.0, 1.0);
           const inputs = new Float64Array([0.5, Math.random()]);
-          const outputs = nn.run(inputs);
+          nn.run(inputs);
           neuralNetworkTimes.push(performance.now() - nnStart);
 
           // 3. Forecasting benchmark - test forecasting functions
           const forecastStart = performance.now();
           const forecaster = coreModule.exports.create_forecasting_model('linear');
           const timeSeries = new Float64Array([1.0, 1.1, 1.2, 1.3, 1.4]);
-          const prediction = forecaster.predict(timeSeries);
+          forecaster.predict(timeSeries);
           forecastingTimes.push(performance.now() - forecastStart);
 
           // 4. Swarm operations benchmark
           const swarmStart = performance.now();
           const swarm = coreModule.exports.create_swarm_orchestrator('mesh');
           swarm.add_agent(`agent-${i}`);
-          const agentCount = swarm.get_agent_count();
+          swarm.get_agent_count();
           swarmOperationTimes.push(performance.now() - swarmStart);
         }
       } catch (error) {
@@ -1359,7 +1359,11 @@ class EnhancedMCPTools {
         };
         // Simulate some topology calculation
         for (let j = 0; j < 100; j++) {
-          Math.sin(j * 0.01) * Math.cos(j * 0.02);
+          const result = Math.sin(j * 0.01) * Math.cos(j * 0.02);
+          // Use result to avoid unused expression
+          if (result > 0.5) {
+            // Topology optimization simulation
+          }
         }
         this.activeSwarms.set(swarmId, swarmData);
         benchmarks.swarm_creation.push(performance.now() - start);
@@ -1487,7 +1491,7 @@ class EnhancedMCPTools {
         const requiredCaps = ['analysis', 'research', 'optimization', 'coordination'];
         const agentCaps = ['analysis', 'research', 'testing', 'documentation'];
         const matches = requiredCaps.filter(cap => agentCaps.includes(cap));
-        const matchScore = matches.length / requiredCaps.length;
+        // const matchScore = matches.length / requiredCaps.length;
         // Simulate more complex matching logic
         await new Promise(resolve => setTimeout(resolve, Math.random() * 2 + 1));
         benchmarks.capability_matching.push(performance.now() - start);
@@ -1506,7 +1510,7 @@ class EnhancedMCPTools {
         };
         // Simulate status update with JSON serialization
         const serialized = JSON.stringify(agent);
-        const deserialized = JSON.parse(serialized);
+        JSON.parse(serialized);
         agent.status = 'updated';
         agent.lastUpdate = new Date();
         benchmarks.status_updates.push(performance.now() - start);
@@ -1614,8 +1618,8 @@ class EnhancedMCPTools {
         };
 
         // Simulate data validation
-        const isValid = aggregatedResult.summary.avgConfidence > 0.5 &&
-                               aggregatedResult.summary.totalDataPoints > 0;
+        // const isValid = aggregatedResult.summary.avgConfidence > 0.5 &&
+        //                        aggregatedResult.summary.totalDataPoints > 0;
 
         benchmarks.result_aggregation.push(performance.now() - start);
 
@@ -1724,7 +1728,7 @@ class EnhancedMCPTools {
     // Handle other benchmark types
     Object.keys(benchmarks).forEach(benchmarkType => {
       if (benchmarkType !== 'wasm' && benchmarks[benchmarkType]) {
-        const data = benchmarks[benchmarkType];
+        // const data = benchmarks[benchmarkType];
         // Add summaries for other benchmark types as needed
       }
     });

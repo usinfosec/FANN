@@ -159,7 +159,7 @@ class ClaudeIntegrationOrchestrator {
           const filePath = path.join(this.options.workingDir, file);
           await fs.rm(filePath, { recursive: true, force: true });
           removedFiles.push(file);
-        } catch (error) {
+        } catch {
           // File doesn't exist, continue
         }
       }

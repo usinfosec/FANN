@@ -3,13 +3,12 @@
  * Tests the integration of ruv-FANN neural network capabilities
  */
 
-const {
-  NeuralAgent,
+import { NeuralAgent,
   NeuralAgentFactory,
   NeuralNetwork,
   COGNITIVE_PATTERNS,
   AGENT_COGNITIVE_PROFILES,
-} = require('../src/neural-agent');
+ } from '../src/neural-agent';
 
 // Mock base agent
 class MockAgent {
@@ -237,7 +236,8 @@ describe('Neural Agent Tests', () => {
 });
 
 // Run tests if this file is executed directly
-if (require.main === module) {
+// Direct execution block
+{
   const runTests = async() => {
     console.log('Running Neural Agent Tests...\n');
 

@@ -7,11 +7,9 @@ import {
   AgentConfig,
   AgentState,
   AgentStatus,
-  AgentPerformance,
   Task,
   Message,
   MessageType,
-  CognitiveProfile,
 } from './types';
 import { generateId, getDefaultCognitiveProfile } from './utils';
 

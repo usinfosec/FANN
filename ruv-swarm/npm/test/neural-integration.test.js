@@ -3,8 +3,8 @@
  * Tests FANN integration, agent learning, and decision making
  */
 
-const assert = require('assert');
-const { v4: uuidv4 } = require('uuid');
+import assert from 'assert';
+import { v4: uuidv4  } from 'uuid';
 
 // Neural Network simulation (in production, this would use actual FANN)
 class NeuralNetwork {
@@ -935,7 +935,7 @@ async function runNeuralIntegrationTests() {
 }
 
 // Export for use in other test suites
-module.exports = {
+export {
   NeuralNetwork,
   NeuralAgent,
   SwarmIntelligence,
@@ -943,7 +943,8 @@ module.exports = {
 };
 
 // Run tests if called directly
-if (require.main === module) {
+// Direct execution block
+{
   runNeuralIntegrationTests()
     .then(passed => process.exit(passed ? 0 : 1))
     .catch(error => {

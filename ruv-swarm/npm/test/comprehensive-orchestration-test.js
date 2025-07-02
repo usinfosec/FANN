@@ -4,10 +4,15 @@
  * Comprehensive orchestration test covering edge cases and different scenarios
  */
 
-const path = require('path');
+import path from 'path';
 process.chdir(path.join(__dirname, '..'));
 
-const { EnhancedMCPTools } = require('../src/mcp-tools-enhanced');
+import { EnhancedMCPTools  } from '../src/mcp-tools-enhanced';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 async function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -202,7 +207,8 @@ async function comprehensiveOrchestrationTest() {
 }
 
 // Run the comprehensive test
-if (require.main === module) {
+// Direct execution block
+{
   comprehensiveOrchestrationTest()
     .then(success => {
       process.exit(success ? 0 : 1);
@@ -213,4 +219,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { comprehensiveOrchestrationTest };
+export { comprehensiveOrchestrationTest };

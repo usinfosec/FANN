@@ -26,7 +26,7 @@ class GHCoordinator {
     // Check if gh CLI is available
     try {
       execSync('gh --version', { stdio: 'ignore' });
-    } catch (error) {
+    } catch {
       throw new Error('GitHub CLI (gh) is not installed. Install it from https://cli.github.com/');
     }
 
@@ -235,26 +235,26 @@ This is an automated update from the swarm coordinator.`;
   }
 }
 
-// Example usage with gh CLI
-async function example() {
-  const coordinator = new GHCoordinator({
-    owner: 'ruvnet',
-    repo: 'ruv-FANN',
-  });
-
-  // Get available tasks
-  const tasks = await coordinator.getAvailableTasks({ state: 'open' });
-  console.log(`Found ${tasks.length} available tasks`);
-
-  // Claim a task for a swarm
-  if (tasks.length > 0) {
-    const claimed = await coordinator.claimTask('swarm-123', tasks[0].number);
-    console.log(`Claimed task #${tasks[0].number}: ${claimed}`);
-  }
-
-  // Get coordination status
-  const status = await coordinator.getCoordinationStatus();
-  console.log('Coordination status:', status);
-}
+// Example usage with gh CLI - commented out to avoid no-unused-vars warning
+// async function example() {
+//   const coordinator = new GHCoordinator({
+//     owner: 'ruvnet',
+//     repo: 'ruv-FANN',
+//   });
+//
+//   // Get available tasks
+//   const tasks = await coordinator.getAvailableTasks({ state: 'open' });
+//   console.log(`Found ${tasks.length} available tasks`);
+//
+//   // Claim a task for a swarm
+//   if (tasks.length > 0) {
+//     const claimed = await coordinator.claimTask('swarm-123', tasks[0].number);
+//     console.log(`Claimed task #${tasks[0].number}: ${claimed}`);
+//   }
+//
+//   // Get coordination status
+//   const status = await coordinator.getCoordinationStatus();
+//   console.log('Coordination status:', status);
+// }
 
 module.exports = GHCoordinator;

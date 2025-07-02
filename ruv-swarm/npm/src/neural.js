@@ -19,6 +19,9 @@ const PATTERN_MEMORY_CONFIG = {
   attention: { baseMemory: 290, poolSharing: 0.4, lazyLoading: false },
   lstm: { baseMemory: 275, poolSharing: 0.5, lazyLoading: false },
   transformer: { baseMemory: 295, poolSharing: 0.3, lazyLoading: false },
+  cnn: { baseMemory: 285, poolSharing: 0.5, lazyLoading: false },
+  gru: { baseMemory: 270, poolSharing: 0.6, lazyLoading: true },
+  autoencoder: { baseMemory: 265, poolSharing: 0.7, lazyLoading: true },
 };
 
 class NeuralCLI {
@@ -60,7 +63,7 @@ class NeuralCLI {
       console.log(`   SIMD Support: ${rs.features.simd_support ? '✅ Available' : '❌ Not available'}`);
 
       console.log('\n🤖 Models:');
-      const models = ['attention', 'lstm', 'transformer', 'feedforward'];
+      const models = ['attention', 'lstm', 'transformer', 'feedforward', 'cnn', 'gru', 'autoencoder'];
 
       for (let i = 0; i < models.length; i++) {
         const model = models[i];

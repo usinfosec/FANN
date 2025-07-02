@@ -21,6 +21,8 @@ class WasmModuleLoader {
     this.loadingPromises = new Map();
     this.loadingStrategy = 'on-demand'; // eager | on-demand | progressive
     this.baseDir = __dirname; // one-liner dirname
+    this.wasmCache = new Map(); // Cache compiled WASM modules
+    this.cacheTimeout = 3600000; // 1 hour cache timeout
     this.moduleManifest = {
       /* The only compiled artefact today. Others are historical → optional */
       core: {
@@ -113,6 +115,14 @@ class WasmModuleLoader {
   /* ── internal ─────────────────────────────────────────────────────────────── */
   async #instantiateRaw(name, info) {
     const wasmPath = path.join(this.baseDir, info.path);
+    const cacheKey = `${name}-${info.path}`;
+    
+    // Check cache first
+    const cached = this.wasmCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < this.cacheTimeout)) {
+      console.log(`✨ Using cached WASM module: ${name}`);
+      return cached.module;
+    }
 
     let buffer;
     if (typeof window !== 'undefined') { // browser
@@ -130,7 +140,15 @@ class WasmModuleLoader {
 
     const imports = this.#importsFor(name);
     const { instance, module } = await WebAssembly.instantiate(buffer, imports);
-    return { instance, module, exports: instance.exports, memory: instance.exports.memory };
+    const result = { instance, module, exports: instance.exports, memory: instance.exports.memory };
+    
+    // Cache the compiled module
+    this.wasmCache.set(cacheKey, {
+      module: result,
+      timestamp: Date.now()
+    });
+    
+    return result;
   }
 
   async #loadCoreBindings() {
@@ -157,6 +175,16 @@ class WasmModuleLoader {
       };
     } catch (error) {
       console.error('Failed to load core module via bindings loader:', error);
+      console.warn('⚠️ Falling back to placeholder WASM functionality');
+      
+      // Log specific import errors for debugging
+      if (error.message && error.message.includes('import')) {
+        console.error('WASM import error details:', {
+          message: error.message,
+          stack: error.stack?.split('\n').slice(0, 5).join('\n')
+        });
+      }
+      
       return this.#placeholder('core');
     }
   }
@@ -239,6 +267,41 @@ class WasmModuleLoader {
     }
 
     return totalBytes;
+  }
+  
+  clearCache() {
+    const cacheSize = this.wasmCache.size;
+    this.wasmCache.clear();
+    console.log(`🧹 Cleared WASM cache (${cacheSize} modules)`);
+  }
+  
+  optimizeMemory() {
+    // Clear expired cache entries
+    const now = Date.now();
+    let expired = 0;
+    
+    for (const [key, cached] of this.wasmCache.entries()) {
+      if (now - cached.timestamp > this.cacheTimeout) {
+        this.wasmCache.delete(key);
+        expired++;
+      }
+    }
+    
+    if (expired > 0) {
+      console.log(`🧹 Removed ${expired} expired WASM cache entries`);
+    }
+    
+    // Force garbage collection if available
+    if (global.gc) {
+      global.gc();
+      console.log('🧹 Triggered garbage collection');
+    }
+    
+    return {
+      cacheSize: this.wasmCache.size,
+      memoryUsage: this.getTotalMemoryUsage(),
+      expiredEntries: expired
+    };
   }
 }
 

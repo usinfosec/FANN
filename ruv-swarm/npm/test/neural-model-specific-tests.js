@@ -4,9 +4,9 @@
  * Tests unique capabilities of each architecture
  */
 
-const { spawn } = require('child_process');
-const fs = require('fs').promises;
-const path = require('path');
+import { spawn  } from 'child_process';
+import fs from 'fs'.promises;
+import path from 'path';
 
 class ModelSpecificTests {
   constructor() {

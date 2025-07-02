@@ -2,8 +2,8 @@
  * Unit tests for RuvSwarm core class
  */
 
-const { RuvSwarm, Swarm, Agent, Task } = require('../../../src/index-enhanced');
-const assert = require('assert');
+import { RuvSwarm, Swarm, Agent, Task } from '../../../src/index-enhanced.js';
+import assert from 'assert';
 
 describe('RuvSwarm Core Tests', () => {
   let ruvSwarm;
@@ -497,7 +497,5 @@ describe('Task Class Tests', () => {
 });
 
 // Run tests
-if (require.main === module) {
-  console.log('Running RuvSwarm Core Unit Tests...');
-  require('../../../node_modules/.bin/jest');
-}
+console.log('Running RuvSwarm Core Unit Tests...');
+import('../../../node_modules/.bin/jest');

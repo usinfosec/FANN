@@ -4,9 +4,14 @@
  * Generate comprehensive test report for ruv-swarm
  */
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { execSync  } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 class TestReportGenerator {
   constructor() {
@@ -377,7 +382,8 @@ Version: ${this.reportData.version}
 }
 
 // Run report generation
-if (require.main === module) {
+// Direct execution block
+{
   const generator = new TestReportGenerator();
   generator.generate().catch(error => {
     console.error('Error generating report:', error);

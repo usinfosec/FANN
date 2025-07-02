@@ -4,7 +4,7 @@
  */
 
 const GHCoordinator = require('./gh-cli-coordinator');
-const fs = require('fs').promises;
+// const fs = require('fs').promises; // Unused - will be used in future implementation
 const path = require('path');
 
 class ClaudeGitHubHooks {
@@ -107,7 +107,7 @@ class ClaudeGitHubHooks {
       const status = await this.coordinator.getCoordinationStatus();
 
       // Check if multiple swarms are working on similar files
-      const conflicts = [];
+      // const conflicts = []; // Unused - will be used in future implementation
 
       // Simple conflict detection based on swarm count
       if (Object.keys(status.swarmStatus).length > 1) {

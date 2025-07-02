@@ -3,9 +3,9 @@
  * Provides performance benchmarking and comparison tools
  */
 
-const { RuvSwarm } = require('./index-enhanced');
-const fs = require('fs').promises;
-const path = require('path');
+import { RuvSwarm } from './index-enhanced.js';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 class BenchmarkCLI {
   constructor() {
@@ -24,7 +24,7 @@ class BenchmarkCLI {
   }
 
   async run(args) {
-    const rs = await this.initialize();
+    await this.initialize();
 
     const iterations = parseInt(this.getArg(args, '--iterations'), 10) || 10;
     const testType = this.getArg(args, '--test') || 'comprehensive';
@@ -183,8 +183,7 @@ class BenchmarkCLI {
   }
 
   async compare(args) {
-    const file1 = args[0];
-    const file2 = args[1];
+    const [file1, file2] = args;
 
     if (!file1 || !file2) {
       console.error('❌ Please provide two benchmark result files to compare');
@@ -265,4 +264,4 @@ class BenchmarkCLI {
 
 const benchmarkCLI = new BenchmarkCLI();
 
-module.exports = { benchmarkCLI, BenchmarkCLI };
+export { benchmarkCLI, BenchmarkCLI };

@@ -4,8 +4,13 @@
  * Tests all 12 MCP tools with a 5-agent swarm
  */
 
-const { spawn } = require('child_process');
-const path = require('path');
+import { spawn  } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Colors for output
 const colors = {
@@ -338,7 +343,7 @@ async function testAllMcpTools() {
   log('=' .repeat(60), 'cyan');
 
   // Save detailed results
-  const fs = require('fs');
+  import fs from 'fs';
   const resultsPath = path.join(__dirname, 'mcp-test-results.json');
   fs.writeFileSync(resultsPath, JSON.stringify(results, null, 2));
   log(`\n📄 Detailed results saved to: ${resultsPath}`, 'cyan');

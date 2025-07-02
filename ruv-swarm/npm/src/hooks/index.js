@@ -95,7 +95,7 @@ class RuvSwarmHooks {
      * Pre-search hook - Prepare cache and optimize search
      */
   async preSearchHook(args) {
-    const { pattern, prepareCache } = args;
+    const { pattern } = args;
 
     // Initialize search cache
     if (!this.sessionData.searchCache) {
@@ -124,7 +124,7 @@ class RuvSwarmHooks {
      * Pre-MCP hook - Validate MCP tool state
      */
   async preMcpHook(args) {
-    const { tool, params, validateState } = args;
+    const { tool, params } = args;
 
     // Parse params if string
     const toolParams = typeof params === 'string' ? JSON.parse(params) : params;
@@ -160,7 +160,7 @@ class RuvSwarmHooks {
      * Pre-edit hook - Ensure coordination before file modifications
      */
   async preEditHook(args) {
-    const { file, ensureCoordination, trackOperation } = args;
+    const { file } = args;
 
     // Determine file type and assign appropriate agent
     const fileExt = path.extname(file);
@@ -307,7 +307,7 @@ class RuvSwarmHooks {
      * Post-web-search hook - Analyze results and update knowledge
      */
   async postWebSearchHook(args) {
-    const { query, analyzeResults, updateKnowledge } = args;
+    const { query, updateKnowledge } = args;
 
     // Track search patterns
     if (!this.sessionData.searchPatterns) {
@@ -412,7 +412,7 @@ class RuvSwarmHooks {
      * Pre-bash hook - Validate commands before execution
      */
   async preBashHook(args) {
-    const { command, validateSafety } = args;
+    const { command } = args;
 
     // Safety checks
     const safetyCheck = this.validateCommandSafety(command);
@@ -633,7 +633,7 @@ class RuvSwarmHooks {
     try {
       const timestamp = new Date().toISOString();
       const agentName = agent || 'Unknown Agent';
-      const shortOutput = output ? `${output.substring(0, 500) }...` : 'No output';
+      // const shortOutput = output ? `${output.substring(0, 500) }...` : 'No output';
 
       // Generate detailed report
       let reportPath = null;
@@ -852,7 +852,7 @@ EOF
      * Session restore hook - Load previous state
      */
   async sessionRestoreHook(args) {
-    const { sessionId, loadMemory, loadAgents } = args;
+    const { loadMemory, loadAgents } = args;
 
     const result = {
       continue: true,
@@ -990,7 +990,7 @@ EOF
       }
 
       return { initialized: false };
-    } catch (error) {
+    } catch (_error) {
       return { initialized: false };
     }
   }
@@ -1473,7 +1473,7 @@ ${this.sessionData.learnings.slice(-5).map(l =>
       if (await fs.access(kbPath).then(() => true).catch(() => false)) {
         kb = JSON.parse(await fs.readFile(kbPath, 'utf-8'));
       }
-    } catch (error) {
+    } catch (_error) {
       kb = { searches: [], patterns: {}, insights: [] };
     }
 
@@ -1540,7 +1540,7 @@ ${this.sessionData.learnings.slice(-5).map(l =>
       if (urlObj.search) {
         patterns.push('has:queryparams');
       }
-    } catch (error) {
+    } catch (_error) {
       patterns.push('pattern:invalid-url');
     }
 
@@ -1553,7 +1553,7 @@ ${this.sessionData.learnings.slice(-5).map(l =>
       if (await fs.access(statusPath).then(() => true).catch(() => false)) {
         return JSON.parse(await fs.readFile(statusPath, 'utf-8'));
       }
-    } catch (error) {
+    } catch (_error) {
       // Fallback to session data
     }
 
@@ -1580,7 +1580,7 @@ ${this.sessionData.learnings.slice(-5).map(l =>
     };
 
     // Async write without blocking
-    fs.appendFile(telemetryPath, `${JSON.stringify(telemetryEvent) }\n`).catch(() => {});
+    fs.appendFile(telemetryPath, `${JSON.stringify(telemetryEvent) }\n`).catch(() => { /* intentionally empty */ });
   }
 
   // Helper methods for other functionality
@@ -1621,7 +1621,7 @@ ${this.sessionData.learnings.slice(-5).map(l =>
     };
   }
 
-  optimizeAgentAllocation(taskId) {
+  optimizeAgentAllocation(_taskId) {
     // Simple load balancing algorithm
     const agents = Array.from(this.sessionData.agents.values());
     const allocation = {};
@@ -1645,7 +1645,7 @@ ${this.sessionData.learnings.slice(-5).map(l =>
     return allocation;
   }
 
-  calculateParallelization(taskId) {
+  calculateParallelization(_taskId) {
     // Determine parallelization factor based on task and resources
     const agentCount = this.sessionData.agents.size;
     const complexity = this.sessionData.taskComplexity || { score: 2 };
@@ -1691,17 +1691,17 @@ ${this.sessionData.learnings.slice(-5).map(l =>
 
   async findRelatedFiles(filePath) {
     const related = [];
-    const baseName = path.basename(filePath, path.extname(filePath));
-    const dirName = path.dirname(filePath);
+    const _baseName = path.basename(filePath, path.extname(filePath));
+    // const dirName = path.dirname(filePath);
 
     // Common related file patterns
-    const patterns = [
-      `${baseName}.test.*`, // Test files
-      `${baseName}.spec.*`, // Spec files
-      `test-${baseName}.*`, // Alternative test pattern
-      `${baseName}.d.ts`, // TypeScript definitions
-      `${baseName}.types.*`, // Type definitions
-    ];
+    // const patterns = [
+    //   `${baseName}.test.*`, // Test files
+    //   `${baseName}.spec.*`, // Spec files
+    //   `test-${baseName}.*`, // Alternative test pattern
+    //   `${baseName}.d.ts`, // TypeScript definitions
+    //   `${baseName}.types.*`, // Type definitions
+    // ];
 
     // For now, return mock related files
     // In production, would use file system search

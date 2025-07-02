@@ -5,11 +5,16 @@
  * Tests: Pattern parsing, memory optimization, and persistence indicators
  */
 
-const { exec } = require('child_process');
-const util = require('util');
+import { exec } from 'child_process';
+import util from 'util';
 const execPromise = util.promisify(exec);
-const fs = require('fs').promises;
-const path = require('path');
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Color codes for output
 const colors = {

@@ -4,10 +4,10 @@
  * Tests that all components work together correctly
  */
 
-const { RuvSwarm } = require('../src/index-enhanced');
-const { EnhancedMCPTools } = require('../src/mcp-tools-enhanced');
-const { WasmModuleLoader } = require('../src/wasm-loader');
-const { NeuralNetworkManager } = require('../src/neural-network-manager');
+import { RuvSwarm  } from '../src/index-enhanced';
+import { EnhancedMCPTools  } from '../src/mcp-tools-enhanced';
+import { WasmModuleLoader  } from '../src/wasm-loader';
+import { NeuralNetworkManager  } from '../src/neural-network-manager';
 
 async function validateIntegration() {
   console.log('🔍 Validating NPX Integration...\n');
@@ -91,7 +91,7 @@ async function validateIntegration() {
 
     // Test 9: Backward Compatibility
     console.log('\n9️⃣ Testing Backward Compatibility...');
-    const { RuvSwarm: LegacyRuvSwarm } = require('../src/index.js');
+    const { RuvSwarm: LegacyRuvSwarm } = await import('../src/index.js');
     console.log('✅ Legacy imports working');
     console.log(`   Version: ${RuvSwarm.getVersion()}`);
 
@@ -123,9 +123,9 @@ async function validateIntegration() {
   }
 }
 
-// Run validation
-if (require.main === module) {
+// Run validation when this file is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
   validateIntegration();
 }
 
-module.exports = { validateIntegration };
+export { validateIntegration };

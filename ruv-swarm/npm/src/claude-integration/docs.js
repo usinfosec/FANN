@@ -952,7 +952,7 @@ Already configured by default for common file types.
 
       if (config.content) {
         // Use provided content for workflow files
-        content = config.content;
+        ({ content } = config);
       } else {
         // Generate content for tool documentation
         content = `# ${config.title}

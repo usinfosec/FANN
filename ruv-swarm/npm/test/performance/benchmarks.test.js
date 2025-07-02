@@ -2,12 +2,17 @@
  * Performance benchmarks for ruv-swarm
  */
 
-const { RuvSwarm } = require('../../src/index-enhanced');
-const { NeuralNetwork } = require('../../src/neural-agent');
-const { SwarmPersistence } = require('../../src/persistence');
-const assert = require('assert');
-const path = require('path');
-const fs = require('fs');
+import { RuvSwarm  } from '../../src/index-enhanced';
+import { NeuralNetwork  } from '../../src/neural-agent';
+import { SwarmPersistence  } from '../../src/persistence';
+import assert from 'assert';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Benchmark utilities
 class BenchmarkRunner {
@@ -534,7 +539,8 @@ describe('Performance Benchmarks', () => {
 });
 
 // Run benchmarks
-if (require.main === module) {
+// Direct execution block
+{
   console.log('Running Performance Benchmarks...');
   console.log('This may take a few minutes...\n');
   require('../../node_modules/.bin/jest');

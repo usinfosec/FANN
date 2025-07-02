@@ -118,7 +118,7 @@ class WorkerPool {
 
     // In Node.js, use worker_threads
     if (typeof window === 'undefined') {
-      const { Worker } = require('worker_threads');
+      // const { Worker } = require('worker_threads');
       for (let i = 0; i < this.size; i++) {
         // TODO: Create worker thread
       }
@@ -164,7 +164,7 @@ class RuvSwarm {
 
   static async initialize(options = {}) {
     const loader = new WASMLoader(options);
-    const wasmResult = await loader.loadModule();
+    // const wasmResult = await loader.loadModule();
 
     // Load the WASM bindings (ES module import with proper file URL)
     const wasmJsPath = path.join(loader.wasmPath, 'ruv_swarm_wasm.js');

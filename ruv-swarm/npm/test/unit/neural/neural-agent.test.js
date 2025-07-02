@@ -2,14 +2,13 @@
  * Unit tests for Neural Agent module
  */
 
-const {
-  NeuralAgent,
+import { NeuralAgent,
   NeuralAgentFactory,
   NeuralNetwork,
   COGNITIVE_PATTERNS,
   AGENT_COGNITIVE_PROFILES,
-} = require('../../../src/neural-agent');
-const assert = require('assert');
+ } from '../../../src/neural-agent';
+import assert from 'assert';
 const EventEmitter = require('events');
 
 // Mock base agent for testing
@@ -565,7 +564,7 @@ describe('Cognitive Profiles Tests', () => {
   });
 });
 
-// Run tests
+// Run tests when this file is executed directly
 if (require.main === module) {
   console.log('Running Neural Agent Unit Tests...');
   require('../../../node_modules/.bin/jest');

@@ -3,13 +3,18 @@
  * Tests progressive loading, neural networks, and swarm orchestration
  */
 
-const { RuvSwarm } = require('../src/index-enhanced');
-const { WasmModuleLoader } = require('../src/wasm-loader');
-const { EnhancedMCPTools } = require('../src/mcp-tools-enhanced');
-const { NeuralNetworkManager } = require('../src/neural-network-manager');
+import { RuvSwarm  } from '../src/index-enhanced';
+import { WasmModuleLoader  } from '../src/wasm-loader';
+import { EnhancedMCPTools  } from '../src/mcp-tools-enhanced';
+import { NeuralNetworkManager  } from '../src/neural-network-manager';
 
-const assert = require('assert');
-const path = require('path');
+import assert from 'assert';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Test utilities
 function assertApprox(actual, expected, tolerance = 0.01) {
@@ -384,7 +389,7 @@ class WasmIntegrationTests {
 
   async testBackwardCompatibility() {
     // Test 1: Legacy API still works
-    const { RuvSwarm: LegacyRuvSwarm } = require('../src/index.js');
+    const { RuvSwarm: LegacyRuvSwarm } = await import('../src/index.js');
     assert(LegacyRuvSwarm, 'Legacy RuvSwarm should be available');
 
     // Test 2: Old initialization pattern
@@ -426,7 +431,8 @@ class WasmIntegrationTests {
 }
 
 // Run tests if called directly
-if (require.main === module) {
+// Direct execution block
+{
   const tests = new WasmIntegrationTests();
   tests.runAll().catch(error => {
     console.error('❌ Test suite failed:', error);
@@ -434,4 +440,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { WasmIntegrationTests };
+export { WasmIntegrationTests };

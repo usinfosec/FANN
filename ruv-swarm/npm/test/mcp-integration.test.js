@@ -3,10 +3,10 @@
  * Tests all 12 MCP tools and their integration
  */
 
-const assert = require('assert');
-const { spawn } = require('child_process');
+import assert from 'assert';
+import { spawn  } from 'child_process';
 const WebSocket = require('ws');
-const { v4: uuidv4 } = require('uuid');
+import { v4: uuidv4  } from 'uuid';
 
 // Test configuration
 const MCP_SERVER_URL = 'ws://localhost:3000/mcp';
@@ -394,7 +394,7 @@ async function runMCPIntegrationTests() {
     // 12. Test Workflow Execute
     await test('MCP Tool: ruv-swarm.workflow.execute', async() => {
       // First, create a simple workflow file
-      const fs = require('fs').promises;
+      import fs from 'fs'.promises;
       const workflowPath = '/tmp/test-workflow.json';
       const workflow = {
         name: 'test-workflow',
@@ -793,11 +793,12 @@ process.on('unhandledRejection', (error) => {
 });
 
 // Run tests if called directly
-if (require.main === module) {
+// Direct execution block
+{
   main().catch(error => {
     console.error('Fatal error:', error);
     process.exit(1);
   });
 }
 
-module.exports = { MCPTestClient, runMCPIntegrationTests, runIntegrationScenarios };
+export { MCPTestClient, runMCPIntegrationTests, runIntegrationScenarios };

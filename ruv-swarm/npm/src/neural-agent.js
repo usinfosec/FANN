@@ -27,6 +27,7 @@ const AGENT_COGNITIVE_PROFILES = {
     momentum: 0.3,
     networkLayers: [64, 128, 64, 32],
     activationFunction: 'sigmoid',
+    advancedModel: 'transformer_nlp', // Use transformer for research tasks
   },
   coder: {
     primary: COGNITIVE_PATTERNS.CONVERGENT,
@@ -35,6 +36,7 @@ const AGENT_COGNITIVE_PROFILES = {
     momentum: 0.2,
     networkLayers: [128, 256, 128, 64],
     activationFunction: 'relu',
+    advancedModel: 'gru_sequence', // Use GRU for code generation
   },
   analyst: {
     primary: COGNITIVE_PATTERNS.CRITICAL,
@@ -43,6 +45,7 @@ const AGENT_COGNITIVE_PROFILES = {
     momentum: 0.25,
     networkLayers: [96, 192, 96, 48],
     activationFunction: 'tanh',
+    advancedModel: 'cnn_vision', // Use CNN for pattern analysis
   },
   optimizer: {
     primary: COGNITIVE_PATTERNS.SYSTEMS,
@@ -701,7 +704,7 @@ class NeuralAgent extends EventEmitter {
    * Get current memory usage for this agent
    */
   getCurrentMemoryUsage() {
-    const patternConfig = PATTERN_MEMORY_CONFIG[this.cognitiveProfile.primary] || PATTERN_MEMORY_CONFIG.convergent;
+    // const patternConfig = PATTERN_MEMORY_CONFIG[this.cognitiveProfile.primary] || PATTERN_MEMORY_CONFIG.convergent;
     let memoryUsage = this.memoryUsage.current;
 
     // Adjust based on current activity

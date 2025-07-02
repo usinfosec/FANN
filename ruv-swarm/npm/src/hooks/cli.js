@@ -15,7 +15,7 @@ async function main() {
     return;
   }
 
-  const hookType = args[1];
+  const [, hookType] = args;
   const options = parseArgs(args.slice(2));
 
   try {
