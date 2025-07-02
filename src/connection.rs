@@ -1,4 +1,5 @@
 use num_traits::Float;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Represents a connection between two neurons with a weight

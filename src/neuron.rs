@@ -1,5 +1,6 @@
 use crate::{ActivationFunction, Connection};
 use num_traits::Float;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Represents a single neuron in the neural network

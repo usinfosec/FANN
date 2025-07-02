@@ -1,6 +1,7 @@
 use crate::{ActivationFunction, Neuron};
 use num_traits::Float;
 use rand::Rng;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Represents a layer of neurons in the neural network

@@ -2,6 +2,7 @@ use crate::{ActivationFunction, Layer, TrainingAlgorithm};
 use num_traits::Float;
 use rand::distributions::Uniform;
 use rand::Rng;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -304,21 +305,37 @@ impl<T: Float> Network<T> {
     }
 
     /// Serialize the network to bytes
+    #[cfg(feature = "binary")]
     pub fn to_bytes(&self) -> Vec<u8>
     where
-        T: serde::Serialize,
-        Network<T>: serde::Serialize,
+        #[cfg(feature = "serde")] T: serde::Serialize,
+        #[cfg(feature = "serde")] Network<T>: serde::Serialize,
     {
-        bincode::serialize(self).unwrap_or_default()
+        #[cfg(feature = "binary")]
+        {
+            bincode::serialize(self).unwrap_or_default()
+        }
+        #[cfg(not(feature = "binary"))]
+        {
+            Vec::new()
+        }
     }
 
     /// Deserialize a network from bytes
+    #[cfg(feature = "binary")]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, NetworkError>
     where
-        T: serde::de::DeserializeOwned,
-        Network<T>: serde::de::DeserializeOwned,
+        #[cfg(feature = "serde")] T: serde::de::DeserializeOwned,
+        #[cfg(feature = "serde")] Network<T>: serde::de::DeserializeOwned,
     {
-        bincode::deserialize(bytes).map_err(|_| NetworkError::InvalidLayerConfiguration)
+        #[cfg(feature = "binary")]
+        {
+            bincode::deserialize(bytes).map_err(|_| NetworkError::InvalidLayerConfiguration)
+        }
+        #[cfg(not(feature = "binary"))]
+        {
+            Err(NetworkError::InvalidLayerConfiguration)
+        }
     }
 }
 
