@@ -6,6 +6,8 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "std"))]
+extern crate alloc;
+#[cfg(not(feature = "std"))]
 use alloc::{boxed::Box, string::String, vec::Vec};
 
 use std::collections::HashMap;

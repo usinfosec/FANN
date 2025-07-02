@@ -6,12 +6,24 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "std"))]
+extern crate alloc;
+#[cfg(not(feature = "std"))]
 use alloc::{boxed::Box, string::String, vec::Vec};
 
 use crate::{
-    types::{AutonomousCapability, DecisionContext, AdaptationFeedback, ResourceAllocation},
-    Result,
+    types::{AutonomousCapability, DecisionContext, AdaptationFeedback},
+    DAAResult as Result,
 };
+
+/// Resource allocation structure (moved here to fix compilation)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResourceAllocation {
+    pub memory_mb: f64,
+    pub cpu_cores: f64,
+    pub network_bandwidth: f64,
+    pub storage_gb: f64,
+    pub priority: f64,
+}
 
 /// Core trait for Distributed Autonomous Agents
 /// 

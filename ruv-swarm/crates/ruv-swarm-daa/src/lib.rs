@@ -48,6 +48,9 @@ pub mod adaptation;
 pub mod telemetry;
 
 #[cfg(feature = "wasm")]
+pub mod wasm;
+
+#[cfg(feature = "wasm")]
 pub mod wasm_simple;
 
 pub use agent::*;

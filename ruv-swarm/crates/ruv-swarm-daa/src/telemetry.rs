@@ -12,7 +12,7 @@ pub struct TelemetryEvent {
     pub metadata: HashMap<String, serde_json::Value>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct TelemetryCollector {
     events: Arc<RwLock<Vec<TelemetryEvent>>>,
 }

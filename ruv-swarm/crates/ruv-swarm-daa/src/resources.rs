@@ -6,11 +6,13 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "std"))]
+extern crate alloc;
+#[cfg(not(feature = "std"))]
 use alloc::{boxed::Box, string::String, vec::Vec};
 
 use crate::{
-    types::ResourceAllocation,
-    Result,
+    traits::ResourceAllocation,
+    DAAResult as Result,
 };
 
 /// Dynamic resource management capabilities
