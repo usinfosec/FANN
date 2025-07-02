@@ -19,18 +19,18 @@ allow = [
 # We want really high confidence when inferring licenses from text
 confidence-threshold = 0.93
 
-# Allow unlicensed crates
+# Allow specific crates with license expressions
 [[licenses.clarify]]
-version = 1
 crate = "adler2"
-expression = "MIT OR Apache-2.0"
-license-files = []
+license-expression = "MIT OR Apache-2.0 OR 0BSD"
 
 [[licenses.clarify]]
-version = 1
 crate = "autocfg"
-expression = "MIT OR Apache-2.0"
-license-files = []
+license-expression = "MIT OR Apache-2.0"
+
+[[licenses.clarify]]
+crate = "bincode"
+license-expression = "MIT"
 
 [bans]
 # Lint level for when multiple versions of the same crate are detected
