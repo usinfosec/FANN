@@ -4,6 +4,14 @@
  */
 
 import { createNeuralModel, MODEL_PRESETS } from './neural-models/index.js';
+import { 
+  NEURAL_PRESETS, 
+  getPreset, 
+  getCategoryPresets,
+  searchPresetsByUseCase,
+  getRecommendedPreset,
+  validatePresetConfig 
+} from './neural-models/presets/index.js';
 
 class NeuralNetworkManager {
   constructor(wasmLoader) {
@@ -90,6 +98,11 @@ class NeuralNetworkManager {
         hiddenSize: 256,
         numLayers: 2,
         bidirectional: true,
+      },
+      // Special template for preset-based models
+      preset_model: {
+        modelType: 'preset', // Will be overridden by actual model type
+        usePreset: true
       },
     };
     
@@ -306,6 +319,184 @@ class NeuralNetworkManager {
     }
 
     return network.load(filePath);
+  }
+
+  // ===============================
+  // PRESET INTEGRATION METHODS
+  // ===============================
+
+  /**
+   * Create a neural network from a production preset
+   * @param {string} agentId - Agent identifier
+   * @param {string} category - Preset category (nlp, vision, timeseries, graph)
+   * @param {string} presetName - Name of the preset
+   * @param {object} customConfig - Optional custom configuration overrides
+   */
+  async createAgentFromPreset(agentId, category, presetName, customConfig = {}) {
+    try {
+      const preset = getPreset(category, presetName);
+      validatePresetConfig(preset);
+
+      console.log(`Creating ${agentId} from preset: ${preset.name}`);
+      console.log(`Expected performance: ${preset.performance.expectedAccuracy} accuracy in ${preset.performance.inferenceTime}`);
+
+      // Merge preset config with custom overrides
+      const config = {
+        ...preset.config,
+        ...customConfig,
+        modelType: preset.model,
+        presetInfo: {
+          category,
+          presetName,
+          name: preset.name,
+          description: preset.description,
+          useCase: preset.useCase,
+          performance: preset.performance
+        }
+      };
+
+      return this.createAdvancedNeuralModel(agentId, 'preset_model', config);
+    } catch (error) {
+      console.error(`Failed to create agent from preset: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a neural network from a recommended preset based on use case
+   * @param {string} agentId - Agent identifier
+   * @param {string} useCase - Use case description
+   * @param {object} customConfig - Optional custom configuration overrides
+   */
+  async createAgentForUseCase(agentId, useCase, customConfig = {}) {
+    const recommendedPreset = getRecommendedPreset(useCase);
+    
+    if (!recommendedPreset) {
+      // Try searching by use case
+      const searchResults = searchPresetsByUseCase(useCase);
+      if (searchResults.length === 0) {
+        throw new Error(`No preset found for use case: ${useCase}`);
+      }
+      
+      const bestMatch = searchResults[0];
+      console.log(`Found preset for "${useCase}": ${bestMatch.preset.name}`);
+      
+      return this.createAgentFromPreset(
+        agentId, 
+        bestMatch.category, 
+        bestMatch.presetName, 
+        customConfig
+      );
+    }
+
+    return this.createAgentFromPreset(
+      agentId,
+      recommendedPreset.category,
+      recommendedPreset.presetName,
+      customConfig
+    );
+  }
+
+  /**
+   * Get all available presets for a category
+   * @param {string} category - Preset category
+   */
+  getAvailablePresets(category = null) {
+    if (category) {
+      return getCategoryPresets(category);
+    }
+    return NEURAL_PRESETS;
+  }
+
+  /**
+   * Search presets by use case or description
+   * @param {string} searchTerm - Search term
+   */
+  searchPresets(searchTerm) {
+    return searchPresetsByUseCase(searchTerm);
+  }
+
+  /**
+   * Get performance information for a preset
+   * @param {string} category - Preset category
+   * @param {string} presetName - Preset name
+   */
+  getPresetPerformance(category, presetName) {
+    const preset = getPreset(category, presetName);
+    return preset.performance;
+  }
+
+  /**
+   * List all available preset categories and their counts
+   */
+  getPresetSummary() {
+    const summary = {};
+    Object.entries(NEURAL_PRESETS).forEach(([category, presets]) => {
+      summary[category] = {
+        count: Object.keys(presets).length,
+        presets: Object.keys(presets)
+      };
+    });
+    return summary;
+  }
+
+  /**
+   * Get detailed information about agent's preset (if created from preset)
+   * @param {string} agentId - Agent identifier
+   */
+  getAgentPresetInfo(agentId) {
+    const network = this.neuralNetworks.get(agentId);
+    if (!network || !network.config || !network.config.presetInfo) {
+      return null;
+    }
+    return network.config.presetInfo;
+  }
+
+  /**
+   * Update existing agent with preset configuration
+   * @param {string} agentId - Agent identifier
+   * @param {string} category - Preset category
+   * @param {string} presetName - Preset name
+   * @param {object} customConfig - Optional custom configuration overrides
+   */
+  async updateAgentWithPreset(agentId, category, presetName, customConfig = {}) {
+    const existingNetwork = this.neuralNetworks.get(agentId);
+    if (existingNetwork) {
+      // Save current state if needed
+      console.log(`Updating agent ${agentId} with new preset: ${category}/${presetName}`);
+    }
+
+    // Remove existing network
+    this.neuralNetworks.delete(agentId);
+    this.neuralModels.delete(agentId);
+
+    // Create new network with preset
+    return this.createAgentFromPreset(agentId, category, presetName, customConfig);
+  }
+
+  /**
+   * Batch create agents from presets
+   * @param {Array} agentConfigs - Array of {agentId, category, presetName, customConfig}
+   */
+  async batchCreateAgentsFromPresets(agentConfigs) {
+    const results = [];
+    const errors = [];
+
+    for (const config of agentConfigs) {
+      try {
+        const agent = await this.createAgentFromPreset(
+          config.agentId,
+          config.category,
+          config.presetName,
+          config.customConfig || {}
+        );
+        results.push({ agentId: config.agentId, success: true, agent });
+      } catch (error) {
+        errors.push({ agentId: config.agentId, error: error.message });
+      }
+    }
+
+    return { results, errors };
   }
 }
 
