@@ -32,8 +32,13 @@ candle-core = { version = "0.3", optional = true }
 candle-nn = { version = "0.3", optional = true }
 
 # Performance optimization
-rayon = "1.7"
-crossbeam = "0.8"
+rayon = { version = "1.7", optional = true }
+crossbeam = { version = "0.8", optional = true }
+
+# CLI dependencies for binary
+clap = { version = "4.0", features = ["derive"] }
+env_logger = "0.10"
+chrono = { version = "0.4", features = ["serde"] }
 
 [features]
 default = ["neural-networks", "autonomous-learning"]
