@@ -7,6 +7,7 @@
 import { setupClaudeIntegration, invokeClaudeWithSwarm } from '../src/claude-integration/index.js';
 import { RuvSwarm } from '../src/index-enhanced.js';
 import { EnhancedMCPTools } from '../src/mcp-tools-enhanced.js';
+import { daaMcpTools } from '../src/mcp-daa-tools.js';
 
 // Input validation constants and functions
 const VALID_TOPOLOGIES = ['mesh', 'hierarchical', 'ring', 'star'];
@@ -146,6 +147,9 @@ async function initializeSystem() {
         // Pass the already initialized RuvSwarm instance to avoid duplicate initialization
         globalMCPTools = new EnhancedMCPTools(globalRuvSwarm);
         await globalMCPTools.initialize(globalRuvSwarm);
+        
+        // Initialize DAA MCP tools with the same instance
+        daaMcpTools.mcpTools = globalMCPTools;
     }
     
     return { ruvSwarm: globalRuvSwarm, mcpTools: globalMCPTools };
@@ -478,11 +482,18 @@ async function stopMcpServer() {
 
 async function listMcpTools() {
     console.log('🛠️  Available MCP Tools:');
+    console.log('\n📊 Core Swarm Tools:');
     console.log('   mcp__ruv-swarm__swarm_init - Initialize a new swarm');
     console.log('   mcp__ruv-swarm__agent_spawn - Spawn new agents');
     console.log('   mcp__ruv-swarm__task_orchestrate - Orchestrate tasks');
     console.log('   mcp__ruv-swarm__swarm_status - Get swarm status');
-    console.log('   ... and 12 more tools');
+    console.log('   ... and 11 more core tools');
+    console.log('\n🤖 DAA (Decentralized Autonomous Agents) Tools:');
+    console.log('   mcp__ruv-swarm__daa_init - Initialize DAA service');
+    console.log('   mcp__ruv-swarm__daa_agent_create - Create autonomous agents');
+    console.log('   mcp__ruv-swarm__daa_workflow_create - Create DAA workflows');
+    console.log('   mcp__ruv-swarm__daa_learning_status - Get learning progress');
+    console.log('   ... and 6 more DAA tools');
     console.log('\nFor full documentation, run: ruv-swarm init --claude');
 }
 
@@ -704,7 +715,9 @@ async function handleMcpRequest(request, mcpTools) {
                                     pattern: { type: 'string', enum: ['all', 'convergent', 'divergent', 'lateral', 'systems', 'critical', 'abstract'], default: 'all', description: 'Cognitive pattern type' }
                                 }
                             }
-                        }
+                        },
+                        // Add DAA tools
+                        ...daaMcpTools.getToolDefinitions()
                     ]
                 };
                 break;
@@ -718,6 +731,15 @@ async function handleMcpRequest(request, mcpTools) {
                     const result = await mcpTools[toolName](toolArgs);
                     // Format response with content array as required by Claude Code
                     // Each content item must have a type (text, image, audio, resource)
+                    response.result = {
+                        content: [{
+                            type: 'text',
+                            text: typeof result === 'string' ? result : JSON.stringify(result, null, 2)
+                        }]
+                    };
+                } else if (daaMcpTools[toolName]) {
+                    // Handle DAA-specific tools
+                    const result = await daaMcpTools[toolName](toolArgs);
                     response.result = {
                         content: [{
                             type: 'text',
