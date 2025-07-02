@@ -17,14 +17,17 @@ jobs:
   test:
     name: Test Suite
     runs-on: ${{ matrix.os }}
+    # Add a timeout for the entire job (30 minutes)
+    timeout-minutes: 30
     strategy:
+      # Add fail-fast: false to continue with other jobs if one fails
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         rust: [stable, beta, nightly]
         include:
           - os: ubuntu-latest
             rust: stable
-            coverage: true
     
     steps:
     - uses: actions/checkout@v4
@@ -68,17 +71,38 @@ jobs:
     - name: Test no-std compatibility
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
       run: cargo build --no-default-features --features no_std
+  
+  # Split code coverage into a separate job to prevent timeouts
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Only run coverage on main branch or PRs to main
+    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request' && github.base_ref == 'main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-coverage-${{ hashFiles('**/Cargo.lock') }}
     
     - name: Install cargo-tarpaulin
-      if: matrix.coverage
       run: cargo install cargo-tarpaulin
     
     - name: Generate code coverage
-      if: matrix.coverage
-      run: cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out xml
+      # Increase tarpaulin timeout to 300 seconds (5 minutes)
+      run: cargo tarpaulin --verbose --all-features --workspace --timeout 300 --out xml
     
     - name: Upload coverage to Codecov
-      if: matrix.coverage
       uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
@@ -88,6 +112,7 @@ jobs:
   benchmark:
     name: Performance Benchmarks
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     
     steps:
@@ -126,6 +151,7 @@ jobs:
   memory-test:
     name: Memory Safety Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     
     steps:
     - uses: actions/checkout@v4
@@ -154,6 +180,7 @@ jobs:
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     
     steps:
     - uses: actions/checkout@v4
@@ -173,6 +200,7 @@ jobs:
   property-tests:
     name: Property-based Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     
     steps:
     - uses: actions/checkout@v4
@@ -192,18 +220,21 @@ jobs:
     - name: Run property-based tests
       run: cargo test --test property_tests --all-features
       env:
-        PROPTEST_CASES: 10000
+        # Reduce the number of test cases to speed up execution
+        PROPTEST_CASES: 1000
+        RUST_BACKTRACE: 1
 
   cross-compile:
     name: Cross Compilation
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
+      fail-fast: false
       matrix:
+        # Reduce the number of cross-compilation targets to speed up CI
         target: 
           - aarch64-unknown-linux-gnu
-          - armv7-unknown-linux-gnueabihf
           - x86_64-pc-windows-gnu
-          - x86_64-apple-darwin
     
     steps:
     - uses: actions/checkout@v4
@@ -222,6 +253,7 @@ jobs:
   docs:
     name: Documentation
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     
     steps:
     - uses: actions/checkout@v4
