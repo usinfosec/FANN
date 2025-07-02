@@ -305,37 +305,37 @@ impl<T: Float> Network<T> {
     }
 
     /// Serialize the network to bytes
-    #[cfg(feature = "binary")]
+    #[cfg(all(feature = "binary", feature = "serde"))]
     pub fn to_bytes(&self) -> Vec<u8>
     where
-        #[cfg(feature = "serde")] T: serde::Serialize,
-        #[cfg(feature = "serde")] Network<T>: serde::Serialize,
+        T: serde::Serialize,
+        Network<T>: serde::Serialize,
     {
-        #[cfg(feature = "binary")]
-        {
-            bincode::serialize(self).unwrap_or_default()
-        }
-        #[cfg(not(feature = "binary"))]
-        {
-            Vec::new()
-        }
+        bincode::serialize(self).unwrap_or_default()
+    }
+    
+    #[cfg(feature = "binary")]
+    #[cfg(not(feature = "serde"))]
+    pub fn to_bytes(&self) -> Vec<u8> {
+        // Fallback implementation when serde is not available
+        Vec::new()
     }
 
     /// Deserialize a network from bytes
-    #[cfg(feature = "binary")]
+    #[cfg(all(feature = "binary", feature = "serde"))]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, NetworkError>
     where
-        #[cfg(feature = "serde")] T: serde::de::DeserializeOwned,
-        #[cfg(feature = "serde")] Network<T>: serde::de::DeserializeOwned,
+        T: serde::de::DeserializeOwned,
+        Network<T>: serde::de::DeserializeOwned,
     {
-        #[cfg(feature = "binary")]
-        {
-            bincode::deserialize(bytes).map_err(|_| NetworkError::InvalidLayerConfiguration)
-        }
-        #[cfg(not(feature = "binary"))]
-        {
-            Err(NetworkError::InvalidLayerConfiguration)
-        }
+        bincode::deserialize(bytes).map_err(|_| NetworkError::InvalidLayerConfiguration)
+    }
+    
+    #[cfg(feature = "binary")]
+    #[cfg(not(feature = "serde"))]
+    pub fn from_bytes(_bytes: &[u8]) -> Result<Self, NetworkError> {
+        // Fallback implementation when serde is not available
+        Err(NetworkError::InvalidLayerConfiguration)
     }
 }
 
