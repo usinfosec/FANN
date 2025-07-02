@@ -332,7 +332,7 @@ impl ErrorLogger {
         self.log_level = level;
         self
     }
-    
+
     #[cfg(not(feature = "logging"))]
     pub fn with_level(self, _level: u8) -> Self {
         // No-op when logging is disabled
@@ -400,11 +400,11 @@ impl ErrorLogger {
                     );
                 }
             }
-            
+
             #[cfg(feature = "logging")]
             log::log!(self.log_level, "{}", serde_json::Value::Object(fields));
         }
-        
+
         #[cfg(not(feature = "serde"))]
         {
             // Simple fallback when serde_json is not available

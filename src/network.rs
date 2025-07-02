@@ -313,7 +313,7 @@ impl<T: Float> Network<T> {
     {
         bincode::serialize(self).unwrap_or_default()
     }
-    
+
     #[cfg(feature = "binary")]
     #[cfg(not(feature = "serde"))]
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -330,7 +330,7 @@ impl<T: Float> Network<T> {
     {
         bincode::deserialize(bytes).map_err(|_| NetworkError::InvalidLayerConfiguration)
     }
-    
+
     #[cfg(feature = "binary")]
     #[cfg(not(feature = "serde"))]
     pub fn from_bytes(_bytes: &[u8]) -> Result<Self, NetworkError> {
