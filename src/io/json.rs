@@ -1,6 +1,6 @@
 //! JSON serialization support
 
-use crate::io::error::{IoError, IoResult};
+use crate::io::error::IoResult;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 

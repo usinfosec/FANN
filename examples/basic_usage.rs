@@ -19,8 +19,8 @@ fn main() {
     let inputs = vec![0.5, 0.7];
     let outputs = network.run(&inputs);
 
-    println!("Inputs: {:?}", inputs);
-    println!("Outputs: {:?}", outputs);
+    println!("Inputs: {inputs:?}");
+    println!("Outputs: {outputs:?}");
 
     // Get and display current weights
     let weights = network.get_weights();
@@ -34,6 +34,6 @@ fn main() {
 
         // Run again with new weights
         let new_outputs = network.run(&inputs);
-        println!("New outputs: {:?}", new_outputs);
+        println!("New outputs: {new_outputs:?}");
     }
 }

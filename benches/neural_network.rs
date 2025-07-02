@@ -15,7 +15,7 @@ fn bench_network_creation(c: &mut Criterion) {
     ] {
         let total_neurons: usize = layers.iter().sum();
         group.bench_with_input(
-            BenchmarkId::new("layers", format!("{:?}", layers)),
+            BenchmarkId::new("layers", format!("{layers:?}")),
             &layers,
             |b, layers| {
                 b.iter(|| {
@@ -171,7 +171,7 @@ fn bench_serialization(c: &mut Criterion) {
         let mut network = Network::new(&layers);
         network.randomize_weights(-1.0, 1.0);
 
-        group.bench_function(format!("{}_serialize", name), |b| {
+        group.bench_function(format!("{name}_serialize"), |b| {
             b.iter(|| {
                 let bytes = network.to_bytes();
                 black_box(bytes);
@@ -180,7 +180,7 @@ fn bench_serialization(c: &mut Criterion) {
 
         let bytes = network.to_bytes();
 
-        group.bench_function(format!("{}_deserialize", name), |b| {
+        group.bench_function(format!("{name}_deserialize"), |b| {
             b.iter(|| {
                 let loaded = Network::<f32>::from_bytes(black_box(&bytes));
                 black_box(loaded);
@@ -311,14 +311,12 @@ fn bench_cascade_network(c: &mut Criterion) {
     let mut group = c.benchmark_group("cascade_network");
     group.sample_size(10);
 
-    let inputs = vec![
-        vec![0.0, 0.0],
+    let inputs = [vec![0.0, 0.0],
         vec![0.0, 1.0],
         vec![1.0, 0.0],
-        vec![1.0, 1.0],
-    ];
+        vec![1.0, 1.0]];
 
-    let outputs = vec![vec![0.0], vec![1.0], vec![1.0], vec![0.0]];
+    let outputs = [vec![0.0], vec![1.0], vec![1.0], vec![0.0]];
 
     group.bench_function("cascade_training", |b| {
         b.iter(|| {

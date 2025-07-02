@@ -208,9 +208,10 @@ mod tests {
     #[test]
     fn test_set_value() {
         let mut neuron = Neuron::<f32>::new(ActivationFunction::Linear, 1.0);
-        neuron.set_value(3.14);
-        assert_eq!(neuron.value, 3.14);
-        assert_eq!(neuron.sum, 3.14);
+        // Use std::f32::consts::PI instead of hardcoded value
+        neuron.set_value(std::f32::consts::PI);
+        assert_eq!(neuron.value, std::f32::consts::PI);
+        assert_eq!(neuron.sum, std::f32::consts::PI);
     }
 
     #[test]

@@ -37,14 +37,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 0 XOR 1 = 1
     // 1 XOR 0 = 1
     // 1 XOR 1 = 0
-    let test_inputs = vec![
-        vec![0.0, 0.0],
+    let test_inputs = [vec![0.0, 0.0],
         vec![0.0, 1.0],
         vec![1.0, 0.0],
-        vec![1.0, 1.0],
-    ];
+        vec![1.0, 1.0]];
 
-    let expected_outputs = vec![0.0, 1.0, 1.0, 0.0];
+    let expected_outputs = [0.0, 1.0, 1.0, 0.0];
 
     println!("\nXOR Truth Table:");
     for (i, input) in test_inputs.iter().enumerate() {
@@ -75,7 +73,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nNetwork weights info:");
     let weights = network.get_weights();
     println!("Total weights: {}", weights.len());
-    println!("Current weights: {:?}", weights);
+    println!("Current weights: {weights:?}");
 
     // Try setting some manual weights that might work better for XOR
     // These are just example weights, not necessarily optimal

@@ -1,6 +1,6 @@
 //! Compression support for file formats
 
-use crate::io::error::{IoError, IoResult};
+use crate::io::error::IoResult;
 use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use std::io::{Read, Write};
 

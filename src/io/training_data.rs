@@ -24,7 +24,7 @@ impl TrainingDataReader {
 
         // Read header line
         buf_reader.read_line(&mut line)?;
-        let header_parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let header_parts: Vec<&str> = line.split_whitespace().collect();
 
         if header_parts.len() != 3 {
             return Err(IoError::InvalidFileFormat(
@@ -34,13 +34,13 @@ impl TrainingDataReader {
 
         let num_data: usize = header_parts[0]
             .parse()
-            .map_err(|e| IoError::ParseError(format!("Invalid num_data: {}", e)))?;
+            .map_err(|e| IoError::ParseError(format!("Invalid num_data: {e}")))?;
         let num_input: usize = header_parts[1]
             .parse()
-            .map_err(|e| IoError::ParseError(format!("Invalid num_input: {}", e)))?;
+            .map_err(|e| IoError::ParseError(format!("Invalid num_input: {e}")))?;
         let num_output: usize = header_parts[2]
             .parse()
-            .map_err(|e| IoError::ParseError(format!("Invalid num_output: {}", e)))?;
+            .map_err(|e| IoError::ParseError(format!("Invalid num_output: {e}")))?;
 
         let mut inputs = Vec::with_capacity(num_data);
         let mut outputs = Vec::with_capacity(num_data);
@@ -50,10 +50,10 @@ impl TrainingDataReader {
             line.clear();
             buf_reader.read_line(&mut line)?;
             let input_values: Result<Vec<f32>, _> =
-                line.trim().split_whitespace().map(|s| s.parse()).collect();
+                line.split_whitespace().map(|s| s.parse()).collect();
 
             let input_values = input_values.map_err(|e| {
-                IoError::ParseError(format!("Invalid input at sample {}: {}", i, e))
+                IoError::ParseError(format!("Invalid input at sample {i}: {e}"))
             })?;
 
             if input_values.len() != num_input {
@@ -69,10 +69,10 @@ impl TrainingDataReader {
             line.clear();
             buf_reader.read_line(&mut line)?;
             let output_values: Result<Vec<f32>, _> =
-                line.trim().split_whitespace().map(|s| s.parse()).collect();
+                line.split_whitespace().map(|s| s.parse()).collect();
 
             let output_values = output_values.map_err(|e| {
-                IoError::ParseError(format!("Invalid output at sample {}: {}", i, e))
+                IoError::ParseError(format!("Invalid output at sample {i}: {e}"))
             })?;
 
             if output_values.len() != num_output {
@@ -135,7 +135,7 @@ impl TrainingDataWriter {
                 if input.fract() == 0.0 && input.abs() < 1e6 {
                     write!(writer, "{}", input as i32)?;
                 } else {
-                    write!(writer, "{}", input)?;
+                    write!(writer, "{input}")?;
                 }
             }
             writeln!(writer)?;
@@ -149,7 +149,7 @@ impl TrainingDataWriter {
                 if output.fract() == 0.0 && output.abs() < 1e6 {
                     write!(writer, "{}", output as i32)?;
                 } else {
-                    write!(writer, "{}", output)?;
+                    write!(writer, "{output}")?;
                 }
             }
             writeln!(writer)?;
@@ -186,7 +186,7 @@ impl TrainingDataStreamReader {
 
         // Read header line
         reader.read_line(&mut line)?;
-        let header_parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let header_parts: Vec<&str> = line.split_whitespace().collect();
 
         if header_parts.len() != 3 {
             return Err(IoError::InvalidFileFormat(
@@ -203,10 +203,10 @@ impl TrainingDataStreamReader {
             line.clear();
             reader.read_line(&mut line)?;
             let input_values: Result<Vec<f32>, _> =
-                line.trim().split_whitespace().map(|s| s.parse()).collect();
+                line.split_whitespace().map(|s| s.parse()).collect();
 
             let input_values = input_values.map_err(|e| {
-                IoError::ParseError(format!("Invalid input at sample {}: {}", i, e))
+                IoError::ParseError(format!("Invalid input at sample {i}: {e}"))
             })?;
 
             if input_values.len() != num_input {
@@ -222,10 +222,10 @@ impl TrainingDataStreamReader {
             line.clear();
             reader.read_line(&mut line)?;
             let output_values: Result<Vec<f32>, _> =
-                line.trim().split_whitespace().map(|s| s.parse()).collect();
+                line.split_whitespace().map(|s| s.parse()).collect();
 
             let output_values = output_values.map_err(|e| {
-                IoError::ParseError(format!("Invalid output at sample {}: {}", i, e))
+                IoError::ParseError(format!("Invalid output at sample {i}: {e}"))
             })?;
 
             if output_values.len() != num_output {

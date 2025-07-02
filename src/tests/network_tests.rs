@@ -231,7 +231,7 @@ fn test_network_get_weights() {
         .build();
 
     let weights = network.get_weights();
-    let expected_weights = 3 * 2 + 3 * 1; // (2+1 bias) * 2 hidden + (2+1 bias) * 1 output
+    let expected_weights = 3 * 2 + 3; // (2+1 bias) * 2 hidden + (2+1 bias) * 1 output
     assert_eq!(weights.len(), expected_weights);
 }
 

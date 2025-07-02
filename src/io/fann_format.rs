@@ -1,7 +1,7 @@
 //! FANN native file format reader and writer
 
 use crate::io::error::{IoError, IoResult};
-use crate::{ActivationFunction, Network, NetworkBuilder};
+use crate::{Network, NetworkBuilder};
 use num_traits::Float;
 use std::io::{BufRead, BufReader, Write};
 
@@ -57,12 +57,12 @@ impl FannReader {
                 match key {
                     "num_layers" => {
                         num_layers = value.parse().map_err(|e| {
-                            IoError::ParseError(format!("Invalid num_layers: {:?}", e))
+                            IoError::ParseError(format!("Invalid num_layers: {e:?}"))
                         })?;
                     }
                     "connection_rate" => {
                         connection_rate = value.parse().map_err(|e| {
-                            IoError::ParseError(format!("Invalid connection_rate: {:?}", e))
+                            IoError::ParseError(format!("Invalid connection_rate: {e:?}"))
                         })?;
                     }
                     "layer_sizes" => {
@@ -71,7 +71,7 @@ impl FannReader {
                             .map(|s| s.parse())
                             .collect::<Result<Vec<_>, _>>()
                             .map_err(|e| {
-                                IoError::ParseError(format!("Invalid layer_sizes: {:?}", e))
+                                IoError::ParseError(format!("Invalid layer_sizes: {e:?}"))
                             })?;
                     }
                     "weights" => {
@@ -80,7 +80,7 @@ impl FannReader {
                             .map(|s| s.parse())
                             .collect::<Result<Vec<_>, _>>()
                             .map_err(|e| {
-                                IoError::ParseError(format!("Invalid weights: {:?}", e))
+                                IoError::ParseError(format!("Invalid weights: {e:?}"))
                             })?;
                     }
                     _ => {
@@ -128,7 +128,7 @@ impl FannReader {
         if !weights.is_empty() {
             network
                 .set_weights(&weights)
-                .map_err(|e| IoError::InvalidNetwork(format!("Failed to set weights: {}", e)))?;
+                .map_err(|e| IoError::InvalidNetwork(format!("Failed to set weights: {e}")))?;
         }
 
         Ok(network)
@@ -211,7 +211,7 @@ impl FannWriter {
         if !weights.is_empty() {
             write!(writer, "weights=")?;
             for weight in weights {
-                write!(writer, "{:.6} ", weight)?;
+                write!(writer, "{weight:.6} ")?;
             }
             writeln!(writer)?;
         }

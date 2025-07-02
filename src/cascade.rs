@@ -18,21 +18,19 @@
 use num_traits::Float;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use thiserror::Error;
 
 use crate::{
     cascade_error,
     errors::{CascadeErrorCategory, RuvFannError},
-    ActivationFunction, Network, NetworkBuilder, TrainingAlgorithm, TrainingData, TrainingError,
+    ActivationFunction, Network, TrainingData,
 };
 
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
 
 #[cfg(feature = "logging")]
-use log::{debug, error, info, warn};
+use log::{debug, error, info};
 
 /// Cascade correlation specific errors
 #[derive(Error, Debug)]
@@ -548,8 +546,7 @@ impl<T: Float> CascadeTrainer<T> {
             if patience_counter >= self.config.patience {
                 #[cfg(feature = "logging")]
                 debug!(
-                    "Early stopping output training at epoch {} due to patience",
-                    epoch
+                    "Early stopping output training at epoch {epoch} due to patience"
                 );
                 break;
             }
@@ -557,7 +554,7 @@ impl<T: Float> CascadeTrainer<T> {
             // Check target error
             if epoch_error <= self.config.output_target_error {
                 #[cfg(feature = "logging")]
-                debug!("Target error reached in output training at epoch {}", epoch);
+                debug!("Target error reached in output training at epoch {epoch}");
                 break;
             }
 

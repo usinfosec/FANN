@@ -8,14 +8,11 @@ use num_traits::Float;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use thiserror::Error;
 
 use crate::{
-    errors::{ErrorCategory, RuvFannError, ValidationError},
-    ActivationFunction, CascadeConfig, CascadeError, CascadeTrainer, Network, NetworkBuilder,
-    TrainingAlgorithm, TrainingData, TrainingError,
+    CascadeConfig, CascadeTrainer, Network, NetworkBuilder, TrainingData,
 };
 
 #[cfg(feature = "parallel")]
@@ -337,7 +334,7 @@ impl<T: Float + Send + Default> IntegrationTestSuite<T> {
         debug!("Testing basic network functionality");
 
         for (i, network) in self.test_networks.iter().enumerate() {
-            let test_name = format!("basic_network_{}", i);
+            let test_name = format!("basic_network_{i}");
             let start_time = Instant::now();
             let mut network_clone = network.clone();
 
@@ -350,7 +347,7 @@ impl<T: Float + Send + Default> IntegrationTestSuite<T> {
                     result.tests_failed += 1;
                     result
                         .errors
-                        .push(format!("Basic network test {}: {}", i, e));
+                        .push(format!("Basic network test {i}: {e}"));
                 }
             }
         }
@@ -439,7 +436,7 @@ impl<T: Float + Send + Default> IntegrationTestSuite<T> {
                     result.tests_failed += 1;
                     result
                         .errors
-                        .push(format!("Training integration test: {}", e));
+                        .push(format!("Training integration test: {e}"));
                 }
             }
         }
@@ -450,18 +447,18 @@ impl<T: Float + Send + Default> IntegrationTestSuite<T> {
     /// Run training integration test
     fn run_training_integration_test(
         &self,
-        mut network: Network<T>,
+        network: Network<T>,
         data: TrainingData<T>,
     ) -> Result<BenchmarkResult, IntegrationError> {
         let start_time = Instant::now();
 
         // Test different training algorithms
-        use crate::training::{IncrementalBackprop, MseError};
+        use crate::training::IncrementalBackprop;
 
-        let mut trainer = IncrementalBackprop::new(T::from(0.1).unwrap());
+        let trainer = IncrementalBackprop::new(T::from(0.1).unwrap());
 
         // Train for a few epochs
-        let mut total_error = T::zero();
+        let total_error = T::zero();
         // TODO: Fix train_epoch implementation
         /*
         for _ in 0..10 {
@@ -508,7 +505,7 @@ impl<T: Float + Send + Default> IntegrationTestSuite<T> {
                     result.tests_failed += 1;
                     result
                         .errors
-                        .push(format!("Cascade integration test: {}", e));
+                        .push(format!("Cascade integration test: {e}"));
                 }
             }
         }
@@ -535,12 +532,12 @@ impl<T: Float + Send + Default> IntegrationTestSuite<T> {
         };
 
         let mut trainer = CascadeTrainer::new(config, network, data).map_err(|e| {
-            IntegrationError::TestFailed(format!("Cascade trainer creation failed: {}", e))
+            IntegrationError::TestFailed(format!("Cascade trainer creation failed: {e}"))
         })?;
 
         let result_data = trainer
             .train()
-            .map_err(|e| IntegrationError::TestFailed(format!("Cascade training failed: {}", e)))?;
+            .map_err(|e| IntegrationError::TestFailed(format!("Cascade training failed: {e}")))?;
 
         let duration = start_time.elapsed();
 
@@ -706,6 +703,12 @@ pub struct CompatibilityTest<T: Float> {
     pub name: String,
     pub test_fn: Box<dyn Fn() -> Result<(), IntegrationError>>,
     pub phantom: std::marker::PhantomData<T>,
+}
+
+impl<T: Float> Default for FannCompatibilityValidator<T> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<T: Float> FannCompatibilityValidator<T> {

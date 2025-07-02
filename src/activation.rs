@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 /// some specialized variants.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Default)]
 pub enum ActivationFunction {
     /// Linear activation function: f(x) = x * steepness
     Linear,
@@ -21,6 +22,7 @@ pub enum ActivationFunction {
 
     /// Sigmoid activation function: f(x) = 1 / (1 + exp(-2 * steepness * x))
     /// Output range: (0, 1)
+    #[default]
     Sigmoid,
 
     /// Symmetric sigmoid (tanh): f(x) = tanh(steepness * x)
@@ -135,11 +137,6 @@ impl ActivationFunction {
     }
 }
 
-impl Default for ActivationFunction {
-    fn default() -> Self {
-        ActivationFunction::Sigmoid
-    }
-}
 
 #[cfg(test)]
 mod tests {

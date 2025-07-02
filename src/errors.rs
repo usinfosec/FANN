@@ -5,7 +5,6 @@
 
 use crate::{NetworkError, TrainingError};
 use std::error::Error;
-use std::fmt;
 use thiserror::Error;
 
 /// Main error type for all ruv-FANN operations
@@ -349,7 +348,7 @@ impl ErrorLogger {
         let mut fields = serde_json::Map::new();
         fields.insert(
             "error_type".to_string(),
-            serde_json::Value::String(format!("{:?}", error)),
+            serde_json::Value::String(format!("{error:?}")),
         );
         fields.insert(
             "message".to_string(),
@@ -397,7 +396,7 @@ impl ErrorLogger {
             .unwrap_or_default();
 
         #[cfg(feature = "logging")]
-        log::log!(self.log_level, "Error{}: {}", context_str, error);
+        log::log!(self.log_level, "Error{context_str}: {error}");
     }
 }
 
@@ -413,14 +412,13 @@ impl From<NetworkError> for RuvFannError {
         match error {
             NetworkError::InputSizeMismatch { expected, actual } => RuvFannError::Network {
                 category: NetworkErrorCategory::Topology,
-                message: format!("Input size mismatch: expected {}, got {}", expected, actual),
+                message: format!("Input size mismatch: expected {expected}, got {actual}"),
                 context: None,
             },
             NetworkError::WeightCountMismatch { expected, actual } => RuvFannError::Network {
                 category: NetworkErrorCategory::Weights,
                 message: format!(
-                    "Weight count mismatch: expected {}, got {}",
-                    expected, actual
+                    "Weight count mismatch: expected {expected}, got {actual}"
                 ),
                 context: None,
             },

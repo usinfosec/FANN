@@ -8,7 +8,7 @@
 //!
 //! All training algorithms implement the `TrainingAlgorithm` trait for extensibility.
 
-use crate::{Network, NetworkError};
+use crate::Network;
 use num_traits::Float;
 use std::collections::HashMap;
 use thiserror::Error;
@@ -296,7 +296,7 @@ pub use rprop::Rprop;
 /// Helper functions for forward propagation and gradient calculation
 pub(crate) mod helpers {
     use super::*;
-    use crate::ActivationFunction;
+    
 
     /// Simple network representation for training algorithms
     #[derive(Debug, Clone)]

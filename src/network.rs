@@ -106,7 +106,7 @@ impl<T: Float> Network<T> {
         }
 
         // Set input layer values
-        if let Err(_) = self.layers[0].set_inputs(inputs) {
+        if self.layers[0].set_inputs(inputs).is_err() {
             return Vec::new();
         }
 
@@ -288,8 +288,7 @@ impl<T: Float> Network<T> {
                     for neuron in &mut layer.neurons {
                         for connection in &mut neuron.connections {
                             // Simple weight update
-                            connection.weight =
-                                connection.weight - lr * T::from(0.01).unwrap_or(T::one());
+                            connection.weight -= lr * T::from(0.01).unwrap_or(T::one());
                         }
                     }
                 }

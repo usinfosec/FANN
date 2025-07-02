@@ -63,7 +63,7 @@ impl DotExporter {
             LayoutDirection::RightToLeft => "RL",
             LayoutDirection::BottomToTop => "BT",
         };
-        writeln!(writer, "  rankdir={};", rankdir)?;
+        writeln!(writer, "  rankdir={rankdir};")?;
         writeln!(writer, "  node [shape=circle];",)?;
         writeln!(writer, "  edge [dir=forward];",)?;
         writeln!(writer)?;
@@ -73,7 +73,7 @@ impl DotExporter {
         let mut layer_nodes = Vec::new();
 
         for (layer_idx, &layer_size) in network.layer_sizes.iter().enumerate() {
-            writeln!(writer, "  // Layer {}", layer_idx)?;
+            writeln!(writer, "  // Layer {layer_idx}")?;
             writeln!(writer, "  {{")?;
             writeln!(writer, "    rank=same;")?;
 
@@ -81,16 +81,16 @@ impl DotExporter {
 
             for neuron_idx in 0..layer_size {
                 let label = if self.show_indices {
-                    format!("L{}N{}", layer_idx, neuron_idx)
+                    format!("L{layer_idx}N{neuron_idx}")
                 } else {
                     match layer_idx {
-                        0 => format!("I{}", neuron_idx),
-                        idx if idx == network.layer_sizes.len() - 1 => format!("O{}", neuron_idx),
-                        _ => format!("H{}", neuron_idx),
+                        0 => format!("I{neuron_idx}"),
+                        idx if idx == network.layer_sizes.len() - 1 => format!("O{neuron_idx}"),
+                        _ => format!("H{neuron_idx}"),
                     }
                 };
 
-                writeln!(writer, "    n{} [label=\"{}\"];", node_id, label)?;
+                writeln!(writer, "    n{node_id} [label=\"{label}\"];")?;
                 current_layer_nodes.push(node_id);
                 node_id += 1;
             }
@@ -126,11 +126,10 @@ impl DotExporter {
 
                         writeln!(
                             writer,
-                            "  n{} -> n{} [label=\"{:.3}\", color={}, penwidth={:.1}];",
-                            from_node, to_node, weight, color, width
+                            "  n{from_node} -> n{to_node} [label=\"{weight:.3}\", color={color}, penwidth={width:.1}];"
                         )?;
                     } else {
-                        writeln!(writer, "  n{} -> n{};", from_node, to_node)?;
+                        writeln!(writer, "  n{from_node} -> n{to_node};")?;
                     }
                 }
             }

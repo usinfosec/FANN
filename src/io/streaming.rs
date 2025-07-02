@@ -35,7 +35,7 @@ impl TrainingDataStreamReader {
         let header_bytes = reader.read_line(&mut line)?;
         bytes_read += header_bytes;
 
-        let header_parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let header_parts: Vec<&str> = line.split_whitespace().collect();
 
         if header_parts.len() != 3 {
             return Err(IoError::InvalidFileFormat(
@@ -55,10 +55,10 @@ impl TrainingDataStreamReader {
             bytes_read += reader.read_line(&mut line)?;
 
             let input_values: Result<Vec<f32>, _> =
-                line.trim().split_whitespace().map(|s| s.parse()).collect();
+                line.split_whitespace().map(|s| s.parse()).collect();
 
             let input_values = input_values.map_err(|e| {
-                IoError::ParseError(format!("Invalid input at sample {}: {}", i, e))
+                IoError::ParseError(format!("Invalid input at sample {i}: {e}"))
             })?;
 
             if input_values.len() != num_input {
@@ -75,10 +75,10 @@ impl TrainingDataStreamReader {
             bytes_read += reader.read_line(&mut line)?;
 
             let output_values: Result<Vec<f32>, _> =
-                line.trim().split_whitespace().map(|s| s.parse()).collect();
+                line.split_whitespace().map(|s| s.parse()).collect();
 
             let output_values = output_values.map_err(|e| {
-                IoError::ParseError(format!("Invalid output at sample {}: {}", i, e))
+                IoError::ParseError(format!("Invalid output at sample {i}: {e}"))
             })?;
 
             if output_values.len() != num_output {
@@ -122,7 +122,7 @@ impl TrainingDataStreamReader {
         let header_bytes = reader.read_line(&mut line)?;
         bytes_read += header_bytes;
 
-        let header_parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let header_parts: Vec<&str> = line.split_whitespace().collect();
 
         if header_parts.len() != 3 {
             return Err(IoError::InvalidFileFormat(
@@ -143,10 +143,10 @@ impl TrainingDataStreamReader {
             bytes_read += reader.read_line(&mut line)?;
 
             let input_values: Result<Vec<f32>, _> =
-                line.trim().split_whitespace().map(|s| s.parse()).collect();
+                line.split_whitespace().map(|s| s.parse()).collect();
 
             let input_values = input_values.map_err(|e| {
-                IoError::ParseError(format!("Invalid input at sample {}: {}", i, e))
+                IoError::ParseError(format!("Invalid input at sample {i}: {e}"))
             })?;
 
             if input_values.len() != num_input {
@@ -163,10 +163,10 @@ impl TrainingDataStreamReader {
             bytes_read += reader.read_line(&mut line)?;
 
             let output_values: Result<Vec<f32>, _> =
-                line.trim().split_whitespace().map(|s| s.parse()).collect();
+                line.split_whitespace().map(|s| s.parse()).collect();
 
             let output_values = output_values.map_err(|e| {
-                IoError::ParseError(format!("Invalid output at sample {}: {}", i, e))
+                IoError::ParseError(format!("Invalid output at sample {i}: {e}"))
             })?;
 
             if output_values.len() != num_output {
@@ -283,7 +283,7 @@ impl<R: Read> Read for BufferedStreamReader<R> {
 
 /// Utilities for memory-efficient streaming
 pub mod memory {
-    use super::*;
+    
 
     /// Estimate memory usage for batch processing
     pub fn estimate_batch_memory(batch_size: usize, num_input: usize, num_output: usize) -> usize {
