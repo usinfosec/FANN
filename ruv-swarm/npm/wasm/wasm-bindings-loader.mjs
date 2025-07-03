@@ -5,11 +5,14 @@
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Global wasm instance for wasm-bindgen compatibility
+let globalWasm;
 
 // Create a proper WASM bindings loader that matches the expected import structure
 class WasmBindingsLoader {
@@ -42,39 +45,57 @@ class WasmBindingsLoader {
         return this.initializePlaceholder();
       }
       
-      // Load the WASM binary
+      // Import the wasm-bindgen generated module
+      const wasmJsUrl = pathToFileURL(wasmJsPath).href;
+      const wasmModule = await import(wasmJsUrl);
+      
+      // Read the WASM binary directly
       const wasmBinary = await fs.readFile(wasmBinaryPath);
       
-      // Create imports object matching the expected structure
-      const imports = this.createImports();
+      // Initialize using the wasm-bindgen module with the binary data
+      if (typeof wasmModule.__wbg_init === 'function') {
+        // Pass the binary data in the expected format to avoid deprecation warning
+        await wasmModule.__wbg_init({ module_or_path: wasmBinary.buffer });
+      } else if (typeof wasmModule.default === 'function') {
+        await wasmModule.default({ module_or_path: wasmBinary.buffer });
+      } else if (typeof wasmModule.init === 'function') {
+        await wasmModule.init(wasmBinary.buffer);
+      } else if (typeof wasmModule.initSync === 'function') {
+        // Some versions have a sync init
+        wasmModule.initSync(wasmBinary.buffer);
+      } else {
+        // Fallback to manual instantiation
+        const imports = wasmModule.__wbg_get_imports ? wasmModule.__wbg_get_imports() : this.createImports();
+        const { instance } = await WebAssembly.instantiate(wasmBinary, imports);
+        
+        // Call finalize if it exists
+        if (wasmModule.__wbg_finalize_init) {
+          wasmModule.__wbg_finalize_init(instance, wasmModule);
+        }
+      }
       
-      // Instantiate the WASM module
-      const { instance, module } = await WebAssembly.instantiate(wasmBinary, imports);
-      
-      // Set up the wasm global that the bindings expect
-      this.wasm = instance.exports;
-      
-      // Store memory
-      this.memory = this.wasm.memory;
-      
-      // Copy all exports to this object
-      for (const key in this.wasm) {
-        if (typeof this.wasm[key] === 'function') {
-          this[key] = this.wasm[key].bind(this.wasm);
-        } else {
+      // Copy all exports from the wasm module to this object
+      for (const key in wasmModule) {
+        if (key.startsWith('__wbg_')) continue; // Skip internal wasm-bindgen functions
+        
+        const value = wasmModule[key];
+        if (typeof value === 'function') {
+          this[key] = value.bind(wasmModule);
+        } else if (value !== undefined) {
           Object.defineProperty(this, key, {
-            get: () => this.wasm[key],
+            get: () => wasmModule[key],
             configurable: true
           });
         }
       }
       
-      // Add neural network and forecasting specific functions
-      this.addNeuralNetworkFunctions();
-      this.addForecastingFunctions();
+      // Store reference to the wasm module
+      this.wasm = wasmModule.wasm || wasmModule;
+      this.memory = wasmModule.memory || (wasmModule.wasm && wasmModule.wasm.memory);
+      globalWasm = this.wasm;
       
       this.initialized = true;
-      console.log('✅ WASM bindings loaded successfully');
+      console.log('✅ WASM bindings loaded successfully (actual WASM)');
       return this;
     } catch (error) {
       console.error('❌ Failed to initialize WASM bindings:', error);
@@ -117,8 +138,9 @@ class WasmBindingsLoader {
     
     const getUint8Memory0 = () => {
       if (cachedUint8Memory0 === null || cachedUint8Memory0.byteLength === 0) {
-        if (this.wasm && this.wasm.memory) {
-          cachedUint8Memory0 = new Uint8Array(this.wasm.memory.buffer);
+        const wasm = globalWasm || this.wasm;
+        if (wasm && wasm.memory) {
+          cachedUint8Memory0 = new Uint8Array(wasm.memory.buffer);
         } else {
           cachedUint8Memory0 = new Uint8Array(1024);
         }
@@ -303,7 +325,8 @@ class WasmBindingsLoader {
     };
     
     imports.wbg.__wbindgen_memory = function() {
-      return addHeapObject(this.wasm.memory);
+      const wasm = globalWasm || this.wasm;
+      return addHeapObject(wasm.memory);
     }.bind(this);
     
     imports.wbg.__wbindgen_number_get = function(arg0, arg1) {
