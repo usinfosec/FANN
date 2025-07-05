@@ -1,0 +1,3 @@
+var srcIndex = new Map(JSON.parse('[["ruv_fann",["",[["io",[],["binary.rs","compression.rs","dot_export.rs","error.rs","fann_format.rs","json.rs","mod.rs","streaming.rs","training_data.rs"]],["training",[],["backprop.rs","mod.rs","quickprop.rs","rprop.rs"]]],["activation.rs","cascade.rs","connection.rs","errors.rs","integration.rs","layer.rs","lib.rs","mock_types.rs","network.rs","neuron.rs"]]]]'));
+createSrcSidebar();
+//{"start":36,"fragment_lengths":[361]}
